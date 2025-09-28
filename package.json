@@ -70,7 +70,7 @@
     "@freik/containers": "^0.4.4",
     "@freik/typechk": "^0.9.0",
     "@freik/workspace": "^0.6.5",
-    "@types/bun": "^1.2.21",
+    "@types/bun": "^1.2.22",
     "husky": "^9.1.7",
     "java-parser": "^3.0.1",
     "prettier": "^3.6.2",
