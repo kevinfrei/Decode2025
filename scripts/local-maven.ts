@@ -1,133 +1,183 @@
-import {
-  chkAnyOf,
-  chkArrayOf,
-  chkObjectOfExactType,
-  chkObjectOfType,
-  chkRecordOf,
-  isNumber,
-  isRecordOf,
-  isString,
-} from '@freik/typechk';
+import { ForFilesSync } from '@freik/files';
+import fs from 'node:fs';
+import path from 'node:path';
+import { execSync, spawnSync } from 'node:child_process';
+import { ReadGradleModule } from './helpers/GradleModule';
+import { hasFieldType, isArray, isString } from '@freik/typechk';
 
 // install-maven.js
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
 
 // Configuration:
 const repoPath = './local-maven-repo'; // ← customize this
 
-// Type of a gradle .module file
-type GradleComponent = {
-  group: string;
-  module: string;
+type LibraryEntry = {
+  primary: string;
+  sources?: string;
+  javadoc?: string;
+};
+
+type PomEntry = {
+  pom: string;
+} & LibraryEntry;
+
+type ModuleEntry = {
+  groupId: string;
+  artifactId: string;
   version: string;
-  attributes: { [key: string]: string };
-};
-const chkGradleComponent = chkObjectOfType<GradleComponent>({
-  group: isString,
-  module: isString,
-  version: isString,
-  attributes: chkRecordOf(isString, isString),
-});
+} & LibraryEntry;
 
-type DepRequires = { requires: string };
-const chkDepRequires = chkObjectOfExactType<DepRequires>({
-  requires: isString,
-});
 
-type GradleVariantDepVersion = string | { requires: string };
-const chkGradleVariantDepVersion = chkAnyOf(isString, chkDepRequires);
+function removeLeadingZeroes(str: string): string {
+  let i = 0;
+  while (i < str.length && str[i] === '0') {
+    i += 1;
+  }
+  return str.slice(i);
+}
 
-type GradleVariantDependency = {
-  group: string;
-  module: string;
-  version: GradleVariantDepVersion;
-};
-const chkGradleVariantDependency = chkObjectOfType<GradleVariantDependency>({
-  group: isString,
-  module: isString,
-  version: chkGradleVariantDepVersion,
-});
-
-type GradleVariantFile = {
-  name: string;
-  url: string;
-  size: number;
-  sha1: string;
-  sha256: string;
-  sha512: string;
-  md5: string;
-};
-const chkGradleVariantFile = chkObjectOfType<GradleVariantFile>({
-  name: isString,
-  url: isString,
-  size: isNumber,
-  sha1: isString,
-  sha256: isString,
-  sha512: isString,
-  md5: isString,
-});
-
-type GradleVariant = {
-  name: string;
-  attributes: Record<string, string>;
-  dependencies: GradleVariantDependency[];
-  files: GradleVariantFile[];
-};
-const chkGradleVariant = chkObjectOfType<GradleVariant>({
-  name: isString,
-  attributes: chkRecordOf(isString, isString),
-  dependencies: chkArrayOf(chkGradleVariantDependency),
-  files: chkArrayOf(chkGradleVariantFile),
-});
-
-type GradleModule = {
-  formatVersion: string;
-  component: GradleComponent;
-  createdBy: Record<string, string>;
-  variants: GradleVariant[];
-};
-const chkGradleModule = chkObjectOfType<GradleModule>({
-  formatVersion: isString,
-  component: chkGradleComponent,
-  createdBy: chkRecordOf(isString, isString),
-  variants: chkArrayOf(chkGradleVariant),
-});
-
-function installArtifact(file: string) {
-  const info = parseArtifactInfo(file);
-  if (!info) {
-    console.warn(`Skipping unrecognized file: ${file}`);
+function readLocalArtifact(modulePath: string): LibraryEntry | undefined {
+  const moduleData = ReadGradleModule(modulePath);
+  if (!moduleData) {
+    console.error(`Failed to read module data from ${modulePath}`);
     return;
   }
+  const moduleParent = path.resolve(path.join(path.dirname(modulePath), '..'));
+  // TODO: We should also look for a .pom file in a sibling directory
 
-  const packaging = getPackaging(file);
-  if (!packaging) {
-    console.warn(`Unknown packaging for: ${file}`);
-    return;
+  // Okay, look for the library, sources, and javadoc files
+  // They should be in the sha1 directories
+  const libEntry: ModuleEntry = {
+    primary: '',
+    groupId: moduleData.component.group,
+    artifactId: moduleData.component.module,
+    version: moduleData.component.version,
+  };
+  for (const variant of moduleData.variants) {
+    if (!hasFieldType(variant, 'files', isArray)) {
+      // This is an 'elsewhere' variant; skip it
+      continue;
+    }
+    if (variant.files.length !== 1) {
+      console.error('I only know how to handle variants with one file.');
+      return;
+    }
+    const file = variant.files[0];
+    if (
+      !hasFieldType(file, 'name', isString) ||
+      !hasFieldType(file, 'sha1', isString)
+    ) {
+      console.error(
+        `Invalid file entry in variant ${variant.name} in module ${modulePath}`,
+      );
+      return;
+    }
+    const sha1Trimmed = removeLeadingZeroes(file.sha1);
+    const sha1Dir = path.join(moduleParent, sha1Trimmed);
+    const filePath = path.join(sha1Dir, file.name);
+    if (fs.existsSync(filePath)) {
+      // Which file is this one: source, docs, or library?
+      // Check the attributes first:
+      if (variant.attributes['org.gradle.docstype'] === 'javadoc') {
+        libEntry.javadoc = filePath;
+      } else if (variant.attributes['org.gradle.docstype'] === 'sources') {
+        libEntry.sources = filePath;
+      } else if (variant.attributes['org.gradle.libraryelements'] === 'aar') {
+        libEntry.primary = filePath;
+      } else if (variant.attributes['org.gradle.libraryelements'] === 'jar') {
+        libEntry.primary = filePath;
+      } else {
+        console.error(`Unknown library type for ${file.name}: ${filePath}`);
+        return;
+      }
+    }
   }
+  return libEntry;
+}
 
-  const filePath = path.resolve(libsDir, file);
+function getModulesFromGradleCache(): ModuleEntry[] {
+  // Get the gradle cache directory:
+  const homeDir = process.env.HOME || process.env.USERPROFILE || '.';
+  const gradleCacheDir = path.join(
+    homeDir,
+    '.gradle',
+    'caches',
+    'modules-2',
+    'files-2.1',
+  );
+  if (!fs.existsSync(gradleCacheDir)) {
+    console.error(`Gradle cache directory does not exist: ${gradleCacheDir}`);
+    return [];
+  }
+  const artifacts: ModuleEntry[] = [];
+  // Walk the gradle cache directory to find all .module files
+  ForFilesSync(
+    gradleCacheDir,
+    (modulePath: string) => {
+      const artifact = readLocalArtifact(modulePath);
+      if (artifact) {
+        artifacts.push(artifact);
+      }
+      return true;
+    },
+    { fileTypes: '.module' },
+  );
 
-  let cmd = [
-    'mvn',
+  return artifacts;
+}
+
+function installModule(lib: ModuleEntry) {
+  let args = [
     'install:install-file',
-    `-Dfile=${filePath}`,
-    `-Dpom=${pomFile}`,
-    `-Dsources=${sourcesFile}`,
-    `-Djavadoc=${javadocFile}`,
-    `-DlocalRepositoryPath=${repoPath}`,
+    `-Dfile=${lib.primary}`,
+    //    `-Dpom=${pomFile}`,
+    `-DgroupId=${lib.groupId}`,
+    `-DartifactId=${lib.artifactId}`,
+    `-Dversion=${lib.version}`,
+    `-Dpackaging=${lib.primary.endsWith('.aar') ? 'aar' : 'jar'}`,
   ];
+  if (lib.javadoc) {
+    args.push(`-Djavadoc=${lib.javadoc}`);
+  }
+  if (lib.sources) {
+    args.push(`-Dsources=${lib.sources}`);
+  }
+  args.push(`-DlocalRepositoryPath=${repoPath}`);
 
-  console.log(`Installing: ${file}`);
+  if (lib.primary.trim() === '') {
+    console.error(
+      `No primary file for ${lib.groupId}:${lib.artifactId}:${lib.version}`,
+    );
+    return;
+  }
+  // console.log(`Installing: ${lib.primary}`);
   try {
-    execSync(cmd.join(' '), { stdio: 'inherit' });
+    const res = spawnSync('mvn', args);
+    if (res.error) {
+      console.error(`Failed to install ${lib.primary} ${res.status}:`, res);
+    } else {
+      // console.log(`Installed ${lib.primary}`);
+    }
   } catch (err) {
-    console.error(`Failed to install ${file}:`, err.message);
+    console.error(`Crashed installing ${lib.primary}:`, err.message);
   }
 }
 
-fs.readdirSync(libsDir)
-  .filter((f) => f.endsWith('.jar') || f.endsWith('.aar'))
-  .forEach(installArtifact);
+// Now we have a list of artifacts to install
+function installFromModules() {
+  // TODO: Clear the gradle cache directory, clean the build, then
+  // do a build to populate the cache.
+  const libs = getModulesFromGradleCache();
+  console.log(`Found ${libs.length} libraries to install.`);
+  for (const lib of libs) {
+    installModule(lib);
+  }
+}
+
+function installFromPom() {
+  const poms = getPomsFromGradleCache();
+  for (const pom of poms) {
+    installLibrary(pom);
+  }
+}
+
+main();

@@ -3,6 +3,8 @@ repositories {
     google() // Needed for androidx
 
     // Start Freik-added stuff:
+    maven { url = '${project.rootDir}/local-maven-repo' }  // Local cache populated by `bun run local-maven`
+
     // Used by TechnoLib; jitpack.io can turn GitHub Releases into package repository like jsDelivr
     maven { url = 'https://jitpack.io' }
 

@@ -64,13 +64,17 @@
     "types": "tsc --noEmit -p tsconfig.json",
     "- // We're using husky to auto-format code upon commit": "",
     "prepare": "husky",
-    "**** java-parser": "Was version 2.3.4 updated to 3.0.1, but wholly untested"
+    "**** java-parser": "Was version 2.3.4 updated to 3.0.1, but wholly untested",
+    "- // This is the 'fill the local maven cache' script": "",
+    "local-maven": "bun run scripts/local-maven.ts"
   },
   "dependencies": {
     "@freik/containers": "^0.4.4",
+    "@freik/files": "^0.3.4",
     "@freik/typechk": "^0.9.0",
     "@freik/workspace": "^0.6.5",
     "@types/bun": "^1.2.22",
+    "fast-xml-parser": "^5.2.5",
     "husky": "^9.1.7",
     "java-parser": "^3.0.1",
     "prettier": "^3.6.2",
