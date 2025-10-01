@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Oct 01 14:40:45 PDT 2025
+proto-google-common-protos-2.48.0.jar>=
+proto-google-common-protos-2.48.0.pom>=

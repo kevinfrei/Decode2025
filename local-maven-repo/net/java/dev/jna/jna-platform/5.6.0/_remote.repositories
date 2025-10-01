@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Oct 01 14:38:37 PDT 2025
+jna-platform-5.6.0.pom>=
+jna-platform-5.6.0.jar>=

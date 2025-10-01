@@ -1,9 +1,9 @@
 import { ForFilesSync } from '@freik/files';
 import fs from 'node:fs';
 import path from 'node:path';
-import { execSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { ReadGradleModule } from './helpers/GradleModule';
-import { hasFieldType, isArray, isString } from '@freik/typechk';
+import { hasFieldOf, hasFieldType, isArray, isString } from '@freik/typechk';
 
 // install-maven.js
 
@@ -26,7 +26,6 @@ type ModuleEntry = {
   version: string;
 } & LibraryEntry;
 
-
 function removeLeadingZeroes(str: string): string {
   let i = 0;
   while (i < str.length && str[i] === '0') {
@@ -35,7 +34,7 @@ function removeLeadingZeroes(str: string): string {
   return str.slice(i);
 }
 
-function readLocalArtifact(modulePath: string): LibraryEntry | undefined {
+function readModuleArtifact(modulePath: string): ModuleEntry | undefined {
   const moduleData = ReadGradleModule(modulePath);
   if (!moduleData) {
     console.error(`Failed to read module data from ${modulePath}`);
@@ -94,8 +93,46 @@ function readLocalArtifact(modulePath: string): LibraryEntry | undefined {
   return libEntry;
 }
 
-function getModulesFromGradleCache(): ModuleEntry[] {
-  // Get the gradle cache directory:
+function readPomArtifact(pomPath: string): PomEntry | undefined {
+  if (!fs.existsSync(pomPath)) {
+    console.error(`POM file does not exist: ${pomPath}`);
+    return;
+  }
+  // I don't need to parse the POM, just find the files around it.
+  // Go up one directory and find all the .{jar,aar} files
+  let primary: string = '';
+  let sources: string | undefined;
+  let javadoc: string | undefined;
+  const pomParent = path.join(path.dirname(pomPath), '..');
+  ForFilesSync(
+    pomParent,
+    (filePath: string) => {
+      if (filePath.endsWith('-sources.jar')) {
+        sources = filePath;
+      } else if (filePath.endsWith('-javadoc.jar')) {
+        javadoc = filePath;
+      } else if (filePath.endsWith('.jar') || filePath.endsWith('.aar')) {
+        // This is the primary file
+        primary = filePath;
+      }
+      return true;
+    },
+    { fileTypes: ['.jar', '.aar'] },
+  );
+  if (primary === '') {
+    console.error(`No primary library found for POM ${pomPath}`);
+    return;
+  }
+  const pomEntry: PomEntry = {
+    pom: pomPath,
+    primary,
+    sources,
+    javadoc,
+  };
+  return pomEntry;
+}
+
+function getGradleCacheDir(): string | { failure: string } {
   const homeDir = process.env.HOME || process.env.USERPROFILE || '.';
   const gradleCacheDir = path.join(
     homeDir,
@@ -104,8 +141,17 @@ function getModulesFromGradleCache(): ModuleEntry[] {
     'modules-2',
     'files-2.1',
   );
-  if (!fs.existsSync(gradleCacheDir)) {
-    console.error(`Gradle cache directory does not exist: ${gradleCacheDir}`);
+  return fs.existsSync(gradleCacheDir)
+    ? gradleCacheDir
+    : { failure: gradleCacheDir };
+}
+function getModulesFromGradleCache(): ModuleEntry[] {
+  // Get the gradle cache directory:
+  const gradleCacheDir = getGradleCacheDir();
+  if (hasFieldOf(gradleCacheDir, 'failure', isString)) {
+    console.error(
+      `Gradle cache directory does not exist (expected at ${gradleCacheDir.failure})`,
+    );
     return [];
   }
   const artifacts: ModuleEntry[] = [];
@@ -113,7 +159,7 @@ function getModulesFromGradleCache(): ModuleEntry[] {
   ForFilesSync(
     gradleCacheDir,
     (modulePath: string) => {
-      const artifact = readLocalArtifact(modulePath);
+      const artifact = readModuleArtifact(modulePath);
       if (artifact) {
         artifacts.push(artifact);
       }
@@ -123,6 +169,31 @@ function getModulesFromGradleCache(): ModuleEntry[] {
   );
 
   return artifacts;
+}
+
+function getPomsFromGradleCache(): PomEntry[] {
+  // Get the gradle cache directory:
+  const gradleCacheDir = getGradleCacheDir();
+  if (hasFieldOf(gradleCacheDir, 'failure', isString)) {
+    console.error(
+      `Gradle cache directory does not exist (expected at ${gradleCacheDir.failure})`,
+    );
+    return [];
+  }
+  const poms: PomEntry[] = [];
+  // Walk the gradle cache directory to find all .pom files
+  ForFilesSync(
+    gradleCacheDir,
+    (pomPath: string) => {
+      const artifact = readPomArtifact(pomPath);
+      if (artifact) {
+        poms.push(artifact);
+      }
+      return true;
+    },
+    { fileTypes: '.pom' },
+  );
+  return poms;
 }
 
 function installModule(lib: ModuleEntry) {
@@ -162,22 +233,62 @@ function installModule(lib: ModuleEntry) {
   }
 }
 
+function installPom(pom: PomEntry) {
+  let args = [
+    'install:install-file',
+    `-Dfile=${pom.primary}`,
+    `-DpomFile=${pom.pom}`,
+    `-Dpackaging=${pom.primary.endsWith('.aar') ? 'aar' : 'jar'}`,
+  ];
+  if (pom.javadoc) {
+    args.push(`-Djavadoc=${pom.javadoc}`);
+  }
+  if (pom.sources) {
+    args.push(`-Dsources=${pom.sources}`);
+  }
+  args.push(`-DlocalRepositoryPath=${repoPath}`);
+
+  if (pom.primary.trim() === '') {
+    console.error(`No primary file for POM ${pom.pom}`);
+    return;
+  }
+  // console.log(`Installing: ${pom.primary}`);
+  try {
+    const res = spawnSync('mvn', args);
+    if (res.error) {
+      console.error(`Failed to install ${pom.primary} ${res.status}:`, res);
+    } else {
+      // console.log(`Installed ${pom.primary}`);
+    }
+  } catch (err) {
+    console.error(`Crashed installing ${pom.primary}:`, err.message);
+  }
+}
+
 // Now we have a list of artifacts to install
 function installFromModules() {
   // TODO: Clear the gradle cache directory, clean the build, then
   // do a build to populate the cache.
   const libs = getModulesFromGradleCache();
-  console.log(`Found ${libs.length} libraries to install.`);
+  console.log(`Found ${libs.length} modules to install.`);
   for (const lib of libs) {
     installModule(lib);
   }
 }
 
-function installFromPom() {
+function installFromPoms() {
   const poms = getPomsFromGradleCache();
+  console.log(`Found ${poms.length} POMs to install.`);
   for (const pom of poms) {
-    installLibrary(pom);
+    installPom(pom);
   }
 }
 
-main();
+// For now, just use the cache as it exists.
+// This means that prior to running this script, you should do a
+// 'gradle build' or similar to populate the cache.
+// Later, we can make this script do that itself.
+// Also, this script only installs what it finds in the cache;
+// it does not (yet) try to build any dependencies itself.
+installFromModules();
+installFromPoms();

@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Oct 01 14:38:59 PDT 2025
+nanohttpd-websocket-2.3.1.jar>=
+nanohttpd-websocket-2.3.1.pom>=

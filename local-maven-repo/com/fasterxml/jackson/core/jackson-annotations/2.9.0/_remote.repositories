@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Oct 01 14:39:48 PDT 2025
+jackson-annotations-2.9.0.pom>=
+jackson-annotations-2.9.0.jar>=

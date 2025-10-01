@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Oct 01 14:38:35 PDT 2025
+kxml2-2.3.0.jar>=
+kxml2-2.3.0.pom>=

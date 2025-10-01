@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Wed Oct 01 14:40:50 PDT 2025
+constraintlayout-2.0.1.pom>=
+constraintlayout-2.0.1.aar>=
