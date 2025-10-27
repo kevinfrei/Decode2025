@@ -12,46 +12,85 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class PathConstants {
-    public static Function<Pose2d, TrajectoryBuilder> func;
-    public static Pose2d STARTNEAR = new Pose2d(-66, 35, toRadians(0));
-    public static Pose2d STARTFAR = new Pose2d(66, 17, toRadians(0));
-    public static Pose2d SCORENEAR = new Pose2d(-24, 24, toRadians(45));
-    public static Pose2d SCOREFAR = new Pose2d(55, 17, toRadians(63.6));
-    public static Pose2d INTAKESTART1 = new Pose2d(-12, 30, toRadians(0));
-    public static Pose2d INTAKEDONE1 = new Pose2d(-12, 48, toRadians(0));
-    public static Pose2d INTAKESTART2 = new Pose2d(12, 30, toRadians(0));
-    public static Pose2d INTAKEDONE2 = new Pose2d(12, 56, toRadians(0));
-    public static Pose2d INTAKESTART3 = new Pose2d(36, 30, toRadians(0));
-    public static Pose2d INTAKEDONE3 = new Pose2d(36, 56, toRadians(0));
-    public static Pose2d PARKNEAR = new Pose2d(-11, 22, toRadians(45));
-    public static Pose2d PARKFAR = new Pose2d(24, 12, toRadians(0));
-    public static final Supplier<Trajectory> STARTNEAR_TO_SCORENEAR = () ->
-            func.apply(STARTNEAR).lineToLinearHeading(SCORENEAR).build();
-    public static final Supplier<Trajectory> SCORENEAR_TO_INTAKESTART1 = () ->
-            func.apply(SCORENEAR).lineToLinearHeading(INTAKESTART1).build();
-    public static final Supplier<Trajectory> INTAKESTART1_TO_INTAKEDONE1 = () ->
-            func.apply(INTAKESTART1).lineToLinearHeading(INTAKEDONE1).build();
-    public static final Supplier<Trajectory> INTAKEDONE1_TO_SCORENEAR = () ->
-            func.apply(INTAKEDONE1).lineToLinearHeading(SCORENEAR).build();
 
-    public static final Supplier<Trajectory> SCORENEAR_TO_INTAKESTART2 = () ->
-            func.apply(SCORENEAR).lineToLinearHeading(INTAKESTART2).build();
-    public static final Supplier<Trajectory> INTAKESTART2_TO_INTAKEDONE2 = () ->
-            func.apply(INTAKESTART2).lineToLinearHeading(INTAKEDONE2).build();
-    public static final Supplier<Trajectory> INTAKEDONE2_TO_SCORENEAR = () ->
-            func.apply(INTAKEDONE2).lineToLinearHeading(SCORENEAR).build();
-    public static final Supplier<Trajectory> SCORENEAR_TO_PARKNEAR = () ->
-            func.apply(SCORENEAR).lineToLinearHeading(PARKNEAR).build();
-    public static final Supplier<Trajectory> STARTFAR_TO_SCOREFAR = () ->
-            func.apply(STARTFAR).lineToLinearHeading(SCOREFAR).build();
-    public static final Supplier<Trajectory> SCOREFAR_TO_INTAKESTART3 = () ->
-            func.apply(SCOREFAR).lineToLinearHeading(INTAKESTART3).build();
-    public static final Supplier<Trajectory> INTAKESTART3_TO_INTAKEDONE3 = () ->
-            func.apply(INTAKESTART3).lineToLinearHeading(INTAKEDONE3).build();
-    public static final Supplier<Trajectory> INTAKEDONE3_TO_SCOREFAR = () ->
-            func.apply(INTAKEDONE3).lineToLinearHeading(SCOREFAR).build();
-    public static final Supplier<Trajectory> SCOREFAR_TO_PARKFAR = () ->
-            func.apply(SCOREFAR).lineToLinearHeading(PARKFAR).build();
+    public static ConfigurablePoseD STARTNEAR = new ConfigurablePoseD(-66, 35, 0);
+    public static ConfigurablePoseD STARTFAR = new ConfigurablePoseD(66, 17, 0);
+    public static ConfigurablePoseD SCORENEAR = new ConfigurablePoseD(-24, 24, 45);
+    public static ConfigurablePoseD SCOREFAR = new ConfigurablePoseD(55, 17, 63.6);
+    public static ConfigurablePoseD INTAKESTART1 = new ConfigurablePoseD(-12, 30, 0);
+    public static ConfigurablePoseD INTAKEDONE1 = new ConfigurablePoseD(-12, 48, 0);
+    public static ConfigurablePoseD INTAKESTART2 = new ConfigurablePoseD(12, 30, 0);
+    public static ConfigurablePoseD INTAKEDONE2 = new ConfigurablePoseD(12, 56, 0);
+    public static ConfigurablePoseD INTAKESTART3 = new ConfigurablePoseD(36, 30, 0);
+    public static ConfigurablePoseD INTAKEDONE3 = new ConfigurablePoseD(36, 56, 0);
+    public static ConfigurablePoseD PARKNEAR = new ConfigurablePoseD(-11, 22, 45);
+    public static ConfigurablePoseD PARKFAR = new ConfigurablePoseD(24, 12, 0);
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > STARTNEAR_TO_SCORENEAR = b ->
+        b.apply(STARTNEAR.toPose()).lineToLinearHeading(SCORENEAR.toPose()).build();
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > SCORENEAR_TO_INTAKESTART1 = b ->
+        b.apply(SCORENEAR.toPose()).lineToLinearHeading(INTAKESTART1.toPose()).build();
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > INTAKESTART1_TO_INTAKEDONE1 = b ->
+        b.apply(INTAKESTART1.toPose()).lineToLinearHeading(INTAKEDONE1.toPose()).build();
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > INTAKEDONE1_TO_SCORENEAR = b ->
+        b.apply(INTAKEDONE1.toPose()).lineToLinearHeading(SCORENEAR.toPose()).build();
+
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > SCORENEAR_TO_INTAKESTART2 = b ->
+        b.apply(SCORENEAR.toPose()).lineToLinearHeading(INTAKESTART2.toPose()).build();
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > INTAKESTART2_TO_INTAKEDONE2 = b ->
+        b.apply(INTAKESTART2.toPose()).lineToLinearHeading(INTAKEDONE2.toPose()).build();
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > INTAKEDONE2_TO_SCORENEAR = b ->
+        b.apply(INTAKEDONE2.toPose()).lineToLinearHeading(SCORENEAR.toPose()).build();
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > SCORENEAR_TO_PARKNEAR = b ->
+        b.apply(SCORENEAR.toPose()).lineToLinearHeading(PARKNEAR.toPose()).build();
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > STARTFAR_TO_SCOREFAR = b ->
+        b.apply(STARTFAR.toPose()).lineToLinearHeading(SCOREFAR.toPose()).build();
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > SCOREFAR_TO_INTAKESTART3 = b ->
+        b.apply(SCOREFAR.toPose()).lineToLinearHeading(INTAKESTART3.toPose()).build();
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > INTAKESTART3_TO_INTAKEDONE3 = b ->
+        b.apply(INTAKESTART3.toPose()).lineToLinearHeading(INTAKEDONE3.toPose()).build();
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > INTAKEDONE3_TO_SCOREFAR = b ->
+        b.apply(INTAKEDONE3.toPose()).lineToLinearHeading(SCOREFAR.toPose()).build();
+    public static final Function<
+        Function<Pose2d, TrajectorySequenceBuilder>,
+        TrajectorySequence
+    > SCOREFAR_TO_PARKFAR = b ->
+        b.apply(SCOREFAR.toPose()).lineToLinearHeading(PARKFAR.toPose()).build();
 
     public static ConfigurablePoseD SPLINETEST1 = new ConfigurablePoseD(0, -55, 0);
     public static ConfigurablePoseD SPLINETEST2 = new ConfigurablePoseD(55, 0, 0);
