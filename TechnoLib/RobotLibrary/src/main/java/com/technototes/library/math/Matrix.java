@@ -8,10 +8,7 @@ import com.technototes.library.math.jni.EigenJNI;
 import com.technototes.library.math.numbers.N1;
 import com.technototes.library.math.proto.MatrixProto;
 import com.technototes.library.math.struct.MatrixStruct;
-import com.technototes.library.util.protobuf.Protobuf;
-import com.technototes.library.util.protobuf.ProtobufSerializable;
 import com.technototes.library.util.struct.Struct;
-import com.technototes.library.util.struct.StructSerializable;
 import java.util.Objects;
 import org.ejml.MatrixDimensionException;
 import org.ejml.data.DMatrixRMaj;
@@ -31,7 +28,7 @@ import org.ejml.simple.SimpleMatrix;
  * @param <C> The number of columns in this matrix.
  */
 public class Matrix<R extends Num, C extends Num>
-    implements ProtobufSerializable, StructSerializable {
+    implements StructSerializable {
   /** Storage for underlying EJML matrix. */
   protected final SimpleMatrix m_storage;
 
