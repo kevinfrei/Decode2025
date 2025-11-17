@@ -1,29 +1,108 @@
-import { readdir } from 'node:fs/promises';
-import fs from 'node:fs';
+import fs, { promises as fsp } from 'node:fs';
 import path from 'node:path';
-import { Dirent } from 'node:fs';
 
+type TeamPaths = { [key: string]: string[] };
+
+// Send the list of TeamPaths to the client
 export async function Roots(): Promise<Response> {
-  // Get the list of all team code roots
   // First, get the path to the root of the repository:
   const repoRoot = await getRelativeRepoRoot();
-  console.log('Repository root:', repoRoot);
+  // Get the list of all team code roots
   const teamDirs = await getTeamDirectories(repoRoot);
-  console.log('Team directories found:', teamDirs);
-  return Response.json(teamDirs);
+  // Next, look for paths in each team directory
+  const filePaths: TeamPaths = {};
+  for (const teamName of teamDirs) {
+    const paths = await getPathFiles(repoRoot, teamName);
+    filePaths[teamName] = paths;
+  }
+  return Response.json(filePaths);
+}
+
+const firstFtcSrc = path.join(
+  'src',
+  'main',
+  'java',
+  'org',
+  'firstinspires',
+  'ftc',
+);
+const pathNameMatch = /Path[^\/\\]*\.java$/;
+
+// Find all the files in the team directory that look like good Path files
+async function getPathFiles(
+  repoRoot: string,
+  teamName: string,
+): Promise<string[]> {
+  const teamDir = path.join(
+    repoRoot,
+    teamName,
+    firstFtcSrc,
+    teamName.toLocaleLowerCase(),
+  );
+  const pathFiles: string[] = [];
+  // A worklist of directories to check for PedroPath-containing java files
+  const pathsToCheck: string[] = [teamDir];
+  while (pathsToCheck.length > 0) {
+    const curDir = pathsToCheck.pop()!;
+    const entries = await fsp.readdir(curDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(curDir, entry.name);
+      if (entry.isDirectory()) {
+        pathsToCheck.push(fullPath);
+      } else if (await isPathFile(entry, fullPath)) {
+        pathFiles.push(path.relative(teamDir, fullPath));
+      }
+    }
+  }
+  return pathFiles;
+}
+
+// The imports we're looking for in a Path*.java file:
+const imports = [
+  /^\s*import\s+com\.pedropathing\.follower\.Follower\s*;/,
+  /^\s*import\s+com\.pedropathing\.geometry\.Bezier[A-Za-z]+\s*;/,
+  /^\s*import\s+com\.pedropathing\.geometry\.Pose\s*;/,
+  /^\s*import\s+com\.pedropathing\.paths\.PathChain\s*;/,
+];
+
+async function isPathFile(
+  entry: fs.Dirent,
+  fullPath: string,
+): Promise<boolean> {
+  if (!entry.isFile() || !pathNameMatch.test(entry.name)) {
+    return false;
+  }
+  const fileContent = (await fsp.readFile(fullPath, 'utf-8')).split('\n');
+  const matches = fileContent.filter((line) => {
+    for (const imp of imports) {
+      if (imp.test(line.trim())) {
+        return true;
+      }
+    }
+    return false;
+  });
+  // console.log(`File ${filePath} has ${matches.length} relevant import lines.`, matches);
+  return matches.length >= 4;
 }
 
 async function getRelativeRepoRoot(): Promise<string> {
   // Get the path to the root of the repository
-  // Assume that this file is located at <repo-root>/pedroviz/server/roots.ts
-  const currentPath = new URL('.', import.meta.url).pathname.substring(1);
-  // TODO: Poke around a bit more: There should at least be a 'settings.gradle' file here.
-  return path.join(currentPath, '../..');
+  let currentPath = Bun.fileURLToPath(new URL('.', import.meta.url));
+  while (currentPath.length > 1) {
+    if (
+      (await fsp.exists(path.join(currentPath, 'settings.gradle'))) &&
+      (await fsp.exists(path.join(currentPath, 'build.gradle'))) &&
+      (await fsp.exists(path.join(currentPath, 'FtcRobotController')))
+    ) {
+      return currentPath;
+    }
+    currentPath = path.dirname(currentPath);
+  }
+  throw new Error('Could not find repository root');
 }
 
 async function getTeamDirectories(repoRoot: string): Promise<string[]> {
-  const entries = await readdir(`${repoRoot}`, { withFileTypes: true });
-  console.log(entries);
+  const entries = await fsp.readdir(`${repoRoot}`, { withFileTypes: true });
   const teamDirs = entries
     .filter((dir) => isTeamDirectory(repoRoot, dir))
     .map((dir) => dir.name);
@@ -37,8 +116,7 @@ async function getTeamDirectories(repoRoot: string): Promise<string[]> {
 // - It contains a 'build.gradle' file
 // - It has a 'src/main/java/org/firstinspires/ftc/<team-name>' subdirectory
 // - It is referred to in the settings.gradle file at the repo root (NYI)
-// - It has a PedroPath constants file? (NYI)
-function isTeamDirectory(repoRoot: string, dir: Dirent): boolean {
+function isTeamDirectory(repoRoot: string, dir: fs.Dirent): boolean {
   if (!dir.isDirectory()) {
     return false;
   }
@@ -58,7 +136,7 @@ function isTeamDirectory(repoRoot: string, dir: Dirent): boolean {
   const teamSrcPath = path.join(
     repoRoot,
     dir.name,
-    'src/main/java/org/firstinspires/ftc',
+    firstFtcSrc,
     dir.name.toLocaleLowerCase(),
   );
   if (!fs.existsSync(teamSrcPath)) {
