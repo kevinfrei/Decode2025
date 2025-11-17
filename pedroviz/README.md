@@ -2,7 +2,7 @@
 
 The **goal** is for this to be a _local_ application that let's you vizualize
 and edit PedroPath's. The _reasons_ for this as opposed to just using
-vizualize.pedropath.com are twofold:
+[vizualizer.pedropathing.com](https://visualizer.pedropathing.com/) are twofold:
 
 1. When you're connected to the bot (for deployment, debugging, or using a
    panel) you can't use the Visualizer, so you have to launch it, then switch
@@ -27,6 +27,8 @@ vizualize.pedropath.com are twofold:
 - [ ] Animate the robot along the path
 - [ ] Bonus: Reflect a path along a line or axis (with or without a bot offset?)
 
+# Docs-n-stuff
+
 To install dependencies:
 
 ```bash
@@ -42,5 +44,13 @@ bun pvdev
 To run for production:
 
 ```bash
-bun -vstart
+bun pvstart
 ```
+
+I'm using [React](https://react.dev/),
+[Typescript](https://www.typescriptlang.org/), with [Jotai](https://jotai.org/)
+for state management and
+[FluentUI](https://developer.microsoft.com/en-us/fluentui#/) as the UI/control
+toolbox. None of them are too complicated, but each have their own sets of
+weirdness. Feel free to reach out to me if you're trying to understand the code,
+add a feature, or fix a bug.
