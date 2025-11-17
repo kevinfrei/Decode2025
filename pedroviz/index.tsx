@@ -1,4 +1,8 @@
 import { serve } from 'bun';
+import { Roots } from './server/roots';
+import { LoadPaths } from './server/loadpaths';
+import { SavePaths } from './server/savepaths';
+
 import index from './index.html';
 
 const server = serve({
@@ -6,26 +10,25 @@ const server = serve({
     // Serve index.html for all unmatched routes.
     '/*': index,
 
-    '/api/hello': {
+    // Get the different robot roots ('TeamCode' by default)
+    '/api/roots': {
       async GET(req) {
-        return Response.json({
-          message: 'Hello, world!',
-          method: 'GET',
-        });
+        return Roots();
       },
       async PUT(req) {
-        return Response.json({
-          message: 'Hello, world!',
-          method: 'PUT',
-        });
+        return Roots();
       },
     },
-
-    '/api/hello/:name': async (req) => {
-      const name = req.params.name;
-      return Response.json({
-        message: `Hello, ${name}!`,
-      });
+    '/api/loadpaths/:team': async (req) => {
+      const team = req.params.team;
+      console.log('Loading paths for team:', team);
+      return LoadPaths(team);
+    },
+    '/api/savepaths/:team/:data': async (req) => {
+      const team = req.params.team;
+      const data = req.params.data;
+      console.log('Received team ', team, ' data: ', data);
+      return SavePaths(team, data);
     },
   },
 
