@@ -31,25 +31,25 @@ public class TestPaths {
         Path1 = follower
             .pathBuilder()
             .addPath(new BezierLine(start, step1))
-            .setLinearHeadingInterpolation(start.heading, step1.heading)
+            .setLinearHeadingInterpolation(start.getHeading(), step1.getHeading())
             .build();
 
         Path2 = follower
             .pathBuilder()
             .addPath(new BezierLine(step1, step2))
-            .setLinearHeadingInterpolation(step1.heading, step2.heading)
+            .setLinearHeadingInterpolation(step1.getHeading(), step2.getHeading())
             .build();
 
         Path3 = follower
             .pathBuilder()
             .addPath(new BezierLine(step2, step3))
-            .setLinearHeadingInterpolation(step2.heading, step3.heading)
+            .setLinearHeadingInterpolation(step2.getHeading(), step3.getHeading())
             .build();
 
         Path4 = follower
             .pathBuilder()
             .addPath(new BezierLine(step3, step4))
-            .setLinearHeadingInterpolation(step3.heading, step4.heading)
+            .setLinearHeadingInterpolation(step3.getHeading(), step4.getHeading())
             .build();
     }
 }

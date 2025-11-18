@@ -1,10 +1,11 @@
 import fs, { promises as fsp } from 'node:fs';
 import path from 'node:path';
+import { firstFtcSrc } from './utility';
 
-type TeamPaths = { [key: string]: string[] };
+type TeamPaths = Record<string, string[]>;
 
 // Send the list of TeamPaths to the client
-export async function Roots(): Promise<Response> {
+export async function GetPathFileNames(): Promise<Response> {
   // First, get the path to the root of the repository:
   const repoRoot = await getRelativeRepoRoot();
   // Get the list of all team code roots
@@ -12,21 +13,12 @@ export async function Roots(): Promise<Response> {
   // Next, look for paths in each team directory
   const filePaths: TeamPaths = {};
   for (const teamName of teamDirs) {
-    const paths = await getPathFiles(repoRoot, teamName);
-    filePaths[teamName] = paths;
+    filePaths[teamName] = await getPathFiles(repoRoot, teamName);
   }
   console.log('Found the following paths:', filePaths);
   return Response.json(filePaths);
 }
 
-const firstFtcSrc = path.join(
-  'src',
-  'main',
-  'java',
-  'org',
-  'firstinspires',
-  'ftc',
-);
 const pathNameMatch = /Path[^\/\\]*\.java$/;
 
 // Find all the files in the team directory that look like good Path files
@@ -50,7 +42,7 @@ async function getPathFiles(
       const fullPath = path.join(curDir, entry.name);
       if (entry.isDirectory()) {
         pathsToCheck.push(fullPath);
-      } else if (await isPathFile(entry, fullPath)) {
+      } else if (await isPathFile(entry)) {
         pathFiles.push(path.relative(teamDir, fullPath));
       }
     }
@@ -66,14 +58,13 @@ const imports = [
   /^\s*import\s+com\.pedropathing\.paths\.PathChain\s*;/,
 ];
 
-async function isPathFile(
-  entry: fs.Dirent,
-  fullPath: string,
-): Promise<boolean> {
+async function isPathFile(entry: fs.Dirent): Promise<boolean> {
   if (!entry.isFile() || !pathNameMatch.test(entry.name)) {
     return false;
   }
-  const fileContent = (await fsp.readFile(fullPath, 'utf-8')).split('\n');
+  const fileContent = (
+    await fsp.readFile(path.join(entry.parentPath, entry.name), 'utf-8')
+  ).split('\n');
   const matches = fileContent.filter((line) => {
     for (const imp of imports) {
       if (imp.test(line.trim())) {

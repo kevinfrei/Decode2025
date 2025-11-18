@@ -1,5 +1,5 @@
 import { serve } from 'bun';
-import { Roots } from './server/roots';
+import { GetPathFileNames } from './server/getpaths';
 import { LoadPath } from './server/loadpath';
 import { SavePath } from './server/savepath';
 
@@ -9,8 +9,8 @@ const server = serve({
   routes: {
     // Serve index.html for all unmatched routes.
     '/*': index,
-    // Get the different robot roots ('TeamCode' by default)
-    '/api/roots': async (req) => Roots(),
+    // Get the different robot path files
+    '/api/getpaths': async (req) => GetPathFileNames(),
     '/api/loadpath/:team/:path': async (req) =>
       LoadPath(req.params.team, req.params.path),
     '/api/savepath/:team/:path/:data': async (req) =>
