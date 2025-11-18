@@ -1,7 +1,7 @@
 import { serve } from 'bun';
 import { Roots } from './server/roots';
-import { LoadPaths } from './server/loadpaths';
-import { SavePaths } from './server/savepaths';
+import { LoadPath } from './server/loadpath';
+import { SavePath } from './server/savepath';
 
 import index from './index.html';
 
@@ -9,27 +9,12 @@ const server = serve({
   routes: {
     // Serve index.html for all unmatched routes.
     '/*': index,
-
     // Get the different robot roots ('TeamCode' by default)
-    '/api/roots': {
-      async GET(req) {
-        return Roots();
-      },
-      async PUT(req) {
-        return Roots();
-      },
-    },
-    '/api/loadpaths/:team': async (req) => {
-      const team = req.params.team;
-      console.log('Loading paths for team:', team);
-      return LoadPaths(team);
-    },
-    '/api/savepaths/:team/:data': async (req) => {
-      const team = req.params.team;
-      const data = req.params.data;
-      console.log('Received team ', team, ' data: ', data);
-      return SavePaths(team, data);
-    },
+    '/api/roots': async (req) => Roots(),
+    '/api/loadpath/:team/:path': async (req) =>
+      LoadPath(req.params.team, req.params.path),
+    '/api/savepath/:team/:path/:data': async (req) =>
+      SavePath(req.params.team, req.params.path, req.params.data),
   },
 
   development: process.env.NODE_ENV !== 'production' && {

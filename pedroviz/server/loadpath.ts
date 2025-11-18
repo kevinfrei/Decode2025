@@ -1,4 +1,7 @@
-export async function LoadPaths(team: string): Promise<Response> {
+export async function LoadPath(
+  team: string,
+  filepath: string,
+): Promise<Response> {
   return Response.json({
     team,
     paths: [

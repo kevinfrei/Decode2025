@@ -15,6 +15,7 @@ export async function Roots(): Promise<Response> {
     const paths = await getPathFiles(repoRoot, teamName);
     filePaths[teamName] = paths;
   }
+  console.log('Found the following paths:', filePaths);
   return Response.json(filePaths);
 }
 
