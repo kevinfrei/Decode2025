@@ -25,7 +25,7 @@
     "- // c ": "These scripts are for formatting code/scripts/markdown stuff:",
     "- // c+": "",
     "format": "tools format bun",
-    "force-format": "prettier -w \"**/*.java\"",
+    "force-format": "prettier -w \"**/*.java\" \"scripts/**/*.ts\" \"pedroviz/**/*.ts*\" \"pedroviz/**/*.md\"",
     "- // d-": "",
     "- // d ": "This will toggle using TechnoLib locally or from Maven",
     "libflip": "bun run scripts/flip.ts lib",
@@ -95,7 +95,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/react": "^19",
+    "@types/react": "^19.2.6",
     "@types/react-dom": "^19"
   },
   "private": true
