@@ -49,7 +49,7 @@ class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
   // All the static fields we care about:
   // double's, int's, pose's, BezierCurve's, BezierLine's.
   // PathChains shouldn't be static
-  
+
   fieldDeclaration(ctx: FieldDeclarationCtx) {
     console.log('fieldDeclaration ctx', ctx);
     return super.fieldDeclaration(ctx);
