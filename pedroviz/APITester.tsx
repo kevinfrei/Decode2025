@@ -31,9 +31,9 @@ export function APITester() {
         <input
           type="text"
           name="endpoint"
-          defaultValue="/api/hello"
+          defaultValue="/api/getpaths"
           className="url-input"
-          placeholder="/api/hello"
+          placeholder="/api/getpaths"
         />
         <button type="submit" className="send-button">
           Send
