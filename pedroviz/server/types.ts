@@ -1,4 +1,4 @@
-export type AnonymousValue = number;
+export type AnonymousValue = { type: 'int' | 'double'; value: number };
 export type NamedValue = { name: string; value: AnonymousValue };
 export type ValueRef = AnonymousValue | string;
 

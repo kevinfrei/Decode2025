@@ -1,6 +1,6 @@
-import { BaseJavaCstVisitorWithDefaults } from 'java-parser';
 import { PathChainFile } from './types';
-import { getProjectFilePath, MakePathChainFile } from './utility';
+import { getProjectFilePath } from './utility';
+import { MakePathChainFile } from './PathChainLoader';
 
 export async function LoadPath(
   team: string,
@@ -14,12 +14,5 @@ export async function LoadPath(
 export async function loadPathChainsFromFile(
   filePath: string,
 ): Promise<PathChainFile> {
-  return MakePathChainFile(filePath);
-}
-
-class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
-  constructor() {
-    super();
-    this.validateVisitor();
-  }
+  return await MakePathChainFile(filePath);
 }
