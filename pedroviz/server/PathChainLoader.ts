@@ -60,12 +60,12 @@ class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
   // PathChains shouldn't be static
 
   fieldDeclaration(ctx: FieldDeclarationCtx) {
-    console.log('fieldDeclaration ctx', ctx);
+    // console.log('fieldDeclaration ctx', ctx);
     return super.fieldDeclaration(ctx);
   }
 
   constructorDeclaration(ctx: ConstructorDeclarationCtx) {
-    console.log('constructorDeclaration ctx', ctx);
+    // console.log('constructorDeclaration ctx', ctx);
     return super.constructorDeclaration(ctx);
   }
 }
