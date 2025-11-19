@@ -9,6 +9,7 @@ import { NamedValue, PathChainFile } from './types';
 import { promises as fsp } from 'node:fs';
 
 class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
+  filename: string = '';
   content: string = '';
   parsed: ReturnType<typeof parse> | null = null;
   info: PathChainFile = {
@@ -19,28 +20,36 @@ class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
     pathChains: [], // PathChain[];
     // heading?: HeadingType;
   };
+
   constructor() {
     super();
     this.validateVisitor();
   }
+
   async loadFile(filename: string): Promise<string | true> {
     // Read the contents fo the file and parse it:
+    this.filename = filename;
     try {
-      this.content = await fsp.readFile(filename, 'utf-8');
+      const content = await fsp.readFile(filename, 'utf-8');
+      return this.parseContent(content);
     } catch (e) {
       return `Could not read file: ${filename} - ${e}`;
     }
+  }
+
+  parseContent(content: string): string | true {
     try {
+      this.content = content;
       this.parsed = parse(this.content);
     } catch (e) {
-      return `Could not parse file: ${filename} - ${e}`;
+      return `Could not parse content - ${e}`;
     }
     // Now visit the parsed CST, filling in all the data structures:
-    console.log(this.parsed);
+    // console.log(this.parsed);
     try {
       this.visit(this.parsed);
     } catch (e) {
-      return `Could not visit parsed CST for file: ${filename} - ${e}`;
+      return `Could not visit parsed CST for file: ${this.filename} - ${e}`;
     }
     return true;
   }
@@ -54,6 +63,7 @@ class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
     console.log('fieldDeclaration ctx', ctx);
     return super.fieldDeclaration(ctx);
   }
+
   constructorDeclaration(ctx: ConstructorDeclarationCtx) {
     console.log('constructorDeclaration ctx', ctx);
     return super.constructorDeclaration(ctx);

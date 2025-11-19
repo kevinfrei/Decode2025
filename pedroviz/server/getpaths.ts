@@ -1,13 +1,15 @@
 import fs, { promises as fsp } from 'node:fs';
 import path from 'node:path';
-import { firstFtcSrc } from './utility';
+import { firstFtcSrc, isDirectory } from './utility';
 
 type TeamPaths = Record<string, string[]>;
 
 // Send the list of TeamPaths to the client
 export async function GetPathFileNames(): Promise<Response> {
   // First, get the path to the root of the repository:
-  const repoRoot = await getRelativeRepoRoot();
+  const repoRoot = await getRelativeRepoRoot(
+    Bun.fileURLToPath(new URL('.', import.meta.url)),
+  );
   // Get the list of all team code roots
   const teamDirs = await getTeamDirectories(repoRoot);
   // Next, look for paths in each team directory
@@ -22,7 +24,7 @@ export async function GetPathFileNames(): Promise<Response> {
 const pathNameMatch = /Path[^\/\\]*\.java$/;
 
 // Find all the files in the team directory that look like good Path files
-async function getPathFiles(
+export async function getPathFiles(
   repoRoot: string,
   teamName: string,
 ): Promise<string[]> {
@@ -77,23 +79,26 @@ async function isPathFile(entry: fs.Dirent): Promise<boolean> {
   return matches.length >= 4;
 }
 
-async function getRelativeRepoRoot(): Promise<string> {
-  // Get the path to the root of the repository
-  let currentPath = Bun.fileURLToPath(new URL('.', import.meta.url));
-  while (currentPath.length > 1) {
+export async function getRelativeRepoRoot(
+  currentPath: string,
+): Promise<string> {
+  let prevPath = '';
+  while (currentPath != prevPath) {
     if (
       (await fsp.exists(path.join(currentPath, 'settings.gradle'))) &&
       (await fsp.exists(path.join(currentPath, 'build.gradle'))) &&
-      (await fsp.exists(path.join(currentPath, 'FtcRobotController')))
+      (await fsp.exists(path.join(currentPath, 'FtcRobotController'))) &&
+      (await isDirectory(path.join(currentPath, 'FtcRobotController')))
     ) {
       return currentPath;
     }
+    prevPath = currentPath;
     currentPath = path.dirname(currentPath);
   }
   throw new Error('Could not find repository root');
 }
 
-async function getTeamDirectories(repoRoot: string): Promise<string[]> {
+export async function getTeamDirectories(repoRoot: string): Promise<string[]> {
   const entries = await fsp.readdir(`${repoRoot}`, { withFileTypes: true });
   const teamDirs = entries
     .filter((dir) => isTeamDirectory(repoRoot, dir))
@@ -131,10 +136,10 @@ function isTeamDirectory(repoRoot: string, dir: fs.Dirent): boolean {
     firstFtcSrc,
     dir.name.toLocaleLowerCase(),
   );
-  if (!fs.existsSync(teamSrcPath)) {
+  if (!fs.existsSync(teamSrcPath) || !isDirectory(teamSrcPath)) {
     return false;
   }
-  // TODO: Check if the directory is included in the settings.gradle file
+  // TODO: Ensure that the directory is included in the settings.gradle file
   /*
   const settingsGradlePath = path.join(repoRoot, 'settings.gradle');
   if (!fs.existsSync(settingsGradlePath)) {

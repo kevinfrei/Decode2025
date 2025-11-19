@@ -1,4 +1,5 @@
 import path from 'path';
+import { promises as fsp } from 'fs';
 
 export const firstFtcSrc = path.join(
   'src',
@@ -11,4 +12,14 @@ export const firstFtcSrc = path.join(
 
 export function getProjectFilePath(team: string, filename: string): string {
   return path.join(team, firstFtcSrc, team.toLocaleLowerCase(), filename);
+}
+
+export async function isDirectory(path: string) {
+  try {
+    const stats = await fsp.stat(path);
+    return stats.isDirectory();
+  } catch (error) {
+    // An error is thrown if the path doesn't exist
+    return false;
+  }
 }
