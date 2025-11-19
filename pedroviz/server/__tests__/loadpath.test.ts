@@ -6,6 +6,7 @@ import path from 'path';
 
 import { LoadPath, loadPathChainsFromFile } from '../loadpath';
 import { firstFtcSrc, getProjectFilePath } from '../utility';
+import { isString } from '@freik/typechk';
 
 function getTestRepoPath(): string {
   return path.resolve(__dirname, 'test-repo-root');
@@ -26,8 +27,11 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
   const repoPathToFile = path.join(getTestRepoPath(), testPath);
   const paths = await loadPathChainsFromFile(repoPathToFile);
   expect(paths).toBeDefined();
+  expect(isString(paths)).toBeFalse();
+  if (isString(paths)) return;
   // This currently failing, as I haven't implemented the parsing yet.
-  expect(paths.values.length).toBe(2);
+  expect(paths.values.length).toBe(3);
   expect(paths.values[0].name).toBe('org');
   expect(paths.values[1].name).toBe('dist');
+  expect(paths.values[2].name).toBe('one80');
 });

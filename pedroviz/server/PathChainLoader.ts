@@ -6,7 +6,7 @@ import {
   parse,
   UnannTypeCtx,
 } from 'java-parser';
-import { AnonymousValue, NamedValue, PathChainFile } from './types';
+import { AnonymousValue, NamedPose, NamedValue, PathChainFile } from './types';
 import { promises as fsp } from 'node:fs';
 import { isArray, isDefined, isString } from '@freik/typechk';
 class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
@@ -65,6 +65,10 @@ class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
     const maybeNamedValue = tryMatchingNamedValues(ctx);
     if (isDefined(maybeNamedValue)) {
       this.info.values.push(maybeNamedValue);
+    }
+    const maybeNamedPoses = tryMatchingNamedPoses(ctx);
+    if (isDefined(maybeNamedPoses)) {
+      this.info.poses.push(maybeNamedPoses);
     }
     return super.fieldDeclaration(ctx);
   }
@@ -134,6 +138,7 @@ function tryMatchingNamedValues(
   if (!name) {
     return;
   }
+  // TODO: Support initializers of "Math.toRadians(K)"
   const expr = descend(
     descend(descend(varDecl.variableInitializer)?.children.expression)?.children
       .conditionalExpression,
@@ -161,6 +166,12 @@ function tryMatchingNamedValues(
     value.value = parseFloat(dblLit);
   }
   return { name, value };
+}
+
+function tryMatchingNamedPoses(
+  ctx: FieldDeclarationCtx,
+): NamedPose | undefined {
+  return;
 }
 
 export async function MakePathChainFile(
