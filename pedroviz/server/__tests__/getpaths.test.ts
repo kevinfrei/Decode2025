@@ -8,6 +8,7 @@ import {
   getTeamDirectories,
   getRelativeRepoRoot,
   getPathFiles,
+  GetPathFileNames,
 } from '../getpaths';
 
 function getTestRepoPath(): string {
@@ -54,4 +55,13 @@ test('getPathFiles finds no path files', async () => {
   const repoRoot = await getTestRepoPath();
   const pathFiles = await getPathFiles(repoRoot, 'TeamB');
   expect(pathFiles).toBeEmpty();
+});
+
+test('raw endpoint invocation', async () => {
+  const res: Response = await GetPathFileNames();
+  expect(res).toHaveProperty('ok', true);
+  expect(res).toHaveProperty('status', 200);
+  expect(res).toHaveProperty('headers');
+  const data = await res.json();
+  expect(data).toBeDefined();
 });
