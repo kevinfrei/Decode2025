@@ -17,7 +17,7 @@ export async function GetPathFileNames(): Promise<Response> {
   for (const teamName of teamDirs) {
     filePaths[teamName] = await getPathFiles(repoRoot, teamName);
   }
-  console.log('Found the following paths:', filePaths);
+  // console.log('Found the following paths:', filePaths);
   return Response.json(filePaths);
 }
 
