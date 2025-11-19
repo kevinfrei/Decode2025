@@ -8,7 +8,7 @@ import {
 } from 'java-parser';
 import { AnonymousValue, NamedValue, PathChainFile } from './types';
 import { promises as fsp } from 'node:fs';
-import { isDefined, isString } from '@freik/typechk';
+import { isArray, isDefined, isString } from '@freik/typechk';
 class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
   content: string = '';
   parsed: ReturnType<typeof parse> | null = null;
@@ -75,6 +75,13 @@ class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
   }
 }
 
+function descend<T>(ctx: T[] | undefined): T | undefined {
+  if (!isArray(ctx) || ctx.length !== 1) {
+    return;
+  }
+  return ctx[0];
+}
+
 // This matches the 'public static int/double name = value;' pattern
 function tryMatchingNamedValues(
   ctx: FieldDeclarationCtx,
@@ -89,37 +96,24 @@ function tryMatchingNamedValues(
   ) {
     return;
   }
-  if (ctx.unannType.length !== 1) {
-    return;
-  }
-  const theType: UnannTypeCtx = ctx.unannType[0].children;
-  if (!theType.unannPrimitiveTypeWithOptionalDimsSuffix) {
-    return;
-  }
-  const primTypes = theType.unannPrimitiveTypeWithOptionalDimsSuffix;
-  if (
-    primTypes.length !== 1 ||
-    isDefined(primTypes[0].children.dims) ||
-    primTypes[0].children.unannPrimitiveType.length !== 1
-  ) {
-    return;
-  }
-  const primType = primTypes[0].children.unannPrimitiveType;
-  if (
-    primType.length !== 1 ||
-    !primType[0].children.numericType ||
-    primType[0].children.numericType.length !== 1
-  ) {
+  const numType = descend(
+    descend(
+      descend(
+        descend(ctx.unannType)?.children
+          .unannPrimitiveTypeWithOptionalDimsSuffix,
+      )?.children.unannPrimitiveType,
+    )?.children.numericType,
+  )?.children;
+  if (!numType) {
     return;
   }
   const value: AnonymousValue = { type: 'double', value: 0 };
-  const children = primType[0].children.numericType![0].children;
-  if (children.floatingPointType) {
-    if (children.floatingPointType[0].children.Float) {
+  if (numType.floatingPointType) {
+    if (!descend(numType.floatingPointType)?.children.Double) {
       return;
     }
-  } else if (children.integralType) {
-    if (!children.integralType[0].children.Int) {
+  } else if (numType.integralType) {
+    if (!descend(numType.integralType)?.children.Int) {
       return;
     }
     value.type = 'int';
@@ -128,73 +122,43 @@ function tryMatchingNamedValues(
   if (ctx.variableDeclaratorList.length !== 1) {
     return;
   }
-  const varDecl = ctx.variableDeclaratorList[0].children.variableDeclarator;
-  if (varDecl.length !== 1) {
+  const varDecl = descend(
+    descend(ctx.variableDeclaratorList)?.children.variableDeclarator,
+  )?.children;
+  if (!varDecl) {
     return;
   }
-  const varDeclCtx = varDecl[0].children;
-  if (
-    !varDeclCtx.variableDeclaratorId ||
-    varDeclCtx.variableDeclaratorId.length !== 1 ||
-    !varDeclCtx.variableDeclaratorId[0].children.Identifier ||
-    varDeclCtx.variableDeclaratorId[0].children.Identifier.length !== 1 ||
-    !varDeclCtx.variableInitializer ||
-    varDeclCtx.variableInitializer.length !== 1
-  ) {
+  const name = descend(
+    descend(varDecl.variableDeclaratorId)?.children.Identifier,
+  )?.image;
+  if (!name) {
     return;
   }
-  const name = varDeclCtx.variableDeclaratorId[0].children.Identifier[0].image;
-  const initializer = varDeclCtx.variableInitializer[0].children.expression;
-  if (
-    !initializer ||
-    initializer.length !== 1 ||
-    !initializer[0].children.conditionalExpression ||
-    initializer[0].children.conditionalExpression.length !== 1
-  ) {
-    return;
-  }
-  const expr =
-    initializer[0].children.conditionalExpression[0].children.binaryExpression;
-  if (
-    !expr ||
-    expr.length !== 1 ||
-    expr[0].children.unaryExpression.length !== 1 ||
-    expr[0].children.unaryExpression[0].children.primary.length !== 1 ||
-    !expr[0].children.unaryExpression[0].children.primary[0].children
-      .primaryPrefix ||
-    expr[0].children.unaryExpression[0].children.primary[0].children
-      .primaryPrefix.length !== 1 ||
-    !expr[0].children.unaryExpression[0].children.primary[0].children
-      .primaryPrefix[0].children.literal ||
-    expr[0].children.unaryExpression[0].children.primary[0].children
-      .primaryPrefix[0].children.literal.length !== 1
-  ) {
-    return;
-  }
-  const lit =
-    expr[0].children.unaryExpression[0].children.primary[0].children
-      .primaryPrefix[0].children.literal;
+  const expr = descend(
+    descend(descend(varDecl.variableInitializer)?.children.expression)?.children
+      .conditionalExpression,
+  )?.children.binaryExpression;
+  const lit = descend(
+    descend(descend(descend(expr)?.children.unaryExpression)?.children.primary)
+      ?.children.primaryPrefix,
+  )?.children.literal;
   if (value.type === 'int') {
-    if (
-      !lit[0].children.integerLiteral ||
-      !lit[0].children.integerLiteral[0].children.DecimalLiteral
-    ) {
+    const intLit = descend(
+      descend(descend(lit)?.children.integerLiteral)?.children.DecimalLiteral,
+    )?.image;
+    if (!intLit) {
       return;
     }
-
-    value.value = parseInt(
-      lit[0].children.integerLiteral[0].children.DecimalLiteral[0].image,
-    );
+    value.value = parseInt(intLit);
   } else {
-    if (
-      !lit[0].children.floatingPointLiteral ||
-      !lit[0].children.floatingPointLiteral[0].children.FloatLiteral
-    ) {
+    const dblLit = descend(
+      descend(descend(lit)?.children.floatingPointLiteral)?.children
+        .FloatLiteral,
+    )?.image;
+    if (!dblLit) {
       return;
     }
-    value.value = parseFloat(
-      lit[0].children.floatingPointLiteral[0].children.FloatLiteral[0].image,
-    );
+    value.value = parseFloat(dblLit);
   }
   return { name, value };
 }
