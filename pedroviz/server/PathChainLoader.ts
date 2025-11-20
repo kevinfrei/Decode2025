@@ -1,14 +1,23 @@
 import {
   BaseJavaCstVisitorWithDefaults,
   ConstructorDeclarationCtx,
+  ExpressionCstNode,
   FieldDeclarationCtx,
   MethodBodyCtx,
   parse,
+  PrimaryPrefixCtx,
   UnannTypeCtx,
+  UnaryExpressionCtx,
 } from 'java-parser';
-import { AnonymousValue, NamedPose, NamedValue, PathChainFile } from './types';
+import {
+  AnonymousValue,
+  NamedPose,
+  NamedValue,
+  PathChainFile,
+  ValueRef,
+} from './types';
 import { promises as fsp } from 'node:fs';
-import { isArray, isDefined, isString } from '@freik/typechk';
+import { isArray, isDefined, isString, isUndefined } from '@freik/typechk';
 class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
   content: string = '';
   parsed: ReturnType<typeof parse> | null = null;
@@ -65,6 +74,7 @@ class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
     const maybeNamedValue = tryMatchingNamedValues(ctx);
     if (isDefined(maybeNamedValue)) {
       this.info.values.push(maybeNamedValue);
+      return super.fieldDeclaration(ctx);
     }
     const maybeNamedPoses = tryMatchingNamedPoses(ctx);
     if (isDefined(maybeNamedPoses)) {
@@ -86,18 +96,25 @@ function descend<T>(ctx: T[] | undefined): T | undefined {
   return ctx[0];
 }
 
-// This matches the 'public static int/double name = value;' pattern
-function tryMatchingNamedValues(
-  ctx: FieldDeclarationCtx,
-): NamedValue | undefined {
+function isPublicStaticField(ctx: FieldDeclarationCtx): boolean {
   if (!ctx.fieldModifier || ctx.fieldModifier.length !== 2) {
-    return;
+    return false;
   }
   if (
     !ctx.fieldModifier.every(
       (mod) => mod.children.Public || mod.children.Static,
     )
   ) {
+    return false;
+  }
+  return true;
+}
+
+// This matches the 'public static int/double name = value;' pattern
+function tryMatchingNamedValues(
+  ctx: FieldDeclarationCtx,
+): NamedValue | undefined {
+  if (!isPublicStaticField(ctx)) {
     return;
   }
   const numType = descend(
@@ -111,6 +128,146 @@ function tryMatchingNamedValues(
   if (!numType) {
     return;
   }
+  const value: AnonymousValue = { type: 'double', value: 0 };
+  if (numType.floatingPointType) {
+    if (!descend(numType.floatingPointType)?.children.Double) {
+      return;
+    }
+  } else if (numType.integralType) {
+    if (!descend(numType.integralType)?.children.Int) {
+      return;
+    }
+    value.type = 'int';
+  }
+  // Okay, found the type. Need the name and the initialized value.
+  if (ctx.variableDeclaratorList.length !== 1) {
+    return;
+  }
+  const varDecl = descend(
+    descend(ctx.variableDeclaratorList)?.children.variableDeclarator,
+  )?.children;
+  if (!varDecl) {
+    return;
+  }
+  const name = descend(
+    descend(varDecl.variableDeclaratorId)?.children.Identifier,
+  )?.image;
+  if (!name) {
+    return;
+  }
+  // TODO: Support initializers of "Math.toRadians(K)"
+  const expr =
+    descend(descend(varDecl.variableInitializer)?.children.expression);
+  if (isUndefined(expr)) {
+    return;
+  }
+  const valRef = getValueRef(expr);
+  if (isString(valRef)) {
+    return;
+  }
+  value.value = valRef!.value;
+  return { name, value };
+}
+
+function getValueRef(expr: ExpressionCstNode): ValueRef | undefined {
+  const unary: UnaryExpressionCtx | undefined = descend(
+    descend(
+      descend(expr.children.conditionalExpression)?.children.binaryExpression,
+    )?.children.unaryExpression,
+  )?.children;
+  const negative = '-' === descend(unary?.UnaryPrefixOperator)?.image ? -1 : 1;
+  const val = descend(
+    descend(unary?.primary)?.children.primaryPrefix,
+  )?.children;
+  if (isDefined(val?.fqnOrRefType)) {
+    const refName = descend(
+      descend(
+        descend(descend(val.fqnOrRefType)?.children.fqnOrRefTypePartFirst)
+          ?.children.fqnOrRefTypePartCommon,
+      )?.children.Identifier,
+    )?.image;
+    return refName;
+  } else if (isDefined(val?.literal)) {
+    const whichLit = descend(val.literal)?.children;
+    if (isDefined(whichLit?.integerLiteral)) {
+      const value = descend(
+        descend(whichLit.integerLiteral)?.children.DecimalLiteral,
+      )?.image;
+      if (isDefined(value)) {
+        return { type: 'int', value: parseInt(value) * negative };
+      }
+    } else if (isDefined(whichLit?.floatingPointLiteral)) {
+      const value = descend(
+        descend(whichLit.floatingPointLiteral)?.children.FloatLiteral,
+      )?.image;
+      if (isDefined(value)) {
+        return { type: 'double', value: parseFloat(value) * negative };
+      }
+    }
+  }
+  return;
+}
+
+function tryMatchingNamedPoses(
+  ctx: FieldDeclarationCtx,
+): NamedPose | undefined {
+  if (!isPublicStaticField(ctx)) {
+    return;
+  }
+  const classType = descend(
+    descend(
+      descend(
+        descend(descend(ctx.unannType)?.children.unannReferenceType)?.children
+          .unannClassOrInterfaceType,
+      )?.children.unannClassType,
+    )?.children.Identifier,
+  )?.image;
+  if (!classType || classType !== 'Pose') {
+    return;
+  }
+
+  const decl = descend(
+    descend(ctx.variableDeclaratorList)?.children.variableDeclarator,
+  )?.children;
+  const name = descend(
+    descend(decl?.variableDeclaratorId)?.children.Identifier,
+  )?.image;
+  const ctorArgs = descend(
+    descend(
+      descend(
+        descend(
+          descend(
+            descend(
+              descend(
+                descend(
+                  descend(
+                    descend(decl?.variableInitializer)?.children.expression,
+                  )?.children.conditionalExpression,
+                )?.children.binaryExpression,
+              )?.children.unaryExpression,
+            )?.children.primary,
+          )?.children.primaryPrefix,
+        )?.children.newExpression,
+      )?.children.unqualifiedClassInstanceCreationExpression,
+    )?.children.argumentList,
+  )?.children.expression;
+  if (isUndefined(ctorArgs) || ctorArgs.length !== 3) {
+    return;
+  }
+  const x = getValueRef(ctorArgs[0]);
+  const y = getValueRef(ctorArgs[1]);
+  const heading = getValueRef(ctorArgs[2]);
+  if (
+    isUndefined(name) ||
+    isUndefined(x) ||
+    isUndefined(y) ||
+    isUndefined(heading)
+  ) {
+    return;
+  }
+  return { name, pose: { x, y, heading } };
+
+  /*
   const value: AnonymousValue = { type: 'double', value: 0 };
   if (numType.floatingPointType) {
     if (!descend(numType.floatingPointType)?.children.Double) {
@@ -166,12 +323,7 @@ function tryMatchingNamedValues(
     value.value = parseFloat(dblLit);
   }
   return { name, value };
-}
-
-function tryMatchingNamedPoses(
-  ctx: FieldDeclarationCtx,
-): NamedPose | undefined {
-  return;
+  */
 }
 
 export async function MakePathChainFile(
