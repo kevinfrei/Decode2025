@@ -35,7 +35,7 @@ public class TeamTestPaths {
     public PathChain Path4;
     public PathChain AnotherPath;
 
-    public TestPaths(Follower follower) {
+    public TeamTestPaths(Follower follower) {
         Path1 = follower
             .pathBuilder()
             .addPath(start_to_step1)

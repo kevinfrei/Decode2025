@@ -17,6 +17,7 @@ import {
   AnonymousPose,
   AnonymousValue,
   NamedBezier,
+  NamedPathChain,
   NamedPose,
   NamedValue,
   PathChainFile,
@@ -34,6 +35,7 @@ import {
 class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
   content: string = '';
   parsed: ReturnType<typeof parse> | null = null;
+  pathChainFields: string[] = [];
   info: PathChainFile = {
     name: '',
     values: [], // NamedValue[];
@@ -96,10 +98,15 @@ class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
       this.info.beziers.push(maybeNamedBeziers);
       return super.fieldDeclaration(ctx);
     }
+    const maybePathChainField = tryMatchingPathChainFields(ctx);
+    if (isDefined(maybePathChainField)) {
+      this.pathChainFields.push(maybePathChainField);
+    }
     return super.fieldDeclaration(ctx);
   }
 
   constructorDeclaration(ctx: ConstructorDeclarationCtx) {
+    this.info.pathChains.push(...getPathChainFactories(ctx));
     return super.constructorDeclaration(ctx);
   }
 }
@@ -120,6 +127,7 @@ function child<T extends { children: any }>(
 function nameOf(ctx: IToken[] | undefined): string | undefined {
   return descend(ctx)?.image;
 }
+
 function isPublicStaticField(ctx: FieldDeclarationCtx): boolean {
   if (!ctx.fieldModifier || ctx.fieldModifier.length !== 2) {
     return false;
@@ -132,6 +140,14 @@ function isPublicStaticField(ctx: FieldDeclarationCtx): boolean {
     return false;
   }
   return true;
+}
+
+function isPublicField(ctx: FieldDeclarationCtx): boolean {
+  return (
+    ctx.fieldModifier &&
+    ctx.fieldModifier.length === 1 &&
+    isDefined(ctx.fieldModifier[0].children.Public)
+  );
 }
 
 // This matches the 'public static int/double name = value;' pattern
@@ -378,8 +394,29 @@ function tryMatchingBeziers(ctx: FieldDeclarationCtx): NamedBezier | undefined {
   if (!points.every(isDefined)) {
     return;
   }
-  console.log({ name, points });
   return { name, points: { type, points } };
+}
+
+function tryMatchingPathChainFields(
+  ctx: FieldDeclarationCtx,
+): string | undefined {
+  if (!isPublicField(ctx)) {
+    return;
+  }
+  if ('PathChain' !== getClassTypeName(ctx.unannType)) {
+    return;
+  }
+  const decl = getVariableDeclarator(ctx);
+  if (isUndefined(decl)) {
+    return;
+  }
+  return getLValueName(decl);
+}
+
+function getPathChainFactories(
+  ctx: ConstructorDeclarationCtx,
+): NamedPathChain[] {
+  return [];
 }
 
 export async function MakePathChainFile(
