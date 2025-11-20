@@ -23,11 +23,17 @@ public class TeamTestPaths {
 
     public static BezierLine start_to_step1 = new BezierLine(start, step1);
     public static BezierCurve step2_to_step3 = new BezierCurve(step2, step23_mid, step3);
+    public static BezierCurve step4_to_start = new BezierCurve(step4, new Pose(org, 15), start);
+    public static BezierLine another_line = new BezierLine(
+        new Pose(1.2, step_mid, 0.0),
+        new Pose(1, 3.4, 1.1)
+    );
 
     public PathChain Path1;
     public PathChain Path2;
     public PathChain Path3;
     public PathChain Path4;
+    public PathChain AnotherPath;
 
     public TestPaths(Follower follower) {
         Path1 = follower
@@ -52,6 +58,13 @@ public class TeamTestPaths {
             .pathBuilder()
             .addPath(new BezierLine(step3, step4))
             .setLinearHeadingInterpolation(step3.getHeading(), step4.getHeading())
+            .build();
+
+        AnotherPath = follower
+            .pathBuilder()
+            .addPath(new BezierLine(new Pose(0, 0), new Pose(20, 20)))
+            .addPath(new BezierCurve(step1, step2, step3, step4))
+            .setLinearHeadingInterpolation(0, step4.getHeading())
             .build();
     }
 }

@@ -28,7 +28,9 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
   const paths = await loadPathChainsFromFile(repoPathToFile);
   expect(paths).toBeDefined();
   expect(isString(paths)).toBeFalse();
-  if (isString(paths)) return;
+  if (isString(paths)) {
+    return;
+  }
   // This currently failing, as I haven't implemented the parsing yet.
   expect(paths.values.length).toBe(4);
   expect(paths.values[0]).toEqual({
@@ -75,6 +77,47 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
       x: { type: 'double', value: 72.0 },
       y: { type: 'int', value: 72 },
       heading: { type: 'double', value: 0.5236 },
+    },
+  });
+
+  expect(paths.beziers.length).toBe(4);
+  expect(paths.beziers[0]).toEqual({
+    name: 'start_to_step1',
+    points: {
+      points: ['start', 'step1'],
+      type: 'line',
+    },
+  });
+  expect(paths.beziers[1]).toEqual({
+    name: 'step2_to_step3',
+    points: {
+      points: ['step2', 'step23_mid', 'step3'],
+      type: 'curve',
+    },
+  });
+  expect(paths.beziers[2]).toEqual({
+    name: 'step4_to_start',
+    points: {
+      points: ['step4', { x: 'org', y: { type: 'int', value: 15 } }, 'start'],
+      type: 'curve',
+    },
+  });
+  expect(paths.beziers[3]).toEqual({
+    name: 'another_line',
+    points: {
+      points: [
+        {
+          x: { type: 'double', value: 1.2 },
+          y: 'step_mid',
+          heading: { type: 'double', value: 0.0 },
+        },
+        {
+          x: { type: 'int', value: 1 },
+          y: { type: 'double', value: 3.4 },
+          heading: { type: 'double', value: 1.1 },
+        },
+      ],
+      type: 'line',
     },
   });
 });

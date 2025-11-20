@@ -6,18 +6,30 @@ import {
   MethodBodyCtx,
   parse,
   PrimaryPrefixCtx,
+  UnannTypeCstNode,
   UnannTypeCtx,
   UnaryExpressionCtx,
+  VariableDeclaratorCtx,
 } from 'java-parser';
 import {
+  AnonymousPathChain,
+  AnonymousPose,
   AnonymousValue,
+  NamedBezier,
   NamedPose,
   NamedValue,
   PathChainFile,
+  PoseRef,
   ValueRef,
 } from './types';
 import { promises as fsp } from 'node:fs';
-import { isArray, isDefined, isString, isUndefined } from '@freik/typechk';
+import {
+  hasField,
+  isArray,
+  isDefined,
+  isString,
+  isUndefined,
+} from '@freik/typechk';
 class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
   content: string = '';
   parsed: ReturnType<typeof parse> | null = null;
@@ -27,7 +39,6 @@ class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
     poses: [], // NamedPose[];
     beziers: [], // Bezier[];
     pathChains: [], // PathChain[];
-    // heading?: HeadingType;
   };
 
   constructor() {
@@ -54,7 +65,6 @@ class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
       return `Could not parse content - ${e}`;
     }
     // Now visit the parsed CST, filling in all the data structures:
-    // console.log(this.parsed);
     try {
       this.visit(this.parsed);
     } catch (e) {
@@ -69,7 +79,6 @@ class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
   // PathChains shouldn't be static
 
   fieldDeclaration(ctx: FieldDeclarationCtx) {
-    // console.log('fieldDeclaration ctx', ctx);
     // We're looking for public static double/int name = value;
     const maybeNamedValue = tryMatchingNamedValues(ctx);
     if (isDefined(maybeNamedValue)) {
@@ -79,12 +88,17 @@ class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
     const maybeNamedPoses = tryMatchingNamedPoses(ctx);
     if (isDefined(maybeNamedPoses)) {
       this.info.poses.push(maybeNamedPoses);
+      return super.fieldDeclaration(ctx);
+    }
+    const maybeNamedBeziers = tryMatchingBeziers(ctx);
+    if (isDefined(maybeNamedBeziers)) {
+      this.info.beziers.push(maybeNamedBeziers);
+      return super.fieldDeclaration(ctx);
     }
     return super.fieldDeclaration(ctx);
   }
 
   constructorDeclaration(ctx: ConstructorDeclarationCtx) {
-    // console.log('constructorDeclaration ctx', ctx);
     return super.constructorDeclaration(ctx);
   }
 }
@@ -170,18 +184,46 @@ function tryMatchingNamedValues(
   return { name, value };
 }
 
-function getValueRef(
-  expr: ExpressionCstNode | undefined,
-): ValueRef | undefined {
-  if (isUndefined(expr)) {
-    return;
-  }
+function getNumericConstant(
+  expr: ExpressionCstNode,
+): AnonymousValue | undefined {
   const unary: UnaryExpressionCtx | undefined = descend(
     descend(
       descend(expr.children.conditionalExpression)?.children.binaryExpression,
     )?.children.unaryExpression,
   )?.children;
   const negative = '-' === descend(unary?.UnaryPrefixOperator)?.image ? -1 : 1;
+  const whichLit = descend(
+    descend(descend(unary?.primary)?.children.primaryPrefix)?.children.literal,
+  )?.children;
+  if (isDefined(whichLit?.integerLiteral)) {
+    const value = descend(
+      descend(whichLit.integerLiteral)?.children.DecimalLiteral,
+    )?.image;
+    if (isDefined(value)) {
+      return { type: 'int', value: parseInt(value) * negative };
+    }
+  } else if (isDefined(whichLit?.floatingPointLiteral)) {
+    const value = descend(
+      descend(whichLit.floatingPointLiteral)?.children.FloatLiteral,
+    )?.image;
+    if (isDefined(value)) {
+      return { type: 'double', value: parseFloat(value) * negative };
+    }
+  }
+  return;
+}
+
+let inGetOr = false;
+function getRefOr<T>(
+  expr: ExpressionCstNode,
+  getOr: (expr: ExpressionCstNode) => T | undefined,
+): T | string | undefined {
+  const unary: UnaryExpressionCtx | undefined = descend(
+    descend(
+      descend(expr.children.conditionalExpression)?.children.binaryExpression,
+    )?.children.unaryExpression,
+  )?.children;
   const val = descend(
     descend(unary?.primary)?.children.primaryPrefix,
   )?.children;
@@ -193,25 +235,85 @@ function getValueRef(
       )?.children.Identifier,
     )?.image;
     return refName;
-  } else if (isDefined(val?.literal)) {
-    const whichLit = descend(val.literal)?.children;
-    if (isDefined(whichLit?.integerLiteral)) {
-      const value = descend(
-        descend(whichLit.integerLiteral)?.children.DecimalLiteral,
-      )?.image;
-      if (isDefined(value)) {
-        return { type: 'int', value: parseInt(value) * negative };
-      }
-    } else if (isDefined(whichLit?.floatingPointLiteral)) {
-      const value = descend(
-        descend(whichLit.floatingPointLiteral)?.children.FloatLiteral,
-      )?.image;
-      if (isDefined(value)) {
-        return { type: 'double', value: parseFloat(value) * negative };
-      }
-    }
   }
-  return;
+  inGetOr = true;
+  const res = getOr(expr);
+  inGetOr = false;
+  return res;
+}
+
+function getValueRef(
+  expr: ExpressionCstNode | undefined,
+): ValueRef | undefined {
+  if (isUndefined(expr)) {
+    return;
+  }
+  return getRefOr(expr, getNumericConstant);
+}
+
+function getClassTypeName(
+  unannType: UnannTypeCstNode[] | undefined,
+): string | undefined {
+  return descend(
+    descend(
+      descend(
+        descend(descend(unannType)?.children.unannReferenceType)?.children
+          .unannClassOrInterfaceType,
+      )?.children.unannClassType,
+    )?.children.Identifier,
+  )?.image;
+}
+
+function getLValueName(decl: VariableDeclaratorCtx): string | undefined {
+  return descend(descend(decl?.variableDeclaratorId)?.children.Identifier)
+    ?.image;
+}
+
+function getVariableDeclarator(
+  ctx: FieldDeclarationCtx,
+): VariableDeclaratorCtx | undefined {
+  return descend(
+    descend(ctx.variableDeclaratorList)?.children.variableDeclarator,
+  )?.children;
+}
+
+function getCtorArgs(
+  decl: VariableDeclaratorCtx | ExpressionCstNode,
+  type: string,
+): ExpressionCstNode[] | undefined {
+  let expr: ExpressionCstNode;
+  if (!hasField(decl, 'name')) {
+    const theExpr = descend(
+      descend(decl.variableInitializer)?.children.expression,
+    );
+    if (isUndefined(theExpr)) {
+      return;
+    }
+    expr = theExpr;
+  } else {
+    expr = decl;
+  }
+  const newExpr = descend(
+    descend(
+      descend(
+        descend(
+          descend(
+            descend(
+              descend(expr?.children.conditionalExpression)?.children
+                .binaryExpression,
+            )?.children.unaryExpression,
+          )?.children.primary,
+        )?.children.primaryPrefix,
+      )?.children.newExpression,
+    )?.children.unqualifiedClassInstanceCreationExpression,
+  )?.children;
+  const dataType = descend(
+    descend(newExpr?.classOrInterfaceTypeToInstantiate)?.children.Identifier,
+  )?.image;
+  if (dataType !== type) {
+    return;
+  }
+  return descend(newExpr?.argumentList)?.children.expression;
 }
 
 function tryMatchingNamedPoses(
@@ -220,43 +322,26 @@ function tryMatchingNamedPoses(
   if (!isPublicStaticField(ctx)) {
     return;
   }
-  const classType = descend(
-    descend(
-      descend(
-        descend(descend(ctx.unannType)?.children.unannReferenceType)?.children
-          .unannClassOrInterfaceType,
-      )?.children.unannClassType,
-    )?.children.Identifier,
-  )?.image;
-  if (!classType || classType !== 'Pose') {
+  const classType = getClassTypeName(ctx.unannType);
+  if (classType !== 'Pose') {
     return;
   }
+  const decl = getVariableDeclarator(ctx);
+  if (isUndefined(decl)) {
+    return;
+  }
+  const name = getLValueName(decl);
+  if (isUndefined(name)) {
+    return;
+  }
+  const pose = getAnonymousPose(decl);
+  return { name, pose };
+}
 
-  const decl = descend(
-    descend(ctx.variableDeclaratorList)?.children.variableDeclarator,
-  )?.children;
-  const name = descend(
-    descend(decl?.variableDeclaratorId)?.children.Identifier,
-  )?.image;
-  const ctorArgs = descend(
-    descend(
-      descend(
-        descend(
-          descend(
-            descend(
-              descend(
-                descend(
-                  descend(
-                    descend(decl?.variableInitializer)?.children.expression,
-                  )?.children.conditionalExpression,
-                )?.children.binaryExpression,
-              )?.children.unaryExpression,
-            )?.children.primary,
-          )?.children.primaryPrefix,
-        )?.children.newExpression,
-      )?.children.unqualifiedClassInstanceCreationExpression,
-    )?.children.argumentList,
-  )?.children.expression;
+function getAnonymousPose(
+  expr: ExpressionCstNode | VariableDeclaratorCtx,
+): AnonymousPose | undefined {
+  const ctorArgs = getCtorArgs(expr, 'Pose');
   if (
     isUndefined(ctorArgs) ||
     (ctorArgs.length !== 3 && ctorArgs.length !== 2)
@@ -266,70 +351,52 @@ function tryMatchingNamedPoses(
   const x = getValueRef(ctorArgs[0]);
   const y = getValueRef(ctorArgs[1]);
   const heading = getValueRef(ctorArgs[2]);
-  if (isUndefined(name) || isUndefined(x) || isUndefined(y)) {
+  if (isUndefined(x) || isUndefined(y)) {
     return;
   }
-  return isUndefined(heading)
-    ? { name, pose: { x, y } }
-    : { name, pose: { x, y, heading } };
+  return isUndefined(heading) ? { x, y } : { x, y, heading };
+}
 
-  /*
-  const value: AnonymousValue = { type: 'double', value: 0 };
-  if (numType.floatingPointType) {
-    if (!descend(numType.floatingPointType)?.children.Double) {
-      return;
-    }
-  } else if (numType.integralType) {
-    if (!descend(numType.integralType)?.children.Int) {
-      return;
-    }
-    value.type = 'int';
-  }
-  // Okay, found the type. Need the name and the initialized value.
-  if (ctx.variableDeclaratorList.length !== 1) {
+function getPoseRef(expr: ExpressionCstNode): PoseRef | undefined {
+  return getRefOr(expr, getAnonymousPose);
+}
+
+function tryMatchingBeziers(ctx: FieldDeclarationCtx): NamedBezier | undefined {
+  if (!isPublicStaticField(ctx)) {
     return;
   }
-  const varDecl = descend(
-    descend(ctx.variableDeclaratorList)?.children.variableDeclarator,
-  )?.children;
-  if (!varDecl) {
+  const classType = getClassTypeName(ctx.unannType);
+  const type =
+    classType === 'BezierLine'
+      ? 'line'
+      : classType === 'BezierCurve'
+        ? 'curve'
+        : undefined;
+  if (isUndefined(type)) {
     return;
   }
-  const name = descend(
-    descend(varDecl.variableDeclaratorId)?.children.Identifier,
-  )?.image;
-  if (!name) {
+  const decl = getVariableDeclarator(ctx);
+  if (isUndefined(decl)) {
     return;
   }
-  // TODO: Support initializers of "Math.toRadians(K)"
-  const expr = descend(
-    descend(descend(varDecl.variableInitializer)?.children.expression)?.children
-      .conditionalExpression,
-  )?.children.binaryExpression;
-  const lit = descend(
-    descend(descend(descend(expr)?.children.unaryExpression)?.children.primary)
-      ?.children.primaryPrefix,
-  )?.children.literal;
-  if (value.type === 'int') {
-    const intLit = descend(
-      descend(descend(lit)?.children.integerLiteral)?.children.DecimalLiteral,
-    )?.image;
-    if (!intLit) {
-      return;
-    }
-    value.value = parseInt(intLit);
-  } else {
-    const dblLit = descend(
-      descend(descend(lit)?.children.floatingPointLiteral)?.children
-        .FloatLiteral,
-    )?.image;
-    if (!dblLit) {
-      return;
-    }
-    value.value = parseFloat(dblLit);
+  const name = getLValueName(decl);
+  if (isUndefined(name)) {
+    return;
   }
-  return { name, value };
-  */
+  const ctorArgs = getCtorArgs(decl, classType);
+  if (
+    isUndefined(ctorArgs) ||
+    (type === 'line' && ctorArgs.length !== 2) ||
+    (type === 'curve' && ctorArgs.length < 2)
+  ) {
+    return;
+  }
+  const points = ctorArgs.map(getPoseRef);
+  if (!points.every(isDefined)) {
+    return;
+  }
+  console.log({ name, points });
+  return { name, points: { type, points } };
 }
 
 export async function MakePathChainFile(
@@ -337,8 +404,5 @@ export async function MakePathChainFile(
 ): Promise<PathChainFile | string> {
   const loader = new PathChainLoader();
   const res = await loader.loadFile(filename);
-  if (isString(res)) {
-    return res;
-  }
-  return loader.info;
+  return isString(res) ? res : loader.info;
 }
