@@ -3,6 +3,7 @@ import {
   ConstructorDeclarationCtx,
   ExpressionCstNode,
   FieldDeclarationCtx,
+  IToken,
   MethodBodyCtx,
   parse,
   PrimaryPrefixCtx,
@@ -110,6 +111,15 @@ function descend<T>(ctx: T[] | undefined): T | undefined {
   return ctx[0];
 }
 
+function child<T extends { children: any }>(
+  ctx: T[] | undefined,
+): T['children'] | undefined {
+  return descend(ctx)?.children;
+}
+
+function nameOf(ctx: IToken[] | undefined): string | undefined {
+  return descend(ctx)?.image;
+}
 function isPublicStaticField(ctx: FieldDeclarationCtx): boolean {
   if (!ctx.fieldModifier || ctx.fieldModifier.length !== 2) {
     return false;
@@ -131,24 +141,22 @@ function tryMatchingNamedValues(
   if (!isPublicStaticField(ctx)) {
     return;
   }
-  const numType = descend(
-    descend(
-      descend(
-        descend(ctx.unannType)?.children
-          .unannPrimitiveTypeWithOptionalDimsSuffix,
-      )?.children.unannPrimitiveType,
-    )?.children.numericType,
-  )?.children;
+  const numType = child(
+    child(
+      child(child(ctx.unannType)?.unannPrimitiveTypeWithOptionalDimsSuffix)
+        ?.unannPrimitiveType,
+    )?.numericType,
+  );
   if (!numType) {
     return;
   }
   const value: AnonymousValue = { type: 'double', value: 0 };
   if (numType.floatingPointType) {
-    if (!descend(numType.floatingPointType)?.children.Double) {
+    if (!child(numType.floatingPointType)?.Double) {
       return;
     }
   } else if (numType.integralType) {
-    if (!descend(numType.integralType)?.children.Int) {
+    if (!child(numType.integralType)?.Int) {
       return;
     }
     value.type = 'int';
@@ -157,22 +165,16 @@ function tryMatchingNamedValues(
   if (ctx.variableDeclaratorList.length !== 1) {
     return;
   }
-  const varDecl = descend(
-    descend(ctx.variableDeclaratorList)?.children.variableDeclarator,
-  )?.children;
+  const varDecl = child(child(ctx.variableDeclaratorList)?.variableDeclarator);
   if (!varDecl) {
     return;
   }
-  const name = descend(
-    descend(varDecl.variableDeclaratorId)?.children.Identifier,
-  )?.image;
+  const name = nameOf(child(varDecl.variableDeclaratorId)?.Identifier);
   if (!name) {
     return;
   }
   // TODO: Support initializers of "Math.toRadians(K)"
-  const expr = descend(
-    descend(varDecl.variableInitializer)?.children.expression,
-  );
+  const expr = descend(child(varDecl.variableInitializer)?.expression);
   if (isUndefined(expr)) {
     return;
   }
@@ -187,26 +189,19 @@ function tryMatchingNamedValues(
 function getNumericConstant(
   expr: ExpressionCstNode,
 ): AnonymousValue | undefined {
-  const unary: UnaryExpressionCtx | undefined = descend(
-    descend(
-      descend(expr.children.conditionalExpression)?.children.binaryExpression,
-    )?.children.unaryExpression,
-  )?.children;
-  const negative = '-' === descend(unary?.UnaryPrefixOperator)?.image ? -1 : 1;
-  const whichLit = descend(
-    descend(descend(unary?.primary)?.children.primaryPrefix)?.children.literal,
-  )?.children;
+  const unary: UnaryExpressionCtx | undefined = child(
+    child(child(expr.children.conditionalExpression)?.binaryExpression)
+      ?.unaryExpression,
+  );
+  const negative = '-' === nameOf(unary?.UnaryPrefixOperator) ? -1 : 1;
+  const whichLit = child(child(child(unary?.primary)?.primaryPrefix)?.literal);
   if (isDefined(whichLit?.integerLiteral)) {
-    const value = descend(
-      descend(whichLit.integerLiteral)?.children.DecimalLiteral,
-    )?.image;
+    const value = nameOf(child(whichLit.integerLiteral)?.DecimalLiteral);
     if (isDefined(value)) {
       return { type: 'int', value: parseInt(value) * negative };
     }
   } else if (isDefined(whichLit?.floatingPointLiteral)) {
-    const value = descend(
-      descend(whichLit.floatingPointLiteral)?.children.FloatLiteral,
-    )?.image;
+    const value = nameOf(child(whichLit.floatingPointLiteral)?.FloatLiteral);
     if (isDefined(value)) {
       return { type: 'double', value: parseFloat(value) * negative };
     }
@@ -219,22 +214,18 @@ function getRefOr<T>(
   expr: ExpressionCstNode,
   getOr: (expr: ExpressionCstNode) => T | undefined,
 ): T | string | undefined {
-  const unary: UnaryExpressionCtx | undefined = descend(
-    descend(
-      descend(expr.children.conditionalExpression)?.children.binaryExpression,
-    )?.children.unaryExpression,
-  )?.children;
-  const val = descend(
-    descend(unary?.primary)?.children.primaryPrefix,
-  )?.children;
+  const unary: UnaryExpressionCtx | undefined = child(
+    child(child(expr.children.conditionalExpression)?.binaryExpression)
+      ?.unaryExpression,
+  );
+  const val = child(child(unary?.primary)?.primaryPrefix);
   if (isDefined(val?.fqnOrRefType)) {
-    const refName = descend(
-      descend(
-        descend(descend(val.fqnOrRefType)?.children.fqnOrRefTypePartFirst)
-          ?.children.fqnOrRefTypePartCommon,
-      )?.children.Identifier,
-    )?.image;
-    return refName;
+    return nameOf(
+      child(
+        child(child(val.fqnOrRefType)?.fqnOrRefTypePartFirst)
+          ?.fqnOrRefTypePartCommon,
+      )?.Identifier,
+    );
   }
   inGetOr = true;
   const res = getOr(expr);
@@ -254,27 +245,23 @@ function getValueRef(
 function getClassTypeName(
   unannType: UnannTypeCstNode[] | undefined,
 ): string | undefined {
-  return descend(
-    descend(
-      descend(
-        descend(descend(unannType)?.children.unannReferenceType)?.children
-          .unannClassOrInterfaceType,
-      )?.children.unannClassType,
-    )?.children.Identifier,
-  )?.image;
+  return nameOf(
+    child(
+      child(
+        child(child(unannType)?.unannReferenceType)?.unannClassOrInterfaceType,
+      )?.unannClassType,
+    )?.Identifier,
+  );
 }
 
 function getLValueName(decl: VariableDeclaratorCtx): string | undefined {
-  return descend(descend(decl?.variableDeclaratorId)?.children.Identifier)
-    ?.image;
+  return nameOf(child(decl?.variableDeclaratorId)?.Identifier);
 }
 
 function getVariableDeclarator(
   ctx: FieldDeclarationCtx,
 ): VariableDeclaratorCtx | undefined {
-  return descend(
-    descend(ctx.variableDeclaratorList)?.children.variableDeclarator,
-  )?.children;
+  return child(child(ctx.variableDeclaratorList)?.variableDeclarator);
 }
 
 function getCtorArgs(
@@ -283,9 +270,7 @@ function getCtorArgs(
 ): ExpressionCstNode[] | undefined {
   let expr: ExpressionCstNode;
   if (!hasField(decl, 'name')) {
-    const theExpr = descend(
-      descend(decl.variableInitializer)?.children.expression,
-    );
+    const theExpr = descend(child(decl.variableInitializer)?.expression);
     if (isUndefined(theExpr)) {
       return;
     }
@@ -293,27 +278,25 @@ function getCtorArgs(
   } else {
     expr = decl;
   }
-  const newExpr = descend(
-    descend(
-      descend(
-        descend(
-          descend(
-            descend(
-              descend(expr?.children.conditionalExpression)?.children
-                .binaryExpression,
-            )?.children.unaryExpression,
-          )?.children.primary,
-        )?.children.primaryPrefix,
-      )?.children.newExpression,
-    )?.children.unqualifiedClassInstanceCreationExpression,
-  )?.children;
-  const dataType = descend(
-    descend(newExpr?.classOrInterfaceTypeToInstantiate)?.children.Identifier,
-  )?.image;
+  const newExpr = child(
+    child(
+      child(
+        child(
+          child(
+            child(child(expr?.children.conditionalExpression)?.binaryExpression)
+              ?.unaryExpression,
+          )?.primary,
+        )?.primaryPrefix,
+      )?.newExpression,
+    )?.unqualifiedClassInstanceCreationExpression,
+  );
+  const dataType = nameOf(
+    child(newExpr?.classOrInterfaceTypeToInstantiate)?.Identifier,
+  );
   if (dataType !== type) {
     return;
   }
-  return descend(newExpr?.argumentList)?.children.expression;
+  return child(newExpr?.argumentList)?.expression;
 }
 
 function tryMatchingNamedPoses(
