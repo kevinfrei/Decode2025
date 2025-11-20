@@ -17,7 +17,7 @@ public class TeamTestPaths {
     public static Pose step1 = new Pose(step, org, 1.5708);
     public static Pose step2 = new Pose(step, step, one80);
     public static Pose step3 = new Pose(org, step, -0.7854);
-    public static Pose step4 = new Pose(org, org, 0.5236);
+    public static Pose step4 = new Pose(72.0, 72, 0.5236);
 
     public PathChain Path1;
     public PathChain Path2;
