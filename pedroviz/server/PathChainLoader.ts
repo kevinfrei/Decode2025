@@ -156,8 +156,9 @@ function tryMatchingNamedValues(
     return;
   }
   // TODO: Support initializers of "Math.toRadians(K)"
-  const expr =
-    descend(descend(varDecl.variableInitializer)?.children.expression);
+  const expr = descend(
+    descend(varDecl.variableInitializer)?.children.expression,
+  );
   if (isUndefined(expr)) {
     return;
   }
@@ -169,7 +170,12 @@ function tryMatchingNamedValues(
   return { name, value };
 }
 
-function getValueRef(expr: ExpressionCstNode): ValueRef | undefined {
+function getValueRef(
+  expr: ExpressionCstNode | undefined,
+): ValueRef | undefined {
+  if (isUndefined(expr)) {
+    return;
+  }
   const unary: UnaryExpressionCtx | undefined = descend(
     descend(
       descend(expr.children.conditionalExpression)?.children.binaryExpression,
@@ -251,21 +257,21 @@ function tryMatchingNamedPoses(
       )?.children.unqualifiedClassInstanceCreationExpression,
     )?.children.argumentList,
   )?.children.expression;
-  if (isUndefined(ctorArgs) || ctorArgs.length !== 3) {
+  if (
+    isUndefined(ctorArgs) ||
+    (ctorArgs.length !== 3 && ctorArgs.length !== 2)
+  ) {
     return;
   }
   const x = getValueRef(ctorArgs[0]);
   const y = getValueRef(ctorArgs[1]);
   const heading = getValueRef(ctorArgs[2]);
-  if (
-    isUndefined(name) ||
-    isUndefined(x) ||
-    isUndefined(y) ||
-    isUndefined(heading)
-  ) {
+  if (isUndefined(name) || isUndefined(x) || isUndefined(y)) {
     return;
   }
-  return { name, pose: { x, y, heading } };
+  return isUndefined(heading)
+    ? { name, pose: { x, y } }
+    : { name, pose: { x, y, heading } };
 
   /*
   const value: AnonymousValue = { type: 'double', value: 0 };

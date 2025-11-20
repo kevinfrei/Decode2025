@@ -30,7 +30,7 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
   expect(isString(paths)).toBeFalse();
   if (isString(paths)) return;
   // This currently failing, as I haven't implemented the parsing yet.
-  expect(paths.values.length).toBe(3);
+  expect(paths.values.length).toBe(4);
   expect(paths.values[0]).toEqual({
     name: 'org',
     value: { type: 'double', value: 72.0 },
@@ -43,8 +43,12 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
     name: 'one80',
     value: { type: 'double', value: 3.1416 },
   });
+  expect(paths.values[3]).toEqual({
+    name: 'step_mid',
+    value: { type: 'double', value: 74.0 },
+  });
 
-  expect(paths.poses.length).toBe(5);
+  expect(paths.poses.length).toBe(6);
   expect(paths.poses[0]).toEqual({
     name: 'start',
     pose: { x: 'org', y: 'org', heading: { type: 'int', value: 0 } },
@@ -58,10 +62,14 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
     pose: { x: 'step', y: 'step', heading: 'one80' },
   });
   expect(paths.poses[3]).toEqual({
+    name: 'step23_mid',
+    pose: { x: 'step_mid', y: 'step_mid' },
+  });
+  expect(paths.poses[4]).toEqual({
     name: 'step3',
     pose: { x: 'org', y: 'step', heading: { type: 'double', value: -0.7854 } },
   });
-  expect(paths.poses[4]).toEqual({
+  expect(paths.poses[5]).toEqual({
     name: 'step4',
     pose: {
       x: { type: 'double', value: 72.0 },
