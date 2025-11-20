@@ -10,14 +10,14 @@ import com.pedropathing.paths.PathChain;
 public class TeamTestPaths {
 
     public static double org = 72.0;
-    public static double dist = 8.0;
-    public static double one80 = 3.1415926;
+    public static int step = 80;
+    public static double one80 = 3.1416;
 
-    public static Pose start = new Pose(org, org, Math.toRadians(0));
-    public static Pose step1 = new Pose(org + dist, org, Math.toRadians(90));
-    public static Pose step2 = new Pose(org + dist, org + dist, one80);
-    public static Pose step3 = new Pose(org, org + dist, Math.toRadians(-45));
-    public static Pose step4 = new Pose(org, org, Math.toRadians(30));
+    public static Pose start = new Pose(org, org, 0);
+    public static Pose step1 = new Pose(step, org, 1.5708);
+    public static Pose step2 = new Pose(step, step, one80);
+    public static Pose step3 = new Pose(org, step, -0.7854);
+    public static Pose step4 = new Pose(org, org, 0.5236);
 
     public PathChain Path1;
     public PathChain Path2;
