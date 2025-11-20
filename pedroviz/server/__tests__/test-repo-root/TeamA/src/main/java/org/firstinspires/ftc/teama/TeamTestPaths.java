@@ -45,25 +45,26 @@ public class TeamTestPaths {
         Path2 = follower
             .pathBuilder()
             .addPath(new BezierCurve(step1, step2))
-            .setLinearHeadingInterpolation(step1.getHeading(), step2.getHeading())
+            .setTangentHeadingInterpolation()
             .build();
 
         Path3 = follower
             .pathBuilder()
             .addPath(step2_to_step3)
-            .setLinearHeadingInterpolation(step2.getHeading(), step3.getHeading())
+            .setLinearHeadingInterpolation(step_mid, step3.getHeading())
             .build();
 
         Path4 = follower
             .pathBuilder()
             .addPath(new BezierLine(step3, step4))
-            .setLinearHeadingInterpolation(step3.getHeading(), step4.getHeading())
+            .setConstantHeadingInterpolation(one80)
             .build();
 
         AnotherPath = follower
             .pathBuilder()
             .addPath(new BezierLine(new Pose(0, 0), new Pose(20, 20)))
             .addPath(new BezierCurve(step1, step2, step3, step4))
+            .addPath(step4_to_start)
             .setLinearHeadingInterpolation(0, step4.getHeading())
             .build();
     }
