@@ -19,7 +19,7 @@ and edit PedroPath's. The _reasons_ for this as opposed to just using
 
 **Tasks, in order:**
 
-- [ ] Read simple path from code
+- [x] Read simple path from code
 - [ ] Display that path on the canvas.
 - [ ] Allow editing paths in a text field
 - [ ] Allow editing points by dragging & dropping on the canvas
@@ -47,6 +47,8 @@ To run for production:
 bun pvstart
 ```
 
+## Development
+
 I'm using [React](https://react.dev/),
 [Typescript](https://www.typescriptlang.org/), with [Jotai](https://jotai.org/)
 for state management and
@@ -54,3 +56,16 @@ for state management and
 toolbox. None of them are too complicated, but each have their own sets of
 weirdness. Feel free to reach out to me if you're trying to understand the code,
 add a feature, or fix a bug.
+
+On the backend, everything is just written in Typescript. It made deployment
+much easier. It's built and served from a `Bun.serve` invocation. I'll probably
+want to figure out how to package it up in a single bundle in the future, but
+for now, that's good enough.
+
+The back end code is all served through `index.tsx` which serves up the .ts/.tsx
+files from the `pedroviz` subdirectory, and runs the stuff in the `server`
+subdirectory on the backend.
+
+> > > This is probably a bad way to nest code, if I'm thinking about it
+
+TODO: Write moar dox
