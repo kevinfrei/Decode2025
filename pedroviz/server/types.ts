@@ -21,8 +21,12 @@ export type HeadingType =
   | ConstandHeading
   | InterpolatedHeading;
 
-export type AnonymousPathChain = { paths: BezierRef[]; heading: HeadingType };
-export type NamedPathChain = { name: string; chain: AnonymousPathChain };
+// No such thing as an anonymous PathChain
+export type NamedPathChain = {
+  name: string;
+  paths: BezierRef[];
+  heading: HeadingType;
+};
 
 export type PathChainFile = {
   name: string;
