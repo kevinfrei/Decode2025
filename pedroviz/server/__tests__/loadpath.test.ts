@@ -127,50 +127,40 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
   expect(paths.pathChains.length).toBe(5);
   expect(paths.pathChains[0]).toEqual({
     name: 'Path1',
-    chain: {
-      paths: ['start_to_step1'],
-      heading: { type: 'interpolated', headings: ['start', 'step1'] },
-    },
+    paths: ['start_to_step1'],
+    heading: { type: 'interpolated', headings: ['start', 'step1'] },
   });
   expect(paths.pathChains[1]).toEqual({
     name: 'Path2',
-    chain: {
-      paths: [{ type: 'curve', points: ['step1', 'step2'] }],
-      heading: { type: 'tangent' },
-    },
+    paths: [{ type: 'curve', points: ['step1', 'step2'] }],
+    heading: { type: 'tangent' },
   });
   expect(paths.pathChains[2]).toEqual({
     name: 'Path3',
-    chain: {
-      paths: ['step2_to_step3'],
-      heading: { type: 'interpolated', headings: ['step_mid', 'step3'] },
-    },
+    paths: ['step2_to_step3'],
+    heading: { type: 'interpolated', headings: ['step_mid', 'step3'] },
   });
   expect(paths.pathChains[3]).toEqual({
     name: 'Path4',
-    chain: {
-      paths: [{ type: 'line', points: ['step3', 'step4'] }],
-      heading: { type: 'constant', heading: 'one80' },
-    },
+    paths: [{ type: 'line', points: ['step3', 'step4'] }],
+    heading: { type: 'constant', heading: 'one80' },
   });
   expect(paths.pathChains[4]).toEqual({
     name: 'AnotherPath',
-    chain: {
-      paths: [
-        {
-          type: 'line',
-          points: [
-            { x: { type: 'int', value: 0 }, y: { type: 'int', value: 0 } },
-            { x: { type: 'int', value: 20 }, y: { type: 'int', value: 20 } },
-          ],
-        },
-        { type: 'curve', points: ['step1', 'step2', 'step3', 'step4'] },
-        'step4_to_start',
-      ],
-      heading: {
-        type: 'interpolated',
-        headings: [{ type: 'int', value: 0 }, 'step4'],
+    paths: [
+      {
+        type: 'line',
+        points: [
+          { x: { type: 'int', value: 0 }, y: { type: 'int', value: 0 } },
+          { x: { type: 'int', value: 20 }, y: { type: 'int', value: 20 } },
+        ],
       },
+      { type: 'curve', points: ['step1', 'step2', 'step3', 'step4'] },
+      'step4_to_start',
+    ],
+    heading: {
+      type: 'interpolated',
+      headings: [{ type: 'int', value: 0 }, 'step4'],
     },
   });
 });

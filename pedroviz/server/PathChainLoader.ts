@@ -3,23 +3,17 @@ import {
   BlockStatementCstNode,
   ConstructorDeclarationCtx,
   ExpressionCstNode,
-  ExpressionCtx,
   FieldDeclarationCtx,
   FqnOrRefTypeCstNode,
   IToken,
-  MethodBodyCtx,
-  MethodInvocationSuffixCtx,
   parse,
-  PrimaryPrefixCtx,
   PrimarySuffixCstNode,
   UnannTypeCstNode,
-  UnannTypeCtx,
   UnaryExpressionCtx,
   VariableDeclaratorCtx,
 } from 'java-parser';
 import {
   AnonymousBezier,
-  AnonymousPathChain,
   AnonymousPose,
   AnonymousValue,
   BezierRef,
@@ -40,7 +34,6 @@ import {
   isString,
   isUndefined,
 } from '@freik/typechk';
-import { start } from 'node:repl';
 class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
   content: string = '';
   parsed: ReturnType<typeof parse> | null = null;
@@ -381,8 +374,8 @@ function getAnonymousBezier(
   expr: ExpressionCstNode[] | ExpressionCstNode | undefined,
   checkType?: string,
 ): AnonymousBezier | undefined {
-  const expr1 = isArray(expr) ? expr[0] : expr;
-  const [foundType, ctorArgs] = getCtorArgs(expr1, checkType);
+  const firstExpr = isArray(expr) ? expr[0] : expr;
+  const [foundType, ctorArgs] = getCtorArgs(firstExpr, checkType);
   if (isUndefined(ctorArgs)) {
     return;
   }
@@ -439,10 +432,18 @@ function getArgList(
     ?.expression;
 }
 
-function getHeadingRef(arg: ExpressionCstNode): ValueRef | undefined {
-  console.log('heading arg', arg);
-  // NYI: TODO: Implement this
-  return;
+function getHeadingRef(
+  arg: ExpressionCstNode,
+  poseAllowed: boolean = false,
+): ValueRef | undefined {
+  if (poseAllowed) {
+    // TODO:
+    // Check for a <ref>.getHeading() expression
+    // As it currently stands, this just gets the name of the ref, which is the end result
+    // we're looking for, but it doesn't do any validation that it's also a "foo.getHeading()"
+    // for names refer to poses.
+  }
+  return getValueRef(arg);
 }
 
 function getBezierRef(arg: ExpressionCstNode): BezierRef | undefined {
@@ -535,12 +536,11 @@ function getPathChain(node: BlockStatementCstNode): NamedPathChain | undefined {
           continue;
         case 'setLinearHeadingInterpolation':
           const linearArgs = getArgList(method);
-          // TODO: Get the two args (both are angles)
           if (linearArgs.length !== 2) {
             return;
           }
-          const startHeading = getHeadingRef(linearArgs[0]);
-          const endHeading = getHeadingRef(linearArgs[1]);
+          const startHeading = getHeadingRef(linearArgs[0], true);
+          const endHeading = getHeadingRef(linearArgs[1], true);
           if (isUndefined(startHeading) || isUndefined(endHeading)) {
             return;
           }
@@ -551,11 +551,10 @@ function getPathChain(node: BlockStatementCstNode): NamedPathChain | undefined {
           continue;
         case 'setConstantHeadingInterpolation':
           const constantArgs = getArgList(method);
-          // TODO: Get the one arg (just one angle)
           if (constantArgs.length !== 1) {
             return;
           }
-          const headingRef = getHeadingRef(constantArgs[0]);
+          const headingRef = getHeadingRef(constantArgs[0], true);
           if (isUndefined(headingRef)) {
             return;
           }
@@ -563,7 +562,6 @@ function getPathChain(node: BlockStatementCstNode): NamedPathChain | undefined {
           continue;
         case 'addPath':
           const pathArgs = getArgList(method);
-          // TODO: Get the one arg (it's a Bezier)
           if (pathArgs.length !== 1) {
             return;
           }
@@ -578,7 +576,7 @@ function getPathChain(node: BlockStatementCstNode): NamedPathChain | undefined {
       }
     }
   }
-  return { name: fieldName, chain: { paths: chain, heading } };
+  return { name: fieldName, paths: chain, heading };
 }
 
 function getPathChainFactories(
