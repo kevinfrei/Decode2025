@@ -3,12 +3,15 @@ import {
   BlockStatementCstNode,
   ConstructorDeclarationCtx,
   ExpressionCstNode,
+  ExpressionCtx,
   FieldDeclarationCtx,
   FqnOrRefTypeCstNode,
   IToken,
   MethodBodyCtx,
+  MethodInvocationSuffixCtx,
   parse,
   PrimaryPrefixCtx,
+  PrimarySuffixCstNode,
   UnannTypeCstNode,
   UnannTypeCtx,
   UnaryExpressionCtx,
@@ -18,6 +21,8 @@ import {
   AnonymousPathChain,
   AnonymousPose,
   AnonymousValue,
+  BezierRef,
+  HeadingType,
   NamedBezier,
   NamedPathChain,
   NamedPose,
@@ -34,6 +39,7 @@ import {
   isString,
   isUndefined,
 } from '@freik/typechk';
+import { start } from 'node:repl';
 class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
   content: string = '';
   parsed: ReturnType<typeof parse> | null = null;
@@ -283,13 +289,13 @@ function getVariableDeclarator(
 
 function getCtorArgs(
   decl: VariableDeclaratorCtx | ExpressionCstNode,
-  type: string,
-): ExpressionCstNode[] | undefined {
+  type?: string,
+): [string, ExpressionCstNode[] | undefined] {
   let expr: ExpressionCstNode;
   if (!hasField(decl, 'name')) {
     const theExpr = descend(child(decl.variableInitializer)?.expression);
     if (isUndefined(theExpr)) {
-      return;
+      return ['', undefined];
     }
     expr = theExpr;
   } else {
@@ -310,10 +316,10 @@ function getCtorArgs(
   const dataType = nameOf(
     child(newExpr?.classOrInterfaceTypeToInstantiate)?.Identifier,
   );
-  if (dataType !== type) {
-    return;
+  if (isDefined(type) && dataType !== type) {
+    return ['', undefined];
   }
-  return child(newExpr?.argumentList)?.expression;
+  return [type, child(newExpr?.argumentList)?.expression];
 }
 
 function tryMatchingNamedPoses(
@@ -341,7 +347,7 @@ function tryMatchingNamedPoses(
 function getAnonymousPose(
   expr: ExpressionCstNode | VariableDeclaratorCtx,
 ): AnonymousPose | undefined {
-  const ctorArgs = getCtorArgs(expr, 'Pose');
+  const [, ctorArgs] = getCtorArgs(expr, 'Pose');
   if (
     isUndefined(ctorArgs) ||
     (ctorArgs.length !== 3 && ctorArgs.length !== 2)
@@ -383,7 +389,7 @@ function tryMatchingBeziers(ctx: FieldDeclarationCtx): NamedBezier | undefined {
   if (isUndefined(name)) {
     return;
   }
-  const ctorArgs = getCtorArgs(decl, classType);
+  const [, ctorArgs] = getCtorArgs(decl, classType);
   if (
     isUndefined(ctorArgs) ||
     (type === 'line' && ctorArgs.length !== 2) ||
@@ -412,6 +418,25 @@ function tryMatchingPathChainFields(
     return;
   }
   return getLValueName(decl);
+}
+
+function getArgList(
+  cstNode: PrimarySuffixCstNode | undefined,
+): ExpressionCstNode[] {
+  return child(child(cstNode.children.methodInvocationSuffix)?.argumentList)
+    ?.expression;
+}
+
+function getHeadingRef(arg: ExpressionCstNode): ValueRef | undefined {
+  console.log('heading arg', arg);
+  // NYI: TODO: Implement this
+  return;
+}
+
+function getBezierRef(arg: ExpressionCstNode): BezierRef | undefined {
+  console.log('bezier arg', arg);
+  // NYI: TODO: Implement this
+  return;
 }
 
 function getPathChain(node: BlockStatementCstNode): NamedPathChain | undefined {
@@ -444,13 +469,105 @@ function getPathChain(node: BlockStatementCstNode): NamedPathChain | undefined {
       )?.unaryExpression,
     )?.primary,
   );
-  const follower =
-    getRefTypeName(child(builder.primaryPrefix)?.fqnOrRefType);
+  const methodInvoke = child(builder.primaryPrefix)?.fqnOrRefType;
+  const follower = getRefTypeName(methodInvoke);
   if (follower !== 'follower') {
+    return;
+  }
+  let lastMethodName = nameOf(
+    child(
+      child(child(methodInvoke)?.fqnOrRefTypePartRest)?.fqnOrRefTypePartCommon,
+    )?.Identifier,
+  );
+  if (lastMethodName !== 'pathBuilder') {
+    return;
+  }
+  const methods = builder.primarySuffix;
+  if (methods.length < 5) {
     return;
   }
   // Okay, remove the '.pathBuilder()' prefix, and the
   // '.build();' suffix.
+  let chain: BezierRef[] = [];
+  let heading: HeadingType | null = null;
+  for (let index = 0; index < methods.length; index++) {
+    const method = methods[index];
+    if (index % 2 === 1) {
+      // This should be a dot
+      if (isUndefined(method.children.Dot)) {
+        return;
+      }
+      lastMethodName = nameOf(method.children.Identifier);
+      switch (lastMethodName) {
+        case 'pathBuilder':
+        case 'addPath':
+        case 'setTangentHeadingInterpolation':
+        case 'setLinearHeadingInterpolation':
+        case 'setConstantHeadingInterpolation':
+        case 'build':
+          continue;
+        default:
+          return;
+      }
+    } else {
+      switch (lastMethodName) {
+        case 'pathBuilder':
+        case 'build':
+          if (isDefined(getArgList(method))) {
+            return;
+          }
+          continue;
+        case 'setTangentHeadingInterpolation':
+          if (isDefined(getArgList(method))) {
+            return;
+          }
+          heading = { type: 'tangent' };
+          continue;
+        case 'setLinearHeadingInterpolation':
+          const linearArgs = getArgList(method);
+          // TODO: Get the two args (both are angles)
+          if (linearArgs.length !== 2) {
+            return;
+          }
+          const startHeading = getHeadingRef(linearArgs[0]);
+          const endHeading = getHeadingRef(linearArgs[1]);
+          if (isUndefined(startHeading) || isUndefined(endHeading)) {
+            return;
+          }
+          heading = {
+            type: 'interpolated',
+            headings: [startHeading, endHeading],
+          };
+          continue;
+        case 'setConstantHeadingInterpolation':
+          const constantArgs = getArgList(method);
+          // TODO: Get the one arg (just one angle)
+          if (constantArgs.length !== 1) {
+            return;
+          }
+          const headingRef = getHeadingRef(constantArgs[0]);
+          if (isUndefined(headingRef)) {
+            return;
+          }
+          heading = { type: 'constant', heading: headingRef };
+          continue;
+        case 'addPath':
+          const pathArgs = getArgList(method);
+          // TODO: Get the one arg (it's a Bezier)
+          if (pathArgs.length !== 1) {
+            return;
+          }
+          const bezierRef = getBezierRef(pathArgs[0]);
+          if (isUndefined(bezierRef)) {
+            return;
+          }
+          chain.push(bezierRef);
+          continue;
+        default:
+          return;
+      }
+    }
+  }
   return;
 }
 
