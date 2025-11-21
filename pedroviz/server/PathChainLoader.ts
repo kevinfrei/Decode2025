@@ -1,8 +1,10 @@
 import {
   BaseJavaCstVisitorWithDefaults,
+  BlockStatementCstNode,
   ConstructorDeclarationCtx,
   ExpressionCstNode,
   FieldDeclarationCtx,
+  FqnOrRefTypeCstNode,
   IToken,
   MethodBodyCtx,
   parse,
@@ -225,7 +227,13 @@ function getNumericConstant(
   return;
 }
 
-let inGetOr = false;
+function getRefTypeName(fqn: FqnOrRefTypeCstNode[]): string | undefined {
+  return nameOf(
+    child(child(child(fqn)?.fqnOrRefTypePartFirst)?.fqnOrRefTypePartCommon)
+      ?.Identifier,
+  );
+}
+
 function getRefOr<T>(
   expr: ExpressionCstNode,
   getOr: (expr: ExpressionCstNode) => T | undefined,
@@ -236,16 +244,9 @@ function getRefOr<T>(
   );
   const val = child(child(unary?.primary)?.primaryPrefix);
   if (isDefined(val?.fqnOrRefType)) {
-    return nameOf(
-      child(
-        child(child(val.fqnOrRefType)?.fqnOrRefTypePartFirst)
-          ?.fqnOrRefTypePartCommon,
-      )?.Identifier,
-    );
+    return getRefTypeName(val.fqnOrRefType);
   }
-  inGetOr = true;
   const res = getOr(expr);
-  inGetOr = false;
   return res;
 }
 
@@ -413,9 +414,53 @@ function tryMatchingPathChainFields(
   return getLValueName(decl);
 }
 
+function getPathChain(node: BlockStatementCstNode): NamedPathChain | undefined {
+  const stmt = child(
+    child(
+      child(
+        child(
+          child(
+            child(
+              child(node.children.statement)
+                ?.statementWithoutTrailingSubstatement,
+            )?.expressionStatement,
+          )?.statementExpression,
+        )?.expression,
+      )?.conditionalExpression,
+    )?.binaryExpression,
+  );
+  if (isUndefined(stmt.AssignmentOperator)) {
+    return;
+  }
+  const fieldName = getRefTypeName(
+    child(child(child(stmt.unaryExpression)?.primary)?.primaryPrefix)
+      .fqnOrRefType,
+  );
+  // TODO: make sure the field name is in the list of fields
+  const builder = child(
+    child(
+      child(
+        child(child(stmt.expression)?.conditionalExpression)?.binaryExpression,
+      )?.unaryExpression,
+    )?.primary,
+  );
+  const follower =
+    getRefTypeName(child(builder.primaryPrefix)?.fqnOrRefType);
+  if (follower !== 'follower') {
+    return;
+  }
+  // Okay, remove the '.pathBuilder()' prefix, and the
+  // '.build();' suffix.
+  return;
+}
+
 function getPathChainFactories(
   ctx: ConstructorDeclarationCtx,
 ): NamedPathChain[] {
+  const statements = child(
+    child(ctx.constructorBody).blockStatements,
+  ).blockStatement;
+  const pathChains = statements.map(getPathChain);
   return [];
 }
 
