@@ -27,6 +27,9 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
   const repoPathToFile = path.join(getTestRepoPath(), testPath);
   const paths = await loadPathChainsFromFile(repoPathToFile);
   expect(paths).toBeDefined();
+  if (isString(paths)) {
+    console.error(paths);
+  }
   expect(isString(paths)).toBeFalse();
   if (isString(paths)) {
     return;
