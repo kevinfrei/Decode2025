@@ -1,3 +1,5 @@
+export type TeamPaths = Record<string, string[]>;
+
 export type AnonymousValue = { type: 'int' | 'double'; value: number };
 export type NamedValue = { name: string; value: AnonymousValue };
 export type ValueRef = AnonymousValue | string;
