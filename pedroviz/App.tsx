@@ -1,24 +1,28 @@
-import { APITester } from './APITester';
-import './index.css';
+import { Provider } from 'jotai';
+import { ReactElement, useState } from 'react';
+import { getStore } from './state/Storage';
+import { PathSelector } from './PathSelector';
+import {
+  FluentProvider,
+  webDarkTheme,
+  webLightTheme,
+} from '@fluentui/react-components';
 
-import logo from './logo.svg';
-import reactLogo from './react.svg';
+// import './index.css';
 
-export function App() {
+export function App(): ReactElement {
+  const store = getStore();
+  const [theTheme, setTheme] = useState<'dark' | 'light'>('light');
+  const theme = theTheme === 'dark' ? webDarkTheme : webLightTheme;
   return (
-    <div className="app">
-      <div className="logo-container">
-        <img src={logo} alt="Bun Logo" className="logo bun-logo" />
-        <img src={reactLogo} alt="React Logo" className="logo react-logo" />
-      </div>
-
-      <h1>Bun + React</h1>
-      <p>
-        Edit <code>src/App.tsx</code> and save to test HMR
-      </p>
-      <APITester />
-    </div>
+    <Provider store={store}>
+      <FluentProvider theme={theme}>
+        <div className="app">
+          <PathSelector />
+          <div className="path-display" />
+          <div className="path-editor" />
+        </div>
+      </FluentProvider>
+    </Provider>
   );
 }
-
-export default App;
