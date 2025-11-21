@@ -18,6 +18,7 @@ import {
   VariableDeclaratorCtx,
 } from 'java-parser';
 import {
+  AnonymousBezier,
   AnonymousPathChain,
   AnonymousPose,
   AnonymousValue,
@@ -134,6 +135,15 @@ function child<T extends { children: any }>(
 
 function nameOf(ctx: IToken[] | undefined): string | undefined {
   return descend(ctx)?.image;
+}
+
+function getBType(className: string): 'line' | 'curve' | undefined {
+  switch (className) {
+    case 'BezierLine':
+      return 'line';
+    case 'BezierCurve':
+      return 'curve';
+  }
 }
 
 function isPublicStaticField(ctx: FieldDeclarationCtx): boolean {
@@ -319,7 +329,7 @@ function getCtorArgs(
   if (isDefined(type) && dataType !== type) {
     return ['', undefined];
   }
-  return [type, child(newExpr?.argumentList)?.expression];
+  return [type || dataType, child(newExpr?.argumentList)?.expression];
 }
 
 function tryMatchingNamedPoses(
@@ -367,41 +377,43 @@ function getPoseRef(expr: ExpressionCstNode): PoseRef | undefined {
   return getRefOr(expr, getAnonymousPose);
 }
 
-function tryMatchingBeziers(ctx: FieldDeclarationCtx): NamedBezier | undefined {
-  if (!isPublicStaticField(ctx)) {
-    return;
-  }
-  const classType = getClassTypeName(ctx.unannType);
-  const type =
-    classType === 'BezierLine'
-      ? 'line'
-      : classType === 'BezierCurve'
-        ? 'curve'
-        : undefined;
-  if (isUndefined(type)) {
-    return;
-  }
-  const decl = getVariableDeclarator(ctx);
-  if (isUndefined(decl)) {
-    return;
-  }
-  const name = getLValueName(decl);
-  if (isUndefined(name)) {
-    return;
-  }
-  const [, ctorArgs] = getCtorArgs(decl, classType);
-  if (
-    isUndefined(ctorArgs) ||
-    (type === 'line' && ctorArgs.length !== 2) ||
-    (type === 'curve' && ctorArgs.length < 2)
-  ) {
+function getAnonymousBezier(
+  expr: ExpressionCstNode[] | ExpressionCstNode | undefined,
+  checkType?: string,
+): AnonymousBezier | undefined {
+  const expr1 = isArray(expr) ? expr[0] : expr;
+  const [foundType, ctorArgs] = getCtorArgs(expr1, checkType);
+  if (isUndefined(ctorArgs)) {
     return;
   }
   const points = ctorArgs.map(getPoseRef);
   if (!points.every(isDefined)) {
     return;
   }
-  return { name, points: { type, points } };
+  const type = getBType(foundType);
+  return { type, points };
+}
+
+function tryMatchingBeziers(ctx: FieldDeclarationCtx): NamedBezier | undefined {
+  if (!isPublicStaticField(ctx)) {
+    return;
+  }
+  const classType = getClassTypeName(ctx.unannType);
+  const type = getBType(classType);
+  const decl = getVariableDeclarator(ctx);
+  if (isUndefined(decl) || isUndefined(type)) {
+    return;
+  }
+  const name = getLValueName(decl);
+  if (isUndefined(name)) {
+    return;
+  }
+  const points = getAnonymousBezier(
+    child(decl.variableInitializer)?.expression,
+  );
+  if (isDefined(points)) {
+    return { name, points };
+  }
 }
 
 function tryMatchingPathChainFields(
@@ -434,9 +446,7 @@ function getHeadingRef(arg: ExpressionCstNode): ValueRef | undefined {
 }
 
 function getBezierRef(arg: ExpressionCstNode): BezierRef | undefined {
-  console.log('bezier arg', arg);
-  // NYI: TODO: Implement this
-  return;
+  return getRefOr(arg, getAnonymousBezier);
 }
 
 function getPathChain(node: BlockStatementCstNode): NamedPathChain | undefined {
@@ -568,7 +578,7 @@ function getPathChain(node: BlockStatementCstNode): NamedPathChain | undefined {
       }
     }
   }
-  return;
+  return { name: fieldName, chain: { paths: chain, heading } };
 }
 
 function getPathChainFactories(
@@ -578,7 +588,7 @@ function getPathChainFactories(
     child(ctx.constructorBody).blockStatements,
   ).blockStatement;
   const pathChains = statements.map(getPathChain);
-  return [];
+  return pathChains.filter(isDefined);
 }
 
 export async function MakePathChainFile(
