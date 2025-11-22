@@ -1,9 +1,9 @@
+import { isDefined, typecheck } from '@freik/typechk';
 import { createStore } from 'jotai';
 
-/*import { atomWithStorage } from 'jotai/utils';
+// import { atomWithStorage } from 'jotai/utils';
 import { AsyncStorage } from 'jotai/vanilla/utils/atomWithStorage';
-import { WritableAtomType } from './Hooks';
-*/
+// import { WritableAtomType } from './Hooks';
 
 const theStore = createStore();
 
@@ -16,13 +16,44 @@ export function getStore(curStore?: MyStore): MyStore {
 
 // This is the simple "sync with main" storage provider for Jotai
 
+export async function fetchApi<T>(
+  key: string,
+  chk: typecheck<T>,
+  def?: T,
+): Promise<T> {
+  const fetched = await fetch('/api/' + key);
+  let maybeValue: T | undefined;
+  if (fetched.ok) {
+    const res = await fetched.json();
+    if (chk(res)) {
+      maybeValue = res;
+    }
+  }
+  return isDefined(maybeValue) ? maybeValue : def;
+}
+
 /*
 function makeGetItem<T>(
   chk: typecheck<T>,
 ): (key: string, initialValue: T) => PromiseLike<T> {
   return async (key: string, initialValue: T): Promise<T> => {
-    const maybeValue = await ReadFromStorage(key, chk);
+    const fetched = await fetch("/api/" + key);
+    let maybeValue: T | undefined;
+    if (fetched.ok) {
+      const res = await fetched.json();
+      if (chk(res)) {
+        maybeValue = res;
+      }
+    }
     return isDefined(maybeValue) ? maybeValue : initialValue;
+  };
+}
+
+export function getMainReadOnlyStorage<T>(chk: typecheck<T>): AsyncStorage<T> {
+  return {
+    getItem: makeGetItem(chk),
+    setItem: Promise.resolve,
+    removeItem: Promise.resolve,
   };
 }
 
@@ -75,14 +106,6 @@ export function getMainStorage<T>(chk: typecheck<T>): AsyncStorage<T> {
     getItem: makeGetItem(chk),
     setItem,
     removeItem,
-  };
-}
-
-export function getMainReadOnlyStorage<T>(chk: typecheck<T>): AsyncStorage<T> {
-  return {
-    getItem: makeGetItem(chk),
-    setItem: noSetItem,
-    removeItem: noRemoveItem,
   };
 }
 

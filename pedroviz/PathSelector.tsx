@@ -6,7 +6,9 @@ import {
   Option,
   useId,
 } from '@fluentui/react-components';
+import { useAtom, useAtomValue } from 'jotai';
 import { ReactElement, useState } from 'react';
+import { FilesForSelectedTeam, SelectedTeamAtom, TeamsAtom } from './API';
 
 const useStyles = makeStyles({
   root: {
@@ -21,7 +23,7 @@ const useStyles = makeStyles({
 
 export function FileSelector(props: Partial<DropdownProps>): ReactElement {
   // TODO: get the atom from Jotai for the files
-  const options = ['Path1.java', 'MyPaths.java'];
+  const options = useAtomValue(FilesForSelectedTeam); // ['Path1.java', 'MyPaths.java'];
   const dropdownId = useId('file-selector');
   const styles = useStyles();
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -50,11 +52,11 @@ export function FileSelector(props: Partial<DropdownProps>): ReactElement {
 
 export function TeamSelector(props: Partial<DropdownProps>): ReactElement {
   // TODO: get the atom from Jotai for the teams
-  const options = ['TeamCode', 'LearnBot'];
+  const options = useAtomValue(TeamsAtom); //['TeamCode', 'LearnBot'];
   const dropdownId = useId('team-selector');
   const styles = useStyles();
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [value, setValue] = useState('');
+  const [value, setValue] = useAtom(SelectedTeamAtom);
 
   const onOptionSelect: (typeof props)['onOptionSelect'] = (ev, data) => {
     setSelectedOptions(data.selectedOptions);
