@@ -16,7 +16,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 @SuppressWarnings("unused")
 @Configurable
-@Disabled
+//@Disabled
 @TeleOp(name = "Test Bed", group = "--Testing--")
 public class TestBedTele extends LinearOpMode {
 

@@ -2,7 +2,7 @@ import { isDefined, typecheck } from '@freik/typechk';
 import { createStore } from 'jotai';
 
 // import { atomWithStorage } from 'jotai/utils';
-import { AsyncStorage } from 'jotai/vanilla/utils/atomWithStorage';
+// import { AsyncStorage } from 'jotai/vanilla/utils/atomWithStorage';
 // import { WritableAtomType } from './Hooks';
 
 const theStore = createStore();
@@ -27,6 +27,9 @@ export async function fetchApi<T>(
     const res = await fetched.json();
     if (chk(res)) {
       maybeValue = res;
+    } else {
+      console.log('Invalid result for', key);
+      console.log(res);
     }
   }
   return isDefined(maybeValue) ? maybeValue : def;

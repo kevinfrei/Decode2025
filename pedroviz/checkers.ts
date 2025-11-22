@@ -3,7 +3,9 @@ import {
   chkArrayOf,
   chkObjectOfExactType,
   chkTupleOf,
+  isArrayOfString,
   isNumber,
+  isRecordOf,
   isString,
 } from '@freik/typechk';
 import {
@@ -18,7 +20,12 @@ import {
   NamedValue,
   PathChainFile,
   TangentHeading,
+  TeamPaths,
 } from './server/types';
+
+export function chkTeamPaths(t: unknown): t is TeamPaths {
+  return isRecordOf(t, isString, isArrayOfString);
+}
 
 function isValueTypeName(t: unknown): t is 'int' | 'string' {
   return t === 'int' || t === 'string';

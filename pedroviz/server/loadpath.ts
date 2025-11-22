@@ -10,9 +10,9 @@ export async function LoadPath(
   const filePath = getProjectFilePath(team, filename);
   const paths = await loadPathChainsFromFile(filePath);
   if (isString(paths)) {
-    return Response.json({ team, error: paths });
+    return Response.json({ error: paths });
   }
-  return Response.json({ team, paths });
+  return Response.json(paths);
 }
 
 export async function loadPathChainsFromFile(

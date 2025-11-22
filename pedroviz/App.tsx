@@ -7,6 +7,7 @@ import {
   webDarkTheme,
   webLightTheme,
 } from '@fluentui/react-components';
+import { PathChainDisplay } from './PathChainDisplay';
 
 // import './index.css';
 
@@ -19,7 +20,7 @@ export function App(): ReactElement {
       <FluentProvider theme={theme}>
         <div className="app">
           <PathSelector />
-          <div className="path-display" />
+          <PathChainDisplay />
           <div className="path-editor" />
         </div>
       </FluentProvider>

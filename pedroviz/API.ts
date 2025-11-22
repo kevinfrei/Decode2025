@@ -1,22 +1,41 @@
 import {
   hasField,
   isArrayOfString,
+  isDefined,
   isRecordOf,
   isString,
 } from '@freik/typechk';
-import { chkPathChainFile } from './checkers';
+import { chkPathChainFile, chkTeamPaths } from './checkers';
 import { PathChainFile, TeamPaths } from './server/types';
 import { fetchApi } from './state/Storage';
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai/utils';
 
-export function isTeamPaths(maybe: unknown): maybe is TeamPaths {
-  return isRecordOf(maybe, isString, isArrayOfString);
+export async function GetPaths(): Promise<TeamPaths> {
+  return fetchApi('getpaths', chkTeamPaths, {});
+}
+const EmptyPathChainFile: PathChainFile = {
+  name: 'empty',
+  values: [],
+  poses: [],
+  beziers: [],
+  pathChains: [],
+};
+export async function LoadFile(team: string, file: string) {
+  return await fetchApi(
+    `loadpath/${encodeURIComponent(team)}/${encodeURIComponent(file)}`,
+    chkPathChainFile,
+    EmptyPathChainFile,
+  );
 }
 
-export async function GetPaths(): Promise<TeamPaths> {
-  return fetchApi('getpaths', isTeamPaths, {});
-  // return { TestTeam: ['Path1.java', 'subdir/Path2.java'] };
+export async function SavePath(
+  team: string,
+  path: string,
+  data: PathChainFile,
+): Promise<undefined | string> {
+  // NYI on the server, either :D
+  return 'NYI';
 }
 
 export const PathsAtom = atom(async () => GetPaths());
@@ -47,30 +66,18 @@ export const FilesForSelectedTeam = atom(async (get) => {
   return [];
 });
 
-export async function LoadPath(
-  team: string,
-  path: string,
-): Promise<PathChainFile | string> {
-  const resp = await fetch(`loadpath/${team}/${encodeURIComponent(path)}`);
-  if (resp.ok) {
-    const json = await resp.json();
-    if (chkPathChainFile(json)) {
-      return json;
+export const CurPathAtom = atom(async (get) => {
+  const paths = await get(PathsAtom);
+  const selTeam = await get(SelectedTeamAtom);
+  const selFile = await get(SelectedFileAtom);
+  console.log('Checking field', selTeam);
+  if (hasField(paths, selTeam)) {
+    console.log('Checking file', selFile);
+    const files = paths[selTeam];
+    if (isDefined(files) && files.indexOf(selFile) >= 0) {
+      console.log('Has team & file', selTeam, selFile);
+      return await LoadFile(selTeam, selFile);
     }
-    return 'Malformed PainChainFile received';
   }
-  return 'Invalid response from server';
-}
-
-export const CurPath = atom(async (get) => {
-  const 
+  return EmptyPathChainFile;
 });
-
-export async function SavePath(
-  team: string,
-  path: string,
-  data: PathChainFile,
-): Promise<undefined | string> {
-  // NYI on the server, either :D
-  return 'NYI';
-}
