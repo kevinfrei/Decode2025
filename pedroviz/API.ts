@@ -4,6 +4,7 @@ import {
   isRecordOf,
   isString,
 } from '@freik/typechk';
+import { chkPathChainFile } from './checkers';
 import { PathChainFile, TeamPaths } from './server/types';
 import { fetchApi } from './state/Storage';
 import { atom } from 'jotai';
@@ -49,8 +50,13 @@ export async function LoadPath(
   team: string,
   path: string,
 ): Promise<PathChainFile | string> {
-  // fetch(/api/loadpath/{team}/{path-URI-Encoded})
-  return 'NYI';
+  const resp = await fetch(`loadpath/${team}/${path}`);
+  if (resp.ok) {
+    const json = await resp.json();
+    if (chkPathChainFile(json)) {
+      return json;
+    }
+  }
 }
 
 export async function SavePath(

@@ -13,14 +13,14 @@ export type NamedBezier = { name: string; points: AnonymousBezier };
 export type BezierRef = AnonymousBezier | string;
 
 export type TangentHeading = { type: 'tangent' };
-export type ConstandHeading = { type: 'constant'; heading: ValueRef };
+export type ConstantHeading = { type: 'constant'; heading: ValueRef };
 export type InterpolatedHeading = {
   type: 'interpolated';
   headings: [ValueRef, ValueRef];
 };
 export type HeadingType =
   | TangentHeading
-  | ConstandHeading
+  | ConstantHeading
   | InterpolatedHeading;
 
 // No such thing as an anonymous PathChain
