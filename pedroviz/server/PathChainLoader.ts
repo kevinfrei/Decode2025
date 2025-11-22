@@ -255,8 +255,7 @@ function getRefOr<T>(
   if (isDefined(val?.fqnOrRefType)) {
     return getRefTypeName(val.fqnOrRefType);
   }
-  const res = getOr(expr);
-  return res;
+  return getOr(expr);
 }
 
 function getValueRef(
@@ -343,8 +342,7 @@ function tryMatchingNamedPoses(
   if (isUndefined(name)) {
     return;
   }
-  const pose = getAnonymousPose(decl);
-  return { name, pose };
+  return { name, pose: getAnonymousPose(decl) };
 }
 
 function getAnonymousPose(
@@ -359,10 +357,10 @@ function getAnonymousPose(
   }
   const x = getValueRef(ctorArgs[0]);
   const y = getValueRef(ctorArgs[1]);
-  const heading = getValueRef(ctorArgs[2]);
   if (isUndefined(x) || isUndefined(y)) {
     return;
   }
+  const heading = getValueRef(ctorArgs[2]);
   return isUndefined(heading) ? { x, y } : { x, y, heading };
 }
 
@@ -383,8 +381,7 @@ function getAnonymousBezier(
   if (!points.every(isDefined)) {
     return;
   }
-  const type = getBType(foundType);
-  return { type, points };
+  return { type: getBType(foundType), points };
 }
 
 function tryMatchingBeziers(ctx: FieldDeclarationCtx): NamedBezier | undefined {
