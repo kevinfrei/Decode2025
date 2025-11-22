@@ -25,6 +25,7 @@ export const TeamsAtom = atom(async (get) => {
   return Object.keys(paths);
 });
 export const SelectedTeamAtom = atom('');
+export const SelectedFileAtom = atom('');
 export const FilesForTeamFamily = atomFamily((team: string) =>
   atom(async (get) => {
     const paths = await get(PathsAtom);
@@ -50,14 +51,20 @@ export async function LoadPath(
   team: string,
   path: string,
 ): Promise<PathChainFile | string> {
-  const resp = await fetch(`loadpath/${team}/${path}`);
+  const resp = await fetch(`loadpath/${team}/${encodeURIComponent(path)}`);
   if (resp.ok) {
     const json = await resp.json();
     if (chkPathChainFile(json)) {
       return json;
     }
+    return 'Malformed PainChainFile received';
   }
+  return 'Invalid response from server';
 }
+
+export const CurPath = atom(async (get) => {
+  const 
+});
 
 export async function SavePath(
   team: string,

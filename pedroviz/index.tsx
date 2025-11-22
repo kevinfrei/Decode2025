@@ -12,9 +12,16 @@ const server = serve({
     // Get the different robot path files
     '/api/getpaths': async (req) => GetPathFileNames(),
     '/api/loadpath/:team/:path': async (req) =>
-      LoadPath(req.params.team, req.params.path),
+      LoadPath(
+        decodeURIComponent(req.params.team),
+        decodeURIComponent(req.params.path),
+      ),
     '/api/savepath/:team/:path/:data': async (req) =>
-      SavePath(req.params.team, req.params.path, req.params.data),
+      SavePath(
+        decodeURIComponent(req.params.team),
+        decodeURIComponent(req.params.path),
+        decodeURIComponent(req.params.data),
+      ),
   },
 
   development: process.env.NODE_ENV !== 'production' && {
