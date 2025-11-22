@@ -1,10 +1,4 @@
-import {
-  hasField,
-  isArrayOfString,
-  isDefined,
-  isRecordOf,
-  isString,
-} from '@freik/typechk';
+import { hasField, isDefined } from '@freik/typechk';
 import { chkPathChainFile, chkTeamPaths } from './checkers';
 import { PathChainFile, TeamPaths } from './server/types';
 import { fetchApi } from './state/Storage';

@@ -342,7 +342,8 @@ function tryMatchingNamedPoses(
   if (isUndefined(name)) {
     return;
   }
-  return { name, pose: getAnonymousPose(decl) };
+  const pose = getAnonymousPose(decl);
+  return isDefined(pose) ? { name, pose } : undefined;
 }
 
 function getAnonymousPose(

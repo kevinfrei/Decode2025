@@ -1,5 +1,21 @@
-import { isDefined, typecheck } from '@freik/typechk';
+import {
+  chkArrayOf,
+  hasFieldOf,
+  isDefined,
+  isString,
+  typecheck,
+} from '@freik/typechk';
 import { createStore } from 'jotai';
+import {
+  chkBezierRef,
+  chkNamedBezier,
+  chkNamedPathChain,
+  chkNamedPose,
+  chkNamedValue,
+  chkPathChainFile,
+  chkPoseRef,
+  chkValueRef,
+} from '../checkers';
 
 // import { atomWithStorage } from 'jotai/utils';
 // import { AsyncStorage } from 'jotai/vanilla/utils/atomWithStorage';
@@ -30,6 +46,27 @@ export async function fetchApi<T>(
     } else {
       console.log('Invalid result for', key);
       console.log(res);
+      if (chk === chkPathChainFile) {
+        console.log('PainChainFile check failed');
+        if (!hasFieldOf(res, 'name', isString)) {
+          console.log('name');
+        }
+        if (!hasFieldOf(res, 'values', chkArrayOf(chkNamedValue))) {
+          console.log('values');
+        }
+        if (!hasFieldOf(res, 'poses', chkArrayOf(chkNamedPose))) {
+          console.log('poses');
+          for (const pose of res.poses) {
+            console.log(pose, chkNamedPose(pose));
+          }
+        }
+        if (!hasFieldOf(res, 'beziers', chkArrayOf(chkNamedBezier))) {
+          console.log('beziers');
+        }
+        if (!hasFieldOf(res, 'pathChains', chkArrayOf(chkNamedPathChain))) {
+          console.log('pathChains');
+        }
+      }
     }
   }
   return isDefined(maybeValue) ? maybeValue : def;

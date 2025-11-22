@@ -30,21 +30,18 @@ function showPoseR(p: PoseRef): string {
 }
 
 function showBezier(b: AnonymousBezier): string {
-  return `${b.type[0]}:[${b.points.map(showPoseR).join(', ')}]`;
+  return `${b.type}:[${b.points.map(showPoseR).join(', ')}]`;
 }
 function showBezierR(b: BezierRef): string {
   return isString(b) ? b : showBezier(b);
 }
 
 function showHeading(ht: HeadingType): string {
-  let res = ht.type[0];
-  switch (ht.type) {
-    case 'constant':
-      res += showValR(ht.heading);
-      break;
-    case 'interpolated':
-      res += showValR(ht.headings[0]) + ' => ' + showValR(ht.headings[1]);
-      break;
+  let res = ht.type[0].toLocaleUpperCase();
+  if (ht.type === 'constant') {
+    res += showValR(ht.heading);
+  } else if (ht.type == 'interpolated') {
+    res += ` ${showValR(ht.headings[0])} => ${showValR(ht.headings[1])}`;
   }
   return res;
 }

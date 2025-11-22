@@ -27,8 +27,8 @@ export function chkTeamPaths(t: unknown): t is TeamPaths {
   return isRecordOf(t, isString, isArrayOfString);
 }
 
-function isValueTypeName(t: unknown): t is 'int' | 'string' {
-  return t === 'int' || t === 'string';
+function isValueTypeName(t: unknown): t is 'int' | 'double' {
+  return t === 'int' || t === 'double';
 }
 
 export const chkAnonymousValue = chkObjectOfExactType<AnonymousValue>({
