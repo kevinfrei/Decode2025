@@ -1,5 +1,5 @@
 import {
-  chkBothOf,
+  chkAllOf,
   chkFieldType,
   hasFieldType,
   isArray,
@@ -197,7 +197,7 @@ export function MakeAutoConstantsTransformer(): AutoConstantsTransformer {
       hasFieldType(
         f,
         'location',
-        chkBothOf(
+        chkAllOf(
           chkFieldType('startOffset', isNumber),
           chkFieldType('endOffset', isNumber),
         ),
