@@ -14,10 +14,6 @@ public class TestPaths {
     public PathChain Path4;
     public PathChain Path5;
 
-    public Pose getStart() {
-        return new Pose(95.670, 7.725, Math.toRadians(90));
-    }
-
     public TestPaths(Follower follower) {
         Path1 = follower
             .pathBuilder()
@@ -35,7 +31,7 @@ public class TestPaths {
                     new Pose(90.916, 28.721)
                 )
             )
-            .setConstantHeadingInterpolation(Math.toRadians(180))
+            .setConstantHeadingInterpolation(Math.PI)
             .build();
 
         Path3 = follower
@@ -48,18 +44,18 @@ public class TestPaths {
                     new Pose(95.670, 35.257)
                 )
             )
-            .setConstantHeadingInterpolation(Math.toRadians(180))
+            .setConstantHeadingInterpolation(Math.PI)
             .build();
 
         Path4 = follower
             .pathBuilder()
             .addPath(new BezierLine(new Pose(95.670, 35.257), new Pose(62.195, 35.257)))
-            .setConstantHeadingInterpolation(Math.toRadians(180))
+            .setConstantHeadingInterpolation(Math.PI)
             .build();
         Path5 = follower
             .pathBuilder()
             .addPath(new BezierLine(new Pose(62.195, 35.257), new Pose(95.670, 7.725)))
-            .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(90))
+            .setLinearHeadingInterpolation(Math.PI, Math.PI / 2)
             .build();
     }
 }

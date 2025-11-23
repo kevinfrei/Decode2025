@@ -1,6 +1,10 @@
 import { hasField, isDefined } from '@freik/typechk';
-import { chkPathChainFile, chkTeamPaths } from './checkers';
-import { PathChainFile, TeamPaths } from './server/types';
+import {
+  chkPathChainFile,
+  chkTeamPaths,
+  PathChainFile,
+  TeamPaths,
+} from './server/types';
 import { fetchApi } from './state/Storage';
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai/utils';

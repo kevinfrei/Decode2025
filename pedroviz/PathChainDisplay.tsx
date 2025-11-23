@@ -5,25 +5,50 @@ import {
   AnonymousPose,
   AnonymousValue,
   BezierRef,
+  chkRadianRef,
+  HeadingRef,
   HeadingType,
   NamedBezier,
   NamedPathChain,
   NamedPose,
   NamedValue,
   PoseRef,
+  RadiansRef,
   ValueRef,
 } from './server/types';
 import { isString } from '@freik/typechk';
 
+function toRad(v: ValueRef): string {
+  return `Math.toRadians(${showValR(v)})`;
+}
+
 function showVal(v: AnonymousValue): string {
-  return `${v.value}${v.type[0]}`;
+  switch (v.type) {
+    case 'radians':
+      return toRad({ type: 'double', value: v.value });
+    case 'double':
+      return v.value.toFixed(3);
+    case 'int':
+      return v.value.toFixed(0);
+  }
 }
 function showValR(v: ValueRef): string {
   return isString(v) ? v : showVal(v);
 }
 
+function showRadians(r: RadiansRef): string {
+  return toRad(r.radians);
+}
+
+function showHeadingR(h: HeadingRef): string {
+  if (chkRadianRef(h)) {
+    return showRadians(h);
+  }
+  return showValR(h);
+}
+
 function showPose(p: AnonymousPose): string {
-  return `(${showValR(p.x)}, ${showValR(p.y)}${p.heading ? ' @' + showValR(p.heading) : ''})`;
+  return `(${showValR(p.x)}, ${showValR(p.y)}${p.heading ? ' @' + showHeadingR(p.heading) : ''})`;
 }
 function showPoseR(p: PoseRef): string {
   return isString(p) ? p : showPose(p);
@@ -39,9 +64,9 @@ function showBezierR(b: BezierRef): string {
 function showHeading(ht: HeadingType): string {
   let res = ht.type[0].toLocaleUpperCase();
   if (ht.type === 'constant') {
-    res += showValR(ht.heading);
+    res += showHeadingR(ht.heading);
   } else if (ht.type == 'interpolated') {
-    res += ` ${showValR(ht.headings[0])} => ${showValR(ht.headings[1])}`;
+    res += ` ${showHeadingR(ht.headings[0])} => ${showHeadingR(ht.headings[1])}`;
   }
   return res;
 }
