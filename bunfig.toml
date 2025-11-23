@@ -1,0 +1,8 @@
+[serve.static]
+env = "BUN_PUBLIC_*"
+
+[test]
+root = "pedroviz"
+coverage = true
+coverageThreshold = 0.9
+coverageSkipTestFiles = true

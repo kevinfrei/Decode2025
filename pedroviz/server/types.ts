@@ -1,0 +1,42 @@
+export type TeamPaths = Record<string, string[]>;
+
+export type AnonymousValue = {
+  type: 'int' | 'double' | 'radians';
+  value: number;
+};
+export type NamedValue = { name: string; value: AnonymousValue };
+export type ValueRef = AnonymousValue | string;
+
+export type AnonymousPose = { x: ValueRef; y: ValueRef; heading?: ValueRef };
+export type NamedPose = { name: string; pose: AnonymousPose };
+export type PoseRef = AnonymousPose | string;
+
+export type AnonymousBezier = { type: 'line' | 'curve'; points: PoseRef[] };
+export type NamedBezier = { name: string; points: AnonymousBezier };
+export type BezierRef = AnonymousBezier | string;
+
+export type TangentHeading = { type: 'tangent' };
+export type ConstantHeading = { type: 'constant'; heading: ValueRef };
+export type InterpolatedHeading = {
+  type: 'interpolated';
+  headings: [ValueRef, ValueRef];
+};
+export type HeadingType =
+  | TangentHeading
+  | ConstantHeading
+  | InterpolatedHeading;
+
+// No such thing as an anonymous PathChain
+export type NamedPathChain = {
+  name: string;
+  paths: BezierRef[];
+  heading: HeadingType;
+};
+
+export type PathChainFile = {
+  name: string;
+  values: NamedValue[];
+  poses: NamedPose[];
+  beziers: NamedBezier[];
+  pathChains: NamedPathChain[];
+};
