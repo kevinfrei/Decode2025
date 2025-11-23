@@ -18,6 +18,10 @@ import {
   AnonymousPose,
   AnonymousValue,
   BezierRef,
+  chkAnonymousValue,
+  chkHeadingRef,
+  chkValueRef,
+  HeadingRef,
   HeadingType,
   NamedBezier,
   NamedPathChain,
@@ -25,6 +29,7 @@ import {
   NamedValue,
   PathChainFile,
   PoseRef,
+  RadiansRef,
   ValueRef,
 } from './types';
 import { promises as fsp } from 'node:fs';
@@ -206,11 +211,15 @@ function tryMatchingNamedValues(
   if (isUndefined(expr)) {
     return;
   }
-  const valRef = getValueRef(expr);
+  const valRef = getHeadingRef(expr);
   if (isString(valRef)) {
     return;
   }
-  return { name, value: valRef };
+  if (chkAnonymousValue(valRef)) {
+    return { name, value: valRef };
+  } else if (!isString(valRef.radians)) {
+    return { name, value: valRef.radians };
+  }
 }
 
 function getNumericConstant(
@@ -276,7 +285,9 @@ function getMethodInvoke(primary: PrimaryCtx): [string, string] | undefined {
   return isDefined(methodName) ? [objName, methodName] : undefined;
 }
 
-function getToRadians(expr: ExpressionCstNode): AnonymousValue | undefined {
+function getToRadians(
+  expr: ExpressionCstNode,
+): RadiansRef | AnonymousValue | undefined {
   const maybeMethod = child(
     child(
       child(child(expr.children.conditionalExpression)?.binaryExpression)
@@ -302,16 +313,26 @@ function getToRadians(expr: ExpressionCstNode): AnonymousValue | undefined {
   if (argList.length !== 1) {
     return;
   }
-  const theNumber = getNumericConstant(argList[0]);
-  if (isDefined(theNumber)) {
-    theNumber.type = 'radians';
-    return theNumber;
+  const numRef = getOnlyValueRef(argList[0]);
+  if (isString(numRef)) {
+  } else if (isDefined(numRef)) {
+    numRef.type = 'radians';
+    return numRef;
   }
+}
+
+function getOnlyValueRef(
+  expr: ExpressionCstNode | undefined,
+): ValueRef | undefined {
+  if (isUndefined(expr)) {
+    return;
+  }
+  return getRefOr(expr, getNumericConstant);
 }
 
 function getValueRef(
   expr: ExpressionCstNode | undefined,
-): ValueRef | undefined {
+): ValueRef | RadiansRef | undefined {
   if (isUndefined(expr)) {
     return;
   }
@@ -409,12 +430,12 @@ function getAnonymousPose(
   ) {
     return;
   }
-  const x = getValueRef(ctorArgs[0]);
-  const y = getValueRef(ctorArgs[1]);
+  const x = getOnlyValueRef(ctorArgs[0]);
+  const y = getOnlyValueRef(ctorArgs[1]);
   if (isUndefined(x) || isUndefined(y)) {
     return;
   }
-  const heading = getValueRef(ctorArgs[2]);
+  const heading = getHeadingRef(ctorArgs[2]);
   return isUndefined(heading) ? { x, y } : { x, y, heading };
 }
 
@@ -486,7 +507,7 @@ function getArgList(
 function getHeadingRef(
   arg: ExpressionCstNode,
   poseAllowed: boolean = false,
-): ValueRef | undefined {
+): HeadingRef | undefined {
   if (poseAllowed) {
     // TODO:
     // Check for a <ref>.getHeading() expression

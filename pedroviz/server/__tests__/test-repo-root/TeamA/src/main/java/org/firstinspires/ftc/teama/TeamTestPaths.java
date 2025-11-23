@@ -65,7 +65,7 @@ public class TeamTestPaths {
             .addPath(new BezierLine(new Pose(0, 0), new Pose(20, 20)))
             .addPath(new BezierCurve(step1, step2, step3, step4))
             .addPath(step4_to_start)
-            .setLinearHeadingInterpolation(0, step4.getHeading())
+            .setLinearHeadingInterpolation(Math.toRadians(step), step4.getHeading())
             .build();
     }
 }
