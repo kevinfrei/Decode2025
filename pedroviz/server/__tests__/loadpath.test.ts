@@ -46,7 +46,7 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
   });
   expect(paths.values[2]).toEqual({
     name: 'one80',
-    value: { type: 'double', value: 3.1416 },
+    value: { type: 'radians', value: 180 },
   });
   expect(paths.values[3]).toEqual({
     name: 'step_mid',
@@ -60,7 +60,7 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
   });
   expect(paths.poses[1]).toEqual({
     name: 'step1',
-    pose: { x: 'step', y: 'org', heading: { type: 'double', value: 1.5708 } },
+    pose: { x: 'step', y: 'org', heading: { type: 'radians', value: 90 } },
   });
   expect(paths.poses[2]).toEqual({
     name: 'step2',
@@ -79,7 +79,7 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
     pose: {
       x: { type: 'double', value: 72.0 },
       y: { type: 'int', value: 72 },
-      heading: { type: 'double', value: 0.5236 },
+      heading: { type: 'radians', value: -30 },
     },
   });
 
@@ -117,7 +117,7 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
         {
           x: { type: 'int', value: 1 },
           y: { type: 'double', value: 3.4 },
-          heading: { type: 'double', value: 1.1 },
+          heading: { type: 'radians', value: 60 },
         },
       ],
       type: 'line',

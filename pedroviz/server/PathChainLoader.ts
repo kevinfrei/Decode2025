@@ -7,6 +7,7 @@ import {
   FqnOrRefTypeCstNode,
   IToken,
   parse,
+  PrimaryCtx,
   PrimarySuffixCstNode,
   UnannTypeCstNode,
   UnaryExpressionCtx,
@@ -209,8 +210,7 @@ function tryMatchingNamedValues(
   if (isString(valRef)) {
     return;
   }
-  value.value = valRef!.value;
-  return { name, value };
+  return { name, value: valRef };
 }
 
 function getNumericConstant(
@@ -262,15 +262,51 @@ function getRefOr<T>(
   return isString(ref) ? ref : getOr(expr);
 }
 
-function getToRadians(expr: ExpressionCstNode): AnonymousValue | undefined {
-  const maybeMath = getRef(expr);
-  if (maybeMath !== 'Math') {
+function getMethodInvoke(primary: PrimaryCtx): [string, string] | undefined {
+  const methodInvoke = child(primary.primaryPrefix)?.fqnOrRefType;
+  const objName = getRefTypeName(methodInvoke);
+  if (isUndefined(objName)) {
     return;
   }
-  const maybeMathToRad = child(
-    child(expr.children.conditionalExpression)?.binaryExpression,
+  let methodName = nameOf(
+    child(
+      child(child(methodInvoke)?.fqnOrRefTypePartRest)?.fqnOrRefTypePartCommon,
+    )?.Identifier,
   );
-  return;
+  return isDefined(methodName) ? [objName, methodName] : undefined;
+}
+
+function getToRadians(expr: ExpressionCstNode): AnonymousValue | undefined {
+  const maybeMethod = child(
+    child(
+      child(child(expr.children.conditionalExpression)?.binaryExpression)
+        ?.unaryExpression,
+    ).primary,
+  );
+  const maybeMathToRad = getMethodInvoke(maybeMethod);
+  if (
+    isUndefined(maybeMathToRad) ||
+    maybeMathToRad[0] !== 'Math' ||
+    maybeMathToRad[1] !== 'toRadians'
+  ) {
+    return;
+  }
+  const argList = getArgList(
+    child(
+      child(
+        child(child(expr.children.conditionalExpression)?.binaryExpression)
+          ?.unaryExpression,
+      )?.primary,
+    )?.primarySuffix[0],
+  );
+  if (argList.length !== 1) {
+    return;
+  }
+  const theNumber = getNumericConstant(argList[0]);
+  if (isDefined(theNumber)) {
+    theNumber.type = 'radians';
+    return theNumber;
+  }
 }
 
 function getValueRef(
@@ -495,17 +531,12 @@ function getPathChain(node: BlockStatementCstNode): NamedPathChain | undefined {
       )?.unaryExpression,
     )?.primary,
   );
-  const methodInvoke = child(builder.primaryPrefix)?.fqnOrRefType;
-  const follower = getRefTypeName(methodInvoke);
-  if (follower !== 'follower') {
-    return;
-  }
-  let lastMethodName = nameOf(
-    child(
-      child(child(methodInvoke)?.fqnOrRefTypePartRest)?.fqnOrRefTypePartCommon,
-    )?.Identifier,
-  );
-  if (lastMethodName !== 'pathBuilder') {
+  const objInvoke = getMethodInvoke(builder);
+  if (
+    isUndefined(objInvoke) ||
+    objInvoke[0] !== 'follower' ||
+    objInvoke[1] !== 'pathBuilder'
+  ) {
     return;
   }
   const methods = builder.primarySuffix;
@@ -516,6 +547,7 @@ function getPathChain(node: BlockStatementCstNode): NamedPathChain | undefined {
   // '.build();' suffix.
   let chain: BezierRef[] = [];
   let heading: HeadingType | null = null;
+  let lastMethodName = 'pathBuilder';
   for (let index = 0; index < methods.length; index++) {
     const method = methods[index];
     if (index % 2 === 1) {
