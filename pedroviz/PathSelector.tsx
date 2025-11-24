@@ -1,13 +1,14 @@
 import {
-  Dropdown,
-  DropdownProps,
-  Field,
-  makeStyles,
-  Option,
-  useId,
+  Menu,
+  MenuButton,
+  MenuItemRadio,
+  MenuList,
+  MenuPopover,
+  MenuProps,
+  MenuTrigger,
 } from '@fluentui/react-components';
 import { useAtom, useAtomValue } from 'jotai';
-import { ReactElement, useState } from 'react';
+import { ReactElement } from 'react';
 import {
   FilesForSelectedTeam,
   SelectedFileAtom,
@@ -15,75 +16,81 @@ import {
   TeamsAtom,
 } from './state/Atoms';
 
-const useStyles = makeStyles({
-  root: {
-    // Stack the label above the field with a gap
-    display: 'grid',
-    gridTemplateRows: 'repeat(1fr)',
-    justifyItems: 'start',
-    gap: '2px',
-    maxWidth: '250px',
-  },
-});
-
-export function FileSelector(props: Partial<DropdownProps>): ReactElement {
-  // TODO: get the atom from Jotai for the files
-  const options = useAtomValue(FilesForSelectedTeam); // ['Path1.java', 'MyPaths.java'];
-  const styles = useStyles();
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [value, setValue] = useAtom(SelectedFileAtom);
-
-  const onOptionSelect: (typeof props)['onOptionSelect'] = (ev, data) => {
-    setSelectedOptions(data.selectedOptions);
-    setValue(data.optionText ?? '');
+function AutoDefaultingSelector({
+  prompt,
+  items,
+  selected,
+  setSelected,
+}: {
+  prompt: string;
+  items: string[];
+  selected: string;
+  setSelected: (item: string) => void;
+}): ReactElement {
+  const onChange: MenuProps['onCheckedValueChange'] = (
+    e,
+    { name, checkedItems },
+  ) => {
+    setSelected(checkedItems[0]);
   };
   return (
-    <Field className={styles.root} label="Pick a file">
-      <Dropdown
-        placeholder="Select a file"
-        selectedOptions={selectedOptions}
-        onOptionSelect={onOptionSelect}
-        value={value}
-      >
-        {options.map((option) => (
-          <Option key={option}>{option}</Option>
-        ))}
-      </Dropdown>
-    </Field>
+    <Menu>
+      <MenuTrigger>
+        <MenuButton disabled={items.length === 0}>
+          {selected.length > 0 ? selected : prompt}
+        </MenuButton>
+      </MenuTrigger>
+      <MenuPopover>
+        <MenuList onCheckedValueChange={onChange}>
+          {items.map((val) => (
+            <MenuItemRadio
+              key={`ts${val}`}
+              name="team-select"
+              onSelect={() => setSelected(val)}
+              value={val}
+            >
+              {val}
+            </MenuItemRadio>
+          ))}
+        </MenuList>
+      </MenuPopover>
+    </Menu>
   );
 }
 
-export function TeamSelector(props: Partial<DropdownProps>): ReactElement {
-  const options = useAtomValue(TeamsAtom); //['TeamCode', 'LearnBot'];
-  const styles = useStyles();
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [value, setValue] = useAtom(SelectedTeamAtom);
-
-  const onOptionSelect: (typeof props)['onOptionSelect'] = (ev, data) => {
-    setSelectedOptions(data.selectedOptions);
-    setValue(data.optionText ?? '');
-  };
+export function TeamSelector(): ReactElement {
+  const teams = useAtomValue(TeamsAtom); //['TeamCode', 'LearnBot'];
+  const [team, setTeam] = useAtom(SelectedTeamAtom);
   return (
-    <Field className={styles.root} label="Pick a team">
-      <Dropdown
-        placeholder="Select a team"
-        selectedOptions={selectedOptions}
-        onOptionSelect={onOptionSelect}
-        value={value}
-      >
-        {options.map((option) => (
-          <Option key={option}>{option}</Option>
-        ))}
-      </Dropdown>
-    </Field>
+    <AutoDefaultingSelector
+      prompt="Select a team"
+      items={teams}
+      selected={team}
+      setSelected={setTeam}
+    />
+  );
+}
+
+export function FileSelector(): ReactElement {
+  // TODO: get the atom from Jotai for the files
+  const files = useAtomValue(FilesForSelectedTeam); // ['Path1.java', 'MyPaths.java'];
+  const [file, setFile] = useAtom(SelectedFileAtom);
+  return (
+    <AutoDefaultingSelector
+      prompt="Select a file"
+      items={files}
+      selected={file}
+      setSelected={setFile}
+    />
   );
 }
 
 export function PathSelector(): ReactElement {
   return (
-    <div>
+    <>
       <TeamSelector />
+      &nbsp;
       <FileSelector />
-    </div>
+    </>
   );
 }
