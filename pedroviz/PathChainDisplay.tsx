@@ -16,7 +16,7 @@ import {
   RadiansRef,
   ValueRef,
 } from './server/types';
-import { isString } from '@freik/typechk';
+import { isDefined, isString } from '@freik/typechk';
 import { ReactElement } from 'react';
 
 function MathToRadianDisplay({ val }: { val: ValueRef }): ReactElement {
@@ -38,11 +38,15 @@ function AnonymouseValueDisplay({
       return <MathToRadianDisplay val={{ type: 'double', value: val.value }} />;
     case 'double':
       return (
-        <span style={{ backgroundColor: '#ddffee' }}>v.value.toFixed(3)</span>
+        <span style={{ backgroundColor: '#ddffee' }}>
+          {val.value.toFixed(3)}
+        </span>
       );
     case 'int':
       return (
-        <span style={{ backgroundColor: '#ddffee' }}>v.value.toFixed(0)</span>
+        <span style={{ backgroundColor: '#ddffee' }}>
+          {val.value.toFixed(0)}
+        </span>
       );
   }
 }
@@ -79,15 +83,29 @@ function AnonymousPose({ pose }: { pose: AnonymousPose }): ReactElement {
   return (
     <div>
       Pose: (<ValueRefDisplay val={pose.x} />, <ValueRefDisplay val={pose.y} />
-      {pose.heading ? <HeadingRef heading={pose.heading} /> : <></>};
+      {pose.heading ? <HeadingRef heading={pose.heading} /> : <></>})
     </div>
   );
 }
-function PoseRefDisplay({ pose }: { pose: PoseRef }): ReactElement {
+function PoseRefDisplay({
+  pose,
+  first,
+}: {
+  pose: PoseRef;
+  first?: boolean;
+}): ReactElement {
+  const showDivider = isDefined(first) ? !first : false;
+  const prefix = showDivider ? <>,&nbsp;</> : <></>;
   return isString(pose) ? (
-    <span style={{ backgroundColor: '#eeddff' }}>pose</span>
+    <>
+      {prefix}
+      <span style={{ backgroundColor: '#eeddff' }}>{pose}</span>
+    </>
   ) : (
-    <AnonymousPose pose={pose} />
+    <>
+      {prefix}
+      <AnonymousPose pose={pose} />
+    </>
   );
 }
 
@@ -95,8 +113,8 @@ function BezierDisplay({ b }: { b: AnonymousBezier }): ReactElement {
   return (
     <span>
       {b.type}:
-      {b.points.map((p) => (
-        <PoseRefDisplay key={p.toString()} pose={p} />
+      {b.points.map((p, index) => (
+        <PoseRefDisplay key={p.toString()} pose={p} first={index === 0} />
       ))}
     </span>
   );
@@ -104,13 +122,13 @@ function BezierDisplay({ b }: { b: AnonymousBezier }): ReactElement {
 
 function BezierRefDisplay({ b }: { b: BezierRef }): ReactElement {
   return isString(b) ? (
-    <span style={{ backgroundColor: '#eeffdd' }}>b</span>
+    <span style={{ backgroundColor: '#eeffdd' }}>{b}</span>
   ) : (
     <BezierDisplay b={b} />
   );
 }
 
-function HeadingTypeDisplay({ ht }: { ht: HeadingType }): ReactElement {
+function PathHeadingTypeDisplay({ ht }: { ht: HeadingType }): ReactElement {
   let res = ht.type[0].toLocaleUpperCase() + ht.type.substring(1);
   let node: ReactElement;
   switch (ht.type) {
@@ -145,7 +163,7 @@ export function PathChainDisplay() {
       <div>
         Values:
         {curPathChain.values.map((val: NamedValue) => (
-          <div>
+          <div key={val.name}>
             {val.name}
             <ValueRefDisplay key={val.name} val={val.value} />
           </div>
@@ -154,7 +172,7 @@ export function PathChainDisplay() {
       <div>
         Poses:
         {curPathChain.poses.map((val: NamedPose) => (
-          <div>
+          <div key={val.name}>
             {val.name}: <PoseRefDisplay pose={val.pose} />
           </div>
         ))}
@@ -162,7 +180,7 @@ export function PathChainDisplay() {
       <div>
         Beziers:
         {curPathChain.beziers.map((b: NamedBezier) => (
-          <div>
+          <div key={b.name}>
             {b.name}: <BezierDisplay b={b.points} />
           </div>
         ))}
@@ -170,10 +188,12 @@ export function PathChainDisplay() {
       <div>
         PathChains:
         {curPathChain.pathChains.map((npc: NamedPathChain) => (
-          <div>
-            {npc.name} @ <HeadingRef heading={npc.heading} />
+          <div key={npc.name}>
+            <div>
+              {npc.name} @ <PathHeadingTypeDisplay ht={npc.heading} />
+            </div>
             {npc.paths.map((br: BezierRef) => (
-              <BezierRefDisplay b={br} />
+              <BezierRefDisplay key={br.toString()} b={br} />
             ))}
           </div>
         ))}
