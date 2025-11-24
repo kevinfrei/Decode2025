@@ -3,11 +3,14 @@ import { ReactElement, useState } from 'react';
 import { getStore } from './state/Storage';
 import { PathSelector } from './PathSelector';
 import {
+  DrawerBody,
   FluentProvider,
+  InlineDrawer,
   webDarkTheme,
   webLightTheme,
 } from '@fluentui/react-components';
-import { PathChainDisplay } from './PathChainDisplay';
+import { PathsDataDisplay } from './PathsDataDisplay';
+import { PathsGraphicDisplay } from './PathsGraphicDisplay';
 
 // import './index.css';
 
@@ -20,8 +23,14 @@ export function App(): ReactElement {
       <FluentProvider theme={theme}>
         <div className="app">
           <PathSelector />
-          <PathChainDisplay />
-          <div className="path-editor" />
+          <span>
+            <InlineDrawer as="aside" separator={true} open={true} size="small">
+              <DrawerBody>
+                <PathsDataDisplay />
+              </DrawerBody>
+            </InlineDrawer>
+            <PathsGraphicDisplay />
+          </span>
         </div>
       </FluentProvider>
     </Provider>
