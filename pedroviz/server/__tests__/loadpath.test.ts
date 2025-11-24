@@ -133,7 +133,16 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
   expect(paths.pathChains[1]).toEqual({
     name: 'Path2',
     paths: [{ type: 'curve', points: ['step1', 'step2'] }],
-    heading: { type: 'tangent' },
+    heading: {
+      type: 'interpolated',
+      headings: [
+        {
+          type: 'radians',
+          value: 90,
+        },
+        { radians: 'step_mid' },
+      ],
+    },
   });
   expect(paths.pathChains[2]).toEqual({
     name: 'Path3',
@@ -160,7 +169,7 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
     ],
     heading: {
       type: 'interpolated',
-      headings: [{ type: 'int', value: 0 }, 'step4'],
+      headings: [{ radians: 'step' }, 'step4'],
     },
   });
 });

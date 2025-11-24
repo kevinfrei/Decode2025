@@ -315,6 +315,7 @@ function getToRadians(
   }
   const numRef = getOnlyValueRef(argList[0]);
   if (isString(numRef)) {
+    return { radians: numRef };
   } else if (isDefined(numRef)) {
     numRef.type = 'radians';
     return numRef;
@@ -651,8 +652,11 @@ function getPathChainFactories(
   ctx: ConstructorDeclarationCtx,
 ): NamedPathChain[] {
   const statements = child(
-    child(ctx.constructorBody).blockStatements,
-  ).blockStatement;
+    child(ctx.constructorBody)?.blockStatements,
+  )?.blockStatement;
+  if (isUndefined(statements)) {
+    return [];
+  }
   const pathChains = statements.map(getPathChain);
   return pathChains.filter(isDefined);
 }

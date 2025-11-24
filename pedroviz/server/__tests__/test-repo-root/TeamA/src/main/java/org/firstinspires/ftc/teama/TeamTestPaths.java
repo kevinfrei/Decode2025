@@ -45,7 +45,7 @@ public class TeamTestPaths {
         Path2 = follower
             .pathBuilder()
             .addPath(new BezierCurve(step1, step2))
-            .setTangentHeadingInterpolation()
+            .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(step_mid))
             .build();
 
         Path3 = follower
