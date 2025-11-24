@@ -13,7 +13,7 @@ import {
   SelectedFileAtom,
   SelectedTeamAtom,
   TeamsAtom,
-} from './API';
+} from './state/Atoms';
 
 const useStyles = makeStyles({
   root: {
