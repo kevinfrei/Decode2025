@@ -1,5 +1,5 @@
 import { useAtomValue } from 'jotai';
-import { CurPathAtom } from './API';
+import { CurPathChainAtom } from './state/Atoms';
 import {
   AnonymousBezier,
   AnonymousPose,
@@ -156,7 +156,7 @@ function PathHeadingTypeDisplay({ ht }: { ht: HeadingType }): ReactElement {
 }
 
 export function PathChainDisplay() {
-  const curPathChain = useAtomValue(CurPathAtom);
+  const curPathChain = useAtomValue(CurPathChainAtom);
   return (
     <div>
       <div>Name: {curPathChain.name}</div>
