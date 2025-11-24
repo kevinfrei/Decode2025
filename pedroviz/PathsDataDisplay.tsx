@@ -87,6 +87,7 @@ function AnonymousPose({ pose }: { pose: AnonymousPose }): ReactElement {
     </div>
   );
 }
+
 function PoseRefDisplay({
   pose,
   first,
@@ -155,7 +156,7 @@ function PathHeadingTypeDisplay({ ht }: { ht: HeadingType }): ReactElement {
   );
 }
 
-export function PathChainDisplay() {
+export function PathsDataDisplay() {
   const curPathChain = useAtomValue(CurPathChainAtom);
   return (
     <div>
