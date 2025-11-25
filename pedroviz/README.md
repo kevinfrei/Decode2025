@@ -24,6 +24,11 @@ and edit PedroPath's. The _reasons_ for this as opposed to just using
 - [ ] Allow editing paths in a text field
 - [ ] Allow editing points by dragging & dropping on the canvas
 - [ ] Reflect those changes in the code
+  - [ ] Checksum the code to detect external edits?
+- [ ] Support additional parts of the path builder
+  - [ ] setMaxPowerScaling, etc...
+- [ ] Maintain any code that I don't actually parse
+- [ ] Maintain comments
 - [ ] Animate the robot along the path
 - [ ] Bonus: Reflect a path along a line or axis (with or without a bot offset?)
 

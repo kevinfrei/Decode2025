@@ -6,6 +6,7 @@ import {
   MenuPopover,
   MenuList,
   MenuItemRadio,
+  useId,
 } from '@fluentui/react-components';
 import { ReactElement } from 'react';
 
@@ -20,10 +21,8 @@ export function AutoDisablingSelector({
   selected: string;
   setSelected: (item: string) => void;
 }): ReactElement {
-  const onChange: MenuProps['onCheckedValueChange'] = (
-    e,
-    { name, checkedItems },
-  ) => {
+  const id = useId('ADS');
+  const onChange: MenuProps['onCheckedValueChange'] = (_, { checkedItems }) => {
     setSelected(checkedItems[0]);
   };
   return (
@@ -37,8 +36,8 @@ export function AutoDisablingSelector({
         <MenuList onCheckedValueChange={onChange}>
           {items.map((val) => (
             <MenuItemRadio
-              key={`ts${val}`}
-              name="team-select"
+              key={`${id}:${val}`}
+              name={`${id}`}
               onSelect={() => setSelected(val)}
               value={val}
             >
