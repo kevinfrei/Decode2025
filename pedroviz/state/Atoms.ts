@@ -7,7 +7,7 @@ export const PathsAtom = atom(async () => GetPaths());
 
 export const TeamsAtom = atom(async (get) => {
   const paths = await get(PathsAtom);
-  return Object.keys(paths);
+  return Object.keys(paths).sort();
 });
 export const SelectedTeamBackingAtom = atom('');
 export const SelectedTeamAtom = atom(
@@ -44,7 +44,7 @@ export const FilesForTeamFamily = atomFamily((team: string) =>
   atom(async (get) => {
     const paths = await get(PathsAtom);
     if (hasField(paths, team)) {
-      return paths[team];
+      return paths[team].sort();
     }
     return [];
   }),
@@ -76,4 +76,10 @@ export const CurPathChainAtom = atom(async (get) => {
     }
   }
   return EmptyPathChainFile;
+});
+
+export const ValuesAtom = atom(async (get) => {
+  // Register the dependency...
+  await get(SelectedFileAtom);
+  // Everything after this is just the local API
 });

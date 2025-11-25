@@ -12,7 +12,8 @@ import {
 import { PathsDataDisplay } from './PathsDataDisplay';
 import { PathsGraphicDisplay } from './PathsGraphicDisplay';
 
-// import './index.css';
+import './index.css';
+import { ScaledCanvas } from './ui-tools/ScaledCanvas';
 
 export function App(): ReactElement {
   const store = getStore();
@@ -22,15 +23,30 @@ export function App(): ReactElement {
     <Provider store={store}>
       <FluentProvider theme={theme}>
         <div className="app">
-          <PathSelector />
-          <span>
-            <InlineDrawer as="aside" separator={true} open={true} size="small">
-              <DrawerBody>
-                <PathsDataDisplay />
-              </DrawerBody>
-            </InlineDrawer>
-            <PathsGraphicDisplay />
-          </span>
+          <div className="header">
+            <div className="header-left">
+              <PathSelector />
+            </div>
+            <div className="header-right">
+              <p>settings?</p>
+            </div>
+          </div>
+          <div className="main">
+            <div className="sidebar">
+              <PathsDataDisplay />
+            </div>
+            <div className="content">
+              <div className="square-wrapper">
+                <ScaledCanvas
+                  points={[
+                    { x: 10, y: 10 },
+                    { x: 72, y: 72 },
+                    { x: 130, y: 20 },
+                  ]}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </FluentProvider>
     </Provider>
