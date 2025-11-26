@@ -17,6 +17,7 @@ export function App(): ReactElement {
   const store = getStore();
   const [theTheme, setTheme] = useState<'dark' | 'light'>('light');
   const theme = theTheme === 'dark' ? webDarkTheme : webLightTheme;
+  /*
   const sidebarRef = useRef(null);
   const dragHandleRef = useRef(null);
 
@@ -57,47 +58,38 @@ export function App(): ReactElement {
       window.removeEventListener('mouseup', stopDrag);
     };
   }, [isDragging]);
-
+  */
   return (
     <Provider store={store}>
       <FluentProvider theme={theme}>
         <div className="app">
-          <header className="header">
+          <div className="header">
             <div className="header-left">
               <PathSelector />
             </div>
+            <div className="header-center">Vote4Pedro</div>
             <div className="header-right">
               <p>settings?</p>
             </div>
-          </header>
+          </div>
+          <div
+            className="sidebar"
+            /*ref={sidebarRef}
+            style={{ width: sidebarWidth }}*/
+          >
+            <PathsDataDisplay />
+          </div>
 
-          <main className="main">
-            <aside
-              className="sidebar"
-              ref={sidebarRef}
-              style={{ width: sidebarWidth }}
-            >
-              <PathsDataDisplay />
-            </aside>
-
-            {/* Drag handle */}
-            <div
-              className="drag-handle"
-              ref={dragHandleRef}
-              onMouseDown={startDrag}
+          {/* Canvas area */}
+          <div className="display">
+            <ScaledCanvas
+              points={[
+                { x: 10, y: 10 },
+                { x: 72, y: 72 },
+                { x: 130, y: 20 },
+              ]}
             />
-
-            {/* Canvas area */}
-            <div className="canvas-container">
-              <ScaledCanvas
-                points={[
-                  { x: 10, y: 10 },
-                  { x: 72, y: 72 },
-                  { x: 130, y: 20 },
-                ]}
-              />
-            </div>
-          </main>
+          </div>
         </div>
       </FluentProvider>
     </Provider>
