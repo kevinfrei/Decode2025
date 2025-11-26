@@ -84,9 +84,16 @@ export function App(): ReactElement {
           <div className="display">
             <ScaledCanvas
               points={[
-                { x: 10, y: 10 },
-                { x: 72, y: 72 },
-                { x: 130, y: 20 },
+                [
+                  { x: 5, y: 10 },
+                  { x: 72, y: 120 },
+                  { x: 130, y: 20 },
+                ],
+                [
+                  { x: 135, y: 75 },
+                  { x: 72, y: 0 },
+                  { x: 15, y: 77 },
+                ],
               ]}
             />
           </div>

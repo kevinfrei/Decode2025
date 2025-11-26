@@ -41,8 +41,8 @@ export const EmptyPathChainFile: PathChainFile = {
   pathChains: [],
 };
 
-export async function LoadFile(team: string, file: string) {
-  const pathChainFiles: PathChainFile = await fetchApi(
+export async function LoadFile(team: string, file: string): Promise<PathChainFile> {
+  const pathChainFile: PathChainFile = await fetchApi(
     `loadpath/${encodeURIComponent(team)}/${encodeURIComponent(file)}`,
     chkPathChainFile,
     EmptyPathChainFile,
@@ -51,12 +51,13 @@ export async function LoadFile(team: string, file: string) {
   namedPoses.clear();
   namedBeziers.clear();
   namedPathChains.clear();
-  pathChainFiles.values.forEach((val) => namedValues.set(val.name, val));
-  pathChainFiles.poses.forEach((val) => namedPoses.set(val.name, val));
-  pathChainFiles.beziers.forEach((val) => namedBeziers.set(val.name, val));
-  pathChainFiles.pathChains.forEach((val) =>
+  pathChainFile.values.forEach((val) => namedValues.set(val.name, val));
+  pathChainFile.poses.forEach((val) => namedPoses.set(val.name, val));
+  pathChainFile.beziers.forEach((val) => namedBeziers.set(val.name, val));
+  pathChainFile.pathChains.forEach((val) =>
     namedPathChains.set(val.name, val),
   );
+  return pathChainFile;
 }
 
 export async function SavePath(

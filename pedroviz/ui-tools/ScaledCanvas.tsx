@@ -1,9 +1,12 @@
 import React, { useRef, useEffect } from 'react';
 import { Point } from '../state/API';
+import {bezierLength, bezierDerivative, deCasteljau} from './bezier';
 
 interface CanvasProps {
-  points: Point[];
+  points: Point[][];
 }
+
+const Scale = 5;
 
 export const ScaledCanvas: React.FC<CanvasProps> = ({ points }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -28,18 +31,36 @@ export const ScaledCanvas: React.FC<CanvasProps> = ({ points }) => {
     ctx.scale(dpr, dpr);
 
     // Map logical 144×144 units into square
-    const scale = squareSize / 144;
+    const scale = squareSize / (144 * Scale);
     ctx.scale(scale, scale);
 
-    ctx.clearRect(0, 0, 144, 144);
+    ctx.clearRect(0, 0, 144 * Scale, 144 * Scale);
 
     ctx.fillStyle = 'red';
-    points.forEach((p) => {
+    points.forEach((curve) => {
+      const len = bezierLength(curve)
+      const points: Point[] = [];
+      for (let t = 0; t <= 1; t += .1 / len) {
+        points.push(deCasteljau(curve, t));
+      }
       ctx.beginPath();
-      ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-      ctx.fill();
+      let first = true;
+      for (const pt of points) {
+        if (first) {
+          ctx.moveTo(pt.x * Scale, pt.y * Scale);
+          first = false;
+        } else {
+          ctx.lineTo(pt.x * Scale, pt.y * Scale);
+        }
+      }
+      ctx.stroke();
+      const tang = bezierDerivative(curve, .4);
+      const mid = deCasteljau(curve, .4);
+      ctx.moveTo(mid.x * Scale - tang.x * Scale / 4, mid.y * Scale - tang.y * Scale / 4);
+      ctx.lineTo(mid.x * Scale + tang.x * Scale / 4, mid.y * Scale + tang.y * Scale / 4);
+      ctx.stroke();
     });
   }, [points]);
 
-  return <canvas ref={canvasRef} />;
+  return <canvas className="field" ref={canvasRef} />;
 };
