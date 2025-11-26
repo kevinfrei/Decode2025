@@ -72,7 +72,10 @@ export const CurPathChainAtom = atom(async (get) => {
     const files = paths[selTeam];
     if (isDefined(files) && files.indexOf(selFile) >= 0) {
       console.log('Has team & file', selTeam, selFile);
-      return await LoadFile(selTeam, selFile);
+      const res = await LoadFile(selTeam, selFile);
+      console.log("here's the result:");
+      console.log(res);
+      return res;
     }
   }
   return EmptyPathChainFile;
