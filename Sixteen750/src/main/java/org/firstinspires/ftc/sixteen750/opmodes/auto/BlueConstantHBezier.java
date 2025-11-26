@@ -26,7 +26,7 @@ public class BlueConstantHBezier extends CommandOpMode {
     @Override
     public void uponInit() {
         hardware = new Hardware(hardwareMap);
-        robot = new Robot(hardware, Alliance.RED, StartingPosition.Net);
+        robot = new Robot(hardware, Alliance.BLUE, StartingPosition.Net);
         Paths p = new Paths(robot.follower);
         robot.follower.setStartingPose(p.getStart());
         CommandScheduler.register(robot.limelightSubsystem);
