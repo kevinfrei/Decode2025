@@ -16,7 +16,7 @@ import {
   RadiansRef,
   ValueRef,
 } from './server/types';
-import { isDefined, isString } from '@freik/typechk';
+import { isDefined, isString, isUndefined } from '@freik/typechk';
 import { ReactElement } from 'react';
 
 function MathToRadianDisplay({ val }: { val: ValueRef }): ReactElement {
@@ -158,6 +158,9 @@ function PathHeadingTypeDisplay({ ht }: { ht: HeadingType }): ReactElement {
 
 export function PathsDataDisplay() {
   const curPathChain = useAtomValue(CurPathChainAtom);
+  if (!curPathChain) { 
+    return <></>;
+  }
   return (
     <div>
       <div>Name: {curPathChain.name}</div>

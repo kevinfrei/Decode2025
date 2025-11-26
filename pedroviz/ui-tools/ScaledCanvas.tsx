@@ -1,6 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-
-type Point = { x: number; y: number };
+import { Point } from '../state/API';
 
 interface CanvasProps {
   points: Point[];
@@ -15,7 +14,7 @@ export const ScaledCanvas: React.FC<CanvasProps> = ({ points }) => {
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.parentElement!.getBoundingClientRect();
+    const rect = canvas.getBoundingClientRect();
 
     // Square size = min(width, height)
     const squareSize = Math.min(rect.width, rect.height);

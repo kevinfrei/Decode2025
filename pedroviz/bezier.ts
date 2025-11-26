@@ -1,7 +1,4 @@
-import { isString } from '@freik/typechk';
-import { AnonymousPose, PoseRef } from './server/types';
-
-export type Point = { x: number; y: number };
+import { Point } from './state/API';
 
 /**
  * De Casteljau algorithm for Bezier curves (2D)
