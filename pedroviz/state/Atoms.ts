@@ -66,15 +66,15 @@ export const CurPathChainAtom = atom(async (get) => {
   const paths = await get(PathsAtom);
   const selTeam = await get(SelectedTeamAtom);
   const selFile = await get(SelectedFileAtom);
-  console.log('Checking field', selTeam);
+  // console.log('Checking field', selTeam);
   if (hasField(paths, selTeam)) {
-    console.log('Checking file', selFile);
+    // console.log('Checking file', selFile);
     const files = paths[selTeam];
     if (isDefined(files) && files.indexOf(selFile) >= 0) {
-      console.log('Has team & file', selTeam, selFile);
+      // console.log('Has team & file', selTeam, selFile);
       const res = await LoadFile(selTeam, selFile);
-      console.log("here's the result:");
-      console.log(res);
+      // console.log("here's the result:");
+      // console.log(res);
       return res;
     }
   }
