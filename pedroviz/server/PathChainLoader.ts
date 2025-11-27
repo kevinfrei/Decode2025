@@ -402,7 +402,7 @@ function getCtorArgs(
 function tryMatchingNamedPoses(
   ctx: FieldDeclarationCtx,
 ): NamedPose | undefined {
-  if (!isPublicStaticField(ctx)) {
+  if (!isPublicStaticField(ctx) && !isPublicField(ctx)) {
     return;
   }
   const classType = getClassTypeName(ctx.unannType);

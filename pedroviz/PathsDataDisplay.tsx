@@ -5,7 +5,7 @@ import {
   AnonymousPose,
   AnonymousValue,
   BezierRef,
-  chkRadianRef,
+  chkRadiansRef,
   HeadingRef,
   HeadingType,
   NamedBezier,
@@ -17,7 +17,7 @@ import {
   ValueRef,
 } from './server/types';
 import { isDefined, isString, isUndefined } from '@freik/typechk';
-import { ReactElement } from 'react';
+import { ReactElement, useId } from 'react';
 
 function MathToRadianDisplay({ val }: { val: ValueRef }): ReactElement {
   return (
@@ -72,7 +72,7 @@ function RadiansRefDisplay({ val }: { val: RadiansRef }): ReactElement {
 }
 
 function HeadingRef({ heading }: { heading: HeadingRef }): ReactElement {
-  return chkRadianRef(heading) ? (
+  return chkRadiansRef(heading) ? (
     <RadiansRefDisplay val={heading} />
   ) : (
     <ValueRefDisplay val={heading} />
@@ -111,11 +111,16 @@ function PoseRefDisplay({
 }
 
 function BezierDisplay({ b }: { b: AnonymousBezier }): ReactElement {
+  const id = useId();
   return (
     <span>
       {b.type}:
       {b.points.map((p, index) => (
-        <PoseRefDisplay key={p.toString()} pose={p} first={index === 0} />
+        <PoseRefDisplay
+          key={`${id}-bdpr-${index}`}
+          pose={p}
+          first={index === 0}
+        />
       ))}
     </span>
   );
@@ -167,16 +172,16 @@ export function PathsDataDisplay() {
       <div>
         Values:
         {curPathChain.values.map((val: NamedValue) => (
-          <div key={val.name}>
+          <div key={`vr-${val.name}`}>
             {val.name}
-            <ValueRefDisplay key={val.name} val={val.value} />
+            <ValueRefDisplay val={val.value} />
           </div>
         ))}
       </div>
       <div>
         Poses:
         {curPathChain.poses.map((val: NamedPose) => (
-          <div key={val.name}>
+          <div key={`pr-${val.name}`}>
             {val.name}: <PoseRefDisplay pose={val.pose} />
           </div>
         ))}
@@ -184,7 +189,7 @@ export function PathsDataDisplay() {
       <div>
         Beziers:
         {curPathChain.beziers.map((b: NamedBezier) => (
-          <div key={b.name}>
+          <div key={`br-${b.name}`}>
             {b.name}: <BezierDisplay b={b.points} />
           </div>
         ))}
@@ -192,12 +197,15 @@ export function PathsDataDisplay() {
       <div>
         PathChains:
         {curPathChain.pathChains.map((npc: NamedPathChain) => (
-          <div key={npc.name}>
+          <div key={`pc-${npc.name}`}>
             <div>
               {npc.name} @ <PathHeadingTypeDisplay ht={npc.heading} />
             </div>
             {npc.paths.map((br: BezierRef) => (
-              <BezierRefDisplay key={br.toString()} b={br} />
+              <BezierRefDisplay
+                key={`pc-${npc.name}-br-${br.toString()}`}
+                b={br}
+              />
             ))}
           </div>
         ))}

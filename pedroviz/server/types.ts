@@ -58,6 +58,8 @@ export function chkTeamPaths(t: unknown): t is TeamPaths {
   return isRecordOf(t, isString, isArrayOfString);
 }
 
+export const isRef = isString;
+
 function isValueTypeName(t: unknown): t is 'int' | 'double' | 'radians' {
   return t === 'int' || t === 'double' || t === 'radians';
 }
@@ -71,11 +73,11 @@ export const chkNamedValue = chkObjectOfExactType<NamedValue>({
   value: chkAnonymousValue,
 });
 export const chkValueRef = chkAnyOf(isString, chkAnonymousValue);
-export const chkRadianRef = chkObjectOfExactType<RadiansRef>({
+export const chkRadiansRef = chkObjectOfExactType<RadiansRef>({
   radians: chkValueRef,
 });
 
-export const chkHeadingRef = chkAnyOf(chkValueRef, chkRadianRef);
+export const chkHeadingRef = chkAnyOf(chkValueRef, chkRadiansRef);
 
 export const chkAnonymousPose = chkObjectOfExactType<AnonymousPose>(
   {
