@@ -158,7 +158,7 @@ function PathHeadingTypeDisplay({ ht }: { ht: HeadingType }): ReactElement {
 
 export function PathsDataDisplay() {
   const curPathChain = useAtomValue(CurPathChainAtom);
-  if (!curPathChain) { 
+  if (!curPathChain) {
     return <></>;
   }
   return (
