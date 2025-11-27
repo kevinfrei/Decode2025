@@ -15,7 +15,7 @@ import {
   PoseRef,
   RadiansRef,
   ValueRef,
-} from './server/types';
+} from '../server/types';
 import { isDefined, isString, isUndefined } from '@freik/typechk';
 import { ReactElement, useId } from 'react';
 

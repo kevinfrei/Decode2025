@@ -3,7 +3,7 @@ import { getBezierPoints, Point } from '../state/API';
 import { bezierLength, bezierDerivative, deCasteljau } from './bezier';
 import { useAtomValue } from 'jotai';
 import { CurPathChainAtom } from '../state/Atoms';
-import { NamedPathChain } from '../server/types';
+import { NamedPathChain } from '../../server/types';
 
 const Scale = 1;
 const xwid = 1;
