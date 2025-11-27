@@ -1,12 +1,13 @@
 import React, { useRef, useEffect } from 'react';
 import { Point } from '../state/API';
-import {bezierLength, bezierDerivative, deCasteljau} from './bezier';
+import { bezierLength, bezierDerivative, deCasteljau } from './bezier';
 
 interface CanvasProps {
   points: Point[][];
 }
 
-const Scale = 5;
+const Scale = 1;
+const xwid = 1;
 
 export const ScaledCanvas: React.FC<CanvasProps> = ({ points }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,26 +39,43 @@ export const ScaledCanvas: React.FC<CanvasProps> = ({ points }) => {
 
     ctx.fillStyle = 'red';
     points.forEach((curve) => {
-      const len = bezierLength(curve)
+      const len = bezierLength(curve);
       const points: Point[] = [];
-      for (let t = 0; t <= 1; t += .1 / len) {
+      for (let t = 0; t <= 1.0; t += 5 / len) {
         points.push(deCasteljau(curve, t));
       }
       ctx.beginPath();
-      let first = true;
+      ctx.lineWidth = 0.25;
+      ctx.strokeStyle = 'black';
+      ctx.moveTo(curve[0].x * Scale, curve[0].y * Scale);
       for (const pt of points) {
-        if (first) {
-          ctx.moveTo(pt.x * Scale, pt.y * Scale);
-          first = false;
-        } else {
-          ctx.lineTo(pt.x * Scale, pt.y * Scale);
-        }
+        ctx.lineTo(pt.x * Scale, pt.y * Scale);
+      }
+      ctx.lineTo(
+        curve[curve.length - 1].x * Scale,
+        curve[curve.length - 1].y * Scale,
+      );
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.lineWidth = 0.1;
+      ctx.strokeStyle = 'blue';
+      for (const pt of curve) {
+        ctx.rect(pt.x - xwid, pt.y - xwid, xwid * 2, xwid * 2);
       }
       ctx.stroke();
-      const tang = bezierDerivative(curve, .4);
-      const mid = deCasteljau(curve, .4);
-      ctx.moveTo(mid.x * Scale - tang.x * Scale / 4, mid.y * Scale - tang.y * Scale / 4);
-      ctx.lineTo(mid.x * Scale + tang.x * Scale / 4, mid.y * Scale + tang.y * Scale / 4);
+      const tang = bezierDerivative(curve, 0.4);
+      const mid = deCasteljau(curve, 0.4);
+      ctx.beginPath();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'red';
+      ctx.moveTo(
+        mid.x * Scale - (tang.x * Scale) / 4,
+        mid.y * Scale - (tang.y * Scale) / 4,
+      );
+      ctx.lineTo(
+        mid.x * Scale + (tang.x * Scale) / 4,
+        mid.y * Scale + (tang.y * Scale) / 4,
+      );
       ctx.stroke();
     });
   }, [points]);

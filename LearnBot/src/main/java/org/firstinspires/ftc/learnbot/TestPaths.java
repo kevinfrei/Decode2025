@@ -10,13 +10,16 @@ import com.pedropathing.paths.PathChain;
 public class TestPaths {
 
     public static double org = 72.0;
-    public static double dist = 8.0;
+    public static double edge = 78.0;
+    public static double one80 = Math.toRadians(180);
+    public static double ninety = Math.toRadians(90);
+    public static int sixty = 60;
 
     public static Pose start = new Pose(org, org, Math.toRadians(0));
-    public static Pose step1 = new Pose(org + dist, org, Math.toRadians(90));
-    public static Pose step2 = new Pose(org + dist, org + dist, Math.toRadians(0));
-    public static Pose step3 = new Pose(org, org + dist, Math.toRadians(-45));
-    public static Pose step4 = new Pose(org, org, Math.toRadians(30));
+    public static Pose step1 = new Pose(edge, org, ninety);
+    public static Pose step2 = new Pose(edge, edge, Math.toRadians(0));
+    public static Pose step3 = new Pose(org, edge, Math.toRadians(sixty));
+    public static Pose step4 = new Pose(org, org, Math.toRadians(one80));
 
     public Pose getStart() {
         return start;
@@ -32,6 +35,7 @@ public class TestPaths {
             .pathBuilder()
             .addPath(new BezierLine(start, step1))
             .setLinearHeadingInterpolation(start.getHeading(), step1.getHeading())
+            .setLinearHeadingInterpolation(0, ninety)
             .build();
 
         Path2 = follower
