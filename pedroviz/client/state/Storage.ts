@@ -7,15 +7,12 @@ import {
 } from '@freik/typechk';
 import { createStore } from 'jotai';
 import {
-  chkBezierRef,
   chkNamedBezier,
   chkNamedPathChain,
   chkNamedPose,
   chkNamedValue,
   chkPathChainFile,
-  chkPoseRef,
-  chkValueRef,
-} from '../server/types';
+} from '../../server/types';
 
 // import { atomWithStorage } from 'jotai/utils';
 // import { AsyncStorage } from 'jotai/vanilla/utils/atomWithStorage';

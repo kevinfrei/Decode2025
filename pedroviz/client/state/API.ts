@@ -1,4 +1,3 @@
-import { hasField, isString } from '@freik/typechk';
 import {
   chkPathChainFile,
   chkTeamPaths,
@@ -20,7 +19,7 @@ import {
   chkRadiansRef,
   chkConstantHeading,
   chkInterpolatedHeading,
-} from '../server/types';
+} from '../../server/types';
 import { fetchApi } from './Storage';
 
 const namedValues: Map<string, NamedValue> = new Map();
