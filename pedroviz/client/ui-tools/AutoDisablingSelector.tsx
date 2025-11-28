@@ -10,6 +10,7 @@ import {
 } from '@fluentui/react-components';
 import { ReactElement } from 'react';
 
+// Show a selection, unless there are no items, then disable the selector entirely
 export function AutoDisablingSelector({
   prompt,
   items,

@@ -1,4 +1,4 @@
-import { Provider } from 'jotai';
+import { Provider, useAtom, useAtomValue } from 'jotai';
 import { useRef, useEffect, ReactElement, useState } from 'react';
 import { getStore } from './state/Storage';
 import { PathSelector } from './PathSelector';
@@ -13,6 +13,41 @@ import { PathsGraphicDisplay } from './PathsGraphicDisplay';
 import { ScaledCanvas } from './ui-tools/ScaledCanvas';
 
 import './index.css';
+import { ThemeAtom } from './state/Atoms';
+import { Settings } from './Settings';
+
+export function MyApp(): ReactElement {
+  return (
+    <div className="app">
+      <div className="header">
+        <div className="header-left">
+          <PathSelector />
+        </div>
+        <div className="header-center">Vote4Pedro</div>
+        <div className="header-right">
+          <Settings />
+        </div>
+      </div>
+      <div className="sidebar">
+        <PathsDataDisplay />
+      </div>
+      <div className="display">
+        <ScaledCanvas />
+      </div>
+    </div>
+  );
+}
+
+export function FluentApp(): ReactElement {
+  const theTheme = useAtomValue(ThemeAtom);
+  const theme = theTheme === 'dark' ? webDarkTheme : webLightTheme;
+
+  return (
+    <FluentProvider theme={theme}>
+      <MyApp />
+    </FluentProvider>
+  );
+}
 
 export function App(): ReactElement {
   const store = getStore();
@@ -25,8 +60,6 @@ export function App(): ReactElement {
     And here's a gist that shows how to manually render an image:
     https://gist.github.com/paulirish/373253
   */
-  const [theTheme, setTheme] = useState<'dark' | 'light'>('light');
-  const theme = theTheme === 'dark' ? webDarkTheme : webLightTheme;
 
   /*
   const sidebarRef = useRef(null);
@@ -72,37 +105,7 @@ export function App(): ReactElement {
   */
   return (
     <Provider store={store}>
-      <FluentProvider theme={theme}>
-        <div className="app">
-          <div className="header">
-            <div className="header-left">
-              <PathSelector />
-            </div>
-            <div className="header-center">Vote4Pedro</div>
-            <div className="header-right">
-              <Checkbox
-                checked={theTheme === 'dark'}
-                onChange={(_, data) =>
-                  setTheme(data.checked ? 'dark' : 'light')
-                }
-                label="Dark Mode"
-              />
-            </div>
-          </div>
-          <div
-            className="sidebar"
-            /*ref={sidebarRef}
-            style={{ width: sidebarWidth }}*/
-          >
-            <PathsDataDisplay />
-          </div>
-
-          {/* Canvas area */}
-          <div className="display">
-            <ScaledCanvas />
-          </div>
-        </div>
-      </FluentProvider>
+      <FluentApp />
     </Provider>
   );
 }

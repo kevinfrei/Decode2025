@@ -6,9 +6,62 @@ import { CurPathChainAtom } from '../state/Atoms';
 import { NamedPathChain } from '../../server/types';
 
 const Scale = 1;
-const xwid = 1;
+const PointRadius = 1;
 
-const styles = ['#000', '#00f', '#0f0', '#0ff', '#f00', '#f0f', '#ff0', '#fff'];
+const styles = [
+  '#501',
+  '#209',
+  '#812',
+  '#106',
+  '#700',
+  '#005',
+  '#520',
+  '#016',
+  '#950',
+  '#056',
+  '#630',
+  '#055',
+  '#860',
+  '#064',
+  '#a80',
+  '#063',
+  '#ba0',
+  '#0a4',
+  '#880',
+  '#070',
+  '#570',
+  '#081',
+  '#360',
+  '#480',
+  '#5a0',
+];
+const dar = [
+  '#f78',
+  '#f9b',
+  '#f77',
+  '#94e',
+  '#e65',
+  '#96f',
+  '#f97',
+  '#b9f',
+  '#f97',
+  '#64f',
+  '#fa7',
+  '#44f',
+  '#fc7',
+  '#54f',
+  '#fe7',
+  '#55f',
+  '#ff8',
+  '#76f',
+  '#9e7',
+  '#45f',
+  '#8f8',
+  '#66e',
+  '#5e7',
+  '#78f',
+  '#7df',
+];
 
 const fix = 144;
 
@@ -50,6 +103,8 @@ export function ScaledCanvas(): ReactElement {
 
     ctx.fillStyle = 'red';
     let i = 0;
+
+    let count = 0;
     points.forEach((curve) => {
       const len = bezierLength(curve);
       const pts: Point[] = [];
@@ -67,7 +122,7 @@ export function ScaledCanvas(): ReactElement {
 
       ctx.beginPath();
       ctx.lineWidth = 0.25;
-      ctx.strokeStyle = 'black';
+      ctx.strokeStyle = styles[(count++ % styles.length) % count++];
       ctx.moveTo(curve[0].x * Scale, curve[0].y * Scale);
       for (const pt of pts) {
         ctx.lineTo(pt.x * Scale, pt.y * Scale);
@@ -78,11 +133,10 @@ export function ScaledCanvas(): ReactElement {
       );
       ctx.stroke();
       ctx.beginPath();
-      ctx.lineWidth = 0.1;
-      ctx.strokeStyle = 'blue';
+      ctx.lineWidth = 0.5;
       for (const pt of curve) {
-        ctx.moveTo(pt.x + xwid, pt.y);
-        ctx.arc(pt.x, pt.y, xwid, 0, 2 * Math.PI);
+        ctx.moveTo(pt.x + PointRadius, pt.y);
+        ctx.arc(pt.x, pt.y, PointRadius, 0, 2 * Math.PI);
       }
       ctx.stroke();
       const tang = bezierDerivative(curve, 0.4);
