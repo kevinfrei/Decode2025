@@ -18,6 +18,8 @@ import {
 } from '../server/types';
 import { isDefined, isString, isUndefined } from '@freik/typechk';
 import { ReactElement, useId } from 'react';
+import { Expandable } from '@freik/fluentui-tools';
+import { Button } from '@fluentui/react-components';
 
 function MathToRadianDisplay({ val }: { val: ValueRef }): ReactElement {
   return (
@@ -166,37 +168,52 @@ export function PathsDataDisplay() {
   if (!curPathChain) {
     return <></>;
   }
-  return (
-    <div>
-      <div>Name: {curPathChain.name}</div>
-      <div>
-        Values:
-        {curPathChain.values.map((val: NamedValue) => (
+  const values = (
+    <Expandable label="Values" indent={10}>
+      {[...curPathChain.values, true].map((val: NamedValue | true) =>
+        val === true ? (
+          <Button key="--new-vr">New Value</Button>
+        ) : (
           <div key={`vr-${val.name}`}>
             {val.name}
             <ValueRefDisplay val={val.value} />
           </div>
-        ))}
-      </div>
-      <div>
-        Poses:
-        {curPathChain.poses.map((val: NamedPose) => (
+        ),
+      )}
+    </Expandable>
+  );
+  const poses = (
+    <Expandable label="Poses" indent={10}>
+      {[...curPathChain.poses, true].map((val: NamedPose | true) =>
+        val === true ? (
+          <Button key="--new-pr">New Pose</Button>
+        ) : (
           <div key={`pr-${val.name}`}>
             {val.name}: <PoseRefDisplay pose={val.pose} />
           </div>
-        ))}
-      </div>
-      <div>
-        Beziers:
-        {curPathChain.beziers.map((b: NamedBezier) => (
+        ),
+      )}
+    </Expandable>
+  );
+  const beziers = (
+    <Expandable label="Beziers" indent={10}>
+      {[...curPathChain.beziers, true].map((b: NamedBezier | true) =>
+        b === true ? (
+          <Button key="--new-br">New Curve</Button>
+        ) : (
           <div key={`br-${b.name}`}>
             {b.name}: <BezierDisplay b={b.points} />
           </div>
-        ))}
-      </div>
-      <div>
-        PathChains:
-        {curPathChain.pathChains.map((npc: NamedPathChain) => (
+        ),
+      )}
+    </Expandable>
+  );
+  const chains = (
+    <Expandable label="PathChains" indent={10}>
+      {[...curPathChain.pathChains, true].map((npc: NamedPathChain | true) =>
+        npc === true ? (
+          <Button key="--new-pc">New PathChain</Button>
+        ) : (
           <div key={`pc-${npc.name}`}>
             <div>
               {npc.name} @ <PathHeadingTypeDisplay ht={npc.heading} />
@@ -208,8 +225,16 @@ export function PathsDataDisplay() {
               />
             ))}
           </div>
-        ))}
-      </div>
+        ),
+      )}
+    </Expandable>
+  );
+  return (
+    <div>
+      {values}
+      {poses}
+      {beziers}
+      {chains}
     </div>
   );
 }
