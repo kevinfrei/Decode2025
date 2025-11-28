@@ -80,7 +80,9 @@
   "dependencies": {
     "@fluentui/react": "^8.125.2",
     "@fluentui/react-components": "^9.72.7",
+    "@fluentui/react-icons-mdl2": "^1.4.2",
     "@freik/containers": "^0.4.4",
+    "@freik/fluentui-tools": "^1.2.4",
     "@freik/react-tools": "^0.3.4",
     "@freik/typechk": "^0.9.0",
     "@freik/workspace": "^0.6.5",
