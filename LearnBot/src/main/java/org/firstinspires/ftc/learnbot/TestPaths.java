@@ -9,8 +9,8 @@ import com.pedropathing.paths.PathChain;
 @Configurable
 public class TestPaths {
 
-    public static double org = 72.0;
-    public static double edge = 78.0;
+    public static double org = 15.0;
+    public static double edge = 50.0;
     public static double one80 = Math.toRadians(180);
     public static double ninety = Math.toRadians(90);
     public static int sixty = 60;

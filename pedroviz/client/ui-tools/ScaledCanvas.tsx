@@ -10,6 +10,8 @@ const xwid = 1;
 
 const styles = ['#000', '#00f', '#0f0', '#0ff', '#f00', '#f0f', '#ff0', '#fff'];
 
+const fix = 144;
+
 export function ScaledCanvas(): ReactElement {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const curPathChainFile = useAtomValue(CurPathChainAtom);
@@ -36,27 +38,32 @@ export function ScaledCanvas(): ReactElement {
     canvas.style.width = `${squareSize}px`;
     canvas.style.height = `${squareSize}px`;
 
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(dpr, dpr);
-
     // Map logical 144×144 units into square
-    const scale = squareSize / (144 * Scale);
-    ctx.scale(scale, scale);
+    const scale = squareSize / (fix * Scale);
+    // Move the origin to the lower left, corner, and scale it up
+    // ctx.translate(0, canvas.height);
+    // ctx.scale(dpr * scale, -dpr * scale);
+    // or just a single line of code:
+    ctx.setTransform(dpr * scale, 0, 0, -dpr * scale, 0, canvas.height);
 
-    ctx.clearRect(0, 0, 144 * Scale, 144 * Scale);
+    ctx.clearRect(0, 0, fix * Scale, fix * Scale);
 
     ctx.fillStyle = 'red';
+    let i = 0;
     points.forEach((curve) => {
       const len = bezierLength(curve);
       const pts: Point[] = [];
       for (let t = 0; t <= 1.0; t += 1 / len) {
         pts.push(deCasteljau(curve, t));
       }
+      ctx.save();
+      ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
       ctx.font = '3px Arial'; // Set font size and family
       ctx.fillStyle = 'blue'; // Set fill color for the text
       ctx.textAlign = 'center'; // Set text alignment (e.g., "start", "end", "center")
       ctx.textBaseline = 'middle'; // Set vertical alignment (e.g., "top", "middle", "bottom")
-      ctx.fillText('Test Text', 45, 80);
+      ctx.fillText(`Text${i}`, 45 + 15 * i++, fix - (80 + 5 * i));
+      ctx.restore();
 
       ctx.beginPath();
       ctx.lineWidth = 0.25;
@@ -74,7 +81,7 @@ export function ScaledCanvas(): ReactElement {
       ctx.lineWidth = 0.1;
       ctx.strokeStyle = 'blue';
       for (const pt of curve) {
-        ctx.moveTo(pt.x, pt.y);
+        ctx.moveTo(pt.x + xwid, pt.y);
         ctx.arc(pt.x, pt.y, xwid, 0, 2 * Math.PI);
       }
       ctx.stroke();
