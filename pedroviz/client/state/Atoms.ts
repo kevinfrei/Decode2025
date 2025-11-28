@@ -3,6 +3,8 @@ import { atom } from 'jotai';
 import { atomFamily } from 'jotai/utils';
 import { EmptyPathChainFile, GetPaths, LoadFile } from './API';
 
+export const ThemeAtom = atom<'dark' | 'light'>('light');
+
 export const PathsAtom = atom(async () => GetPaths());
 
 export const TeamsAtom = atom(async (get) => {
