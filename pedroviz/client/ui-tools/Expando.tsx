@@ -1,9 +1,17 @@
 // A little control that expands or collapses the children
 
-import { Button, Text } from '@fluentui/react-components';
+import { Button, Text, TextProps } from '@fluentui/react-components';
 import { ChevronDownRegular, ChevronRightRegular } from '@fluentui/react-icons';
 import { isString } from '@freik/typechk';
 import { ReactElement, useState } from 'react';
+
+export type ExpandoProps = TextProps & {
+  children: ReactElement | ReactElement[];
+  label: string | React.JSX.Element;
+  defaultShow?: boolean;
+  separator?: boolean;
+  indent?: number;
+};
 
 // with the header provided
 export function Expando({
@@ -11,16 +19,9 @@ export function Expando({
   label,
   defaultShow,
   separator,
-  size,
   indent,
-}: {
-  children: ReactElement | ReactElement[];
-  label: string | React.JSX.Element;
-  defaultShow?: boolean;
-  separator?: boolean;
-  size?: 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 1000;
-  indent?: number;
-}): React.JSX.Element {
+  ...props
+}: ExpandoProps): ReactElement {
   const indentSize = indent || 0;
   const [hidden, setHidden] = useState(!defaultShow);
   const button = (
@@ -33,7 +34,7 @@ export function Expando({
   const theHeader = (
     <span style={{ marginTop: 10 }}>
       {button}
-      {isString(label) ? <Text size={size || 300}>{label}</Text> : label}
+      {isString(label) ? <Text {...props}>{label}</Text> : label}
     </span>
   );
   const padding = indentSize ? { paddingLeft: indentSize } : {};
