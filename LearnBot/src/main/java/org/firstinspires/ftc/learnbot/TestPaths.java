@@ -21,6 +21,8 @@ public class TestPaths {
     public static Pose step3 = new Pose(org, edge, Math.toRadians(sixty));
     public static Pose step4 = new Pose(org, org, Math.toRadians(one80));
 
+    public static BezierLine start_to_step1 = new BezierLine(start, step1);
+
     public Pose getStart() {
         return start;
     }
@@ -33,7 +35,7 @@ public class TestPaths {
     public TestPaths(Follower follower) {
         Path1 = follower
             .pathBuilder()
-            .addPath(new BezierLine(start, step1))
+            .addPath(start_to_step1)
             .setLinearHeadingInterpolation(start.getHeading(), step1.getHeading())
             .setLinearHeadingInterpolation(0, ninety)
             .build();
