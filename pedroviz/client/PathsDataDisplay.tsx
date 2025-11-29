@@ -210,7 +210,7 @@ export function PathsDataDisplay() {
     </Expando>
   );
   const chains = (
-    <Expando label="PathChains" indent={20}>
+    <Expando label="PathChains" indent={20} as="h1">
       {[...curPathChain.pathChains, true].map((npc: NamedPathChain | true) =>
         npc === true ? (
           <Button key="--new-pc">New PathChain</Button>
