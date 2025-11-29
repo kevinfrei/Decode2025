@@ -1,7 +1,7 @@
-import { Button } from '@fluentui/react-components';
+import { Button, Text } from '@fluentui/react-components';
 import { isDefined, isString } from '@freik/typechk';
 import { useAtomValue } from 'jotai';
-import { ReactElement, useId } from 'react';
+import { CSSProperties, ReactElement, useId } from 'react';
 import {
   AnonymousBezier,
   AnonymousPose,
@@ -163,6 +163,40 @@ function PathHeadingTypeDisplay({ ht }: { ht: HeadingType }): ReactElement {
   );
 }
 
+export function NamedValueList({
+  values,
+}: {
+  values: NamedValue[];
+}): ReactElement {
+  const gridStyle: CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: '1fr .5fr auto',
+  };
+  return (
+    <div style={gridStyle}>
+      {values.map((val, index) => (
+        <>
+          <div
+            key={`vr-${val.name}-1`}
+            style={{ gridRow: index + 1, gridColumn: 1 }}
+          >
+            <Text>{val.name}</Text>
+          </div>
+          <div
+            key={`vr-${val.name}-2`}
+            style={{ gridRow: index + 1, gridColumn: 3 }}
+          >
+            <Text>
+              {val.value.value}
+              {val.value.type === 'radians' ? ' degrees' : ''}
+            </Text>
+          </div>
+        </>
+      ))}
+    </div>
+  );
+}
+
 export function PathsDataDisplay() {
   const curPathChain = useAtomValue(CurPathChainAtom);
   const selFile = useAtomValue(SelectedFileAtom);
@@ -171,16 +205,7 @@ export function PathsDataDisplay() {
   }
   const values = (
     <Expando label="Values" indent={20}>
-      {[...curPathChain.values, true].map((val: NamedValue | true) =>
-        val === true ? (
-          <Button key="--new-vr">New Value</Button>
-        ) : (
-          <div key={`vr-${val.name}`}>
-            {val.name}
-            <ValueRefDisplay val={val.value} />
-          </div>
-        ),
-      )}
+      <NamedValueList values={curPathChain.values} />
     </Expando>
   );
   const poses = (
