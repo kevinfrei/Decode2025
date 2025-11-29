@@ -1,5 +1,7 @@
+import { Button } from '@fluentui/react-components';
+import { isDefined, isString } from '@freik/typechk';
 import { useAtomValue } from 'jotai';
-import { CurPathChainAtom } from './state/Atoms';
+import { ReactElement, useId } from 'react';
 import {
   AnonymousBezier,
   AnonymousPose,
@@ -16,10 +18,8 @@ import {
   RadiansRef,
   ValueRef,
 } from '../server/types';
-import { isDefined, isString, isUndefined } from '@freik/typechk';
-import { ReactElement, useId } from 'react';
-import { Expandable } from '@freik/fluentui-tools';
-import { Button } from '@fluentui/react-components';
+import { CurPathChainAtom, SelectedFileAtom } from './state/Atoms';
+import { Expando } from './ui-tools/Expando';
 
 function MathToRadianDisplay({ val }: { val: ValueRef }): ReactElement {
   return (
@@ -165,11 +165,12 @@ function PathHeadingTypeDisplay({ ht }: { ht: HeadingType }): ReactElement {
 
 export function PathsDataDisplay() {
   const curPathChain = useAtomValue(CurPathChainAtom);
-  if (!curPathChain) {
-    return <></>;
+  const selFile = useAtomValue(SelectedFileAtom);
+  if (!curPathChain || selFile.length === 0) {
+    return <div>Please select a file to view.</div>;
   }
   const values = (
-    <Expandable label="Values" indent={10}>
+    <Expando label="Values" indent={20}>
       {[...curPathChain.values, true].map((val: NamedValue | true) =>
         val === true ? (
           <Button key="--new-vr">New Value</Button>
@@ -180,10 +181,10 @@ export function PathsDataDisplay() {
           </div>
         ),
       )}
-    </Expandable>
+    </Expando>
   );
   const poses = (
-    <Expandable label="Poses" indent={10}>
+    <Expando label="Poses" indent={20}>
       {[...curPathChain.poses, true].map((val: NamedPose | true) =>
         val === true ? (
           <Button key="--new-pr">New Pose</Button>
@@ -193,10 +194,10 @@ export function PathsDataDisplay() {
           </div>
         ),
       )}
-    </Expandable>
+    </Expando>
   );
   const beziers = (
-    <Expandable label="Beziers" indent={10}>
+    <Expando label="Beziers" indent={20}>
       {[...curPathChain.beziers, true].map((b: NamedBezier | true) =>
         b === true ? (
           <Button key="--new-br">New Curve</Button>
@@ -206,10 +207,10 @@ export function PathsDataDisplay() {
           </div>
         ),
       )}
-    </Expandable>
+    </Expando>
   );
   const chains = (
-    <Expandable label="PathChains" indent={10}>
+    <Expando label="PathChains" indent={20}>
       {[...curPathChain.pathChains, true].map((npc: NamedPathChain | true) =>
         npc === true ? (
           <Button key="--new-pc">New PathChain</Button>
@@ -227,7 +228,7 @@ export function PathsDataDisplay() {
           </div>
         ),
       )}
-    </Expandable>
+    </Expando>
   );
   return (
     <div>

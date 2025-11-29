@@ -1,8 +1,6 @@
-import { test, expect /* beforeAll, afterAll */ } from 'bun:test';
-import path from 'path';
+import { expect /* beforeAll, afterAll */, test } from 'bun:test';
 import fs from 'fs';
-// import { $ } from 'bun';
-
+import path from 'path';
 import { firstFtcSrc, getProjectFilePath, isDirectory } from '../utility';
 
 test('getProjectFilePath simple test', () => {

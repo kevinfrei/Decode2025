@@ -1,7 +1,7 @@
+import { isString } from '@freik/typechk';
+import { MakePathChainFile } from './PathChainLoader';
 import { PathChainFile } from './types';
 import { getProjectFilePath } from './utility';
-import { MakePathChainFile } from './PathChainLoader';
-import { isString } from '@freik/typechk';
 
 export async function LoadPath(
   team: string,

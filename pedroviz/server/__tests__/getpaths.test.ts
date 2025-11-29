@@ -1,14 +1,10 @@
-import { test, expect /* beforeAll, afterAll */ } from 'bun:test';
+import { expect, test } from 'bun:test';
 import path from 'path';
-
-// import fs, {promises as fsp} from 'fs';
-// import { $ } from 'bun';
-
 import {
-  getTeamDirectories,
-  getRelativeRepoRoot,
-  getPathFiles,
   GetPathFileNames,
+  getPathFiles,
+  getRelativeRepoRoot,
+  getTeamDirectories,
 } from '../getpaths';
 
 function getTestRepoPath(): string {

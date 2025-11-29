@@ -1,5 +1,5 @@
-import path from 'path';
 import { promises as fsp } from 'fs';
+import path from 'path';
 
 export const firstFtcSrc = path.join(
   'src',

@@ -1,11 +1,11 @@
 import {
-  MenuProps,
   Menu,
-  MenuTrigger,
   MenuButton,
-  MenuPopover,
-  MenuList,
   MenuItemRadio,
+  MenuList,
+  MenuPopover,
+  MenuProps,
+  MenuTrigger,
   useId,
 } from '@fluentui/react-components';
 import { ReactElement } from 'react';

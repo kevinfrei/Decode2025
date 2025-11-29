@@ -7,7 +7,10 @@ module.exports = {
   proseWrap: 'always',
   tabWidth: 2,
   useTabs: false,
-  plugins: [require.resolve('prettier-plugin-java')],
+  plugins: [
+    require.resolve('prettier-plugin-java'),
+    require.resolve('prettier-plugin-organize-imports'),
+  ],
   overrides: [
     {
       files: '*.json',
