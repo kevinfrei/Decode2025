@@ -8,10 +8,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
-import { FluentInitIcons } from './FluentInit';
 
 const elem = document.getElementById('root')!;
-FluentInitIcons();
+
 const app = (
   <StrictMode>
     <App />

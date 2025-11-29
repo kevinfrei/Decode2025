@@ -1,5 +1,15 @@
 type RGB = [number, number, number];
 
+/*
+    For reference: To invert the brightness, but not the hue, of an image:
+    R = 1 - (G + B) / 2
+    G = 1 - (R + B) / 2
+    B = 1 - (R + G) / 2
+
+    And here's a gist that shows how to manually render an image:
+    https://gist.github.com/paulirish/373253
+  */
+
 // Utility: compute relative luminance
 function luminance(rgb: RGB): number {
   const srgb = rgb.map((v) => {

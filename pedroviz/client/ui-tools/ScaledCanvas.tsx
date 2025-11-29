@@ -1,9 +1,9 @@
-import React, { useRef, useEffect, ReactElement } from 'react';
-import { getBezierPoints, Point } from '../state/API';
-import { bezierLength, bezierDerivative, deCasteljau } from './bezier';
 import { useAtomValue } from 'jotai';
-import { CurPathChainAtom } from '../state/Atoms';
+import { ReactElement, useEffect, useRef } from 'react';
 import { NamedPathChain } from '../../server/types';
+import { getBezierPoints, Point } from '../state/API';
+import { CurPathChainAtom } from '../state/Atoms';
+import { bezierDerivative, bezierLength, deCasteljau } from './bezier';
 
 const Scale = 1;
 const PointRadius = 1;
@@ -71,7 +71,9 @@ export function ScaledCanvas(): ReactElement {
   const pathChains = curPathChainFile.pathChains;
   const points = pathChains
     .map((npc: NamedPathChain) => {
-      return npc.paths.map(getBezierPoints);
+      const bps = npc.paths.map(getBezierPoints);
+      // TODO: Map each path to a style
+      return bps;
     })
     .flat(1);
 

@@ -1,7 +1,7 @@
 import fs, { promises as fsp } from 'node:fs';
 import path from 'node:path';
-import { firstFtcSrc, isDirectory } from './utility';
 import { TeamPaths } from './types';
+import { firstFtcSrc, isDirectory } from './utility';
 
 // Send the list of TeamPaths to the client
 export async function GetPathFileNames(): Promise<Response> {

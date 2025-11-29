@@ -1,4 +1,11 @@
 import {
+  hasField,
+  isArray,
+  isDefined,
+  isString,
+  isUndefined,
+} from '@freik/typechk';
+import {
   BaseJavaCstVisitorWithDefaults,
   BlockStatementCstNode,
   ConstructorDeclarationCtx,
@@ -13,14 +20,13 @@ import {
   UnaryExpressionCtx,
   VariableDeclaratorCtx,
 } from 'java-parser';
+import { promises as fsp } from 'node:fs';
 import {
   AnonymousBezier,
   AnonymousPose,
   AnonymousValue,
   BezierRef,
   chkAnonymousValue,
-  chkHeadingRef,
-  chkValueRef,
   HeadingRef,
   HeadingType,
   NamedBezier,
@@ -32,14 +38,7 @@ import {
   RadiansRef,
   ValueRef,
 } from './types';
-import { promises as fsp } from 'node:fs';
-import {
-  hasField,
-  isArray,
-  isDefined,
-  isString,
-  isUndefined,
-} from '@freik/typechk';
+
 class PathChainLoader extends BaseJavaCstVisitorWithDefaults {
   content: string = '';
   parsed: ReturnType<typeof parse> | null = null;

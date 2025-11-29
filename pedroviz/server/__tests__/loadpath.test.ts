@@ -1,12 +1,8 @@
-import { test, expect /* beforeAll, afterAll */ } from 'bun:test';
+import { isString } from '@freik/typechk';
+import { expect, test } from 'bun:test';
 import path from 'path';
-
-// import fs, {promises as fsp} from 'fs';
-// import { $ } from 'bun';
-
 import { LoadPath, loadPathChainsFromFile } from '../loadpath';
 import { firstFtcSrc, getProjectFilePath } from '../utility';
-import { isString } from '@freik/typechk';
 
 function getTestRepoPath(): string {
   return path.resolve(__dirname, 'test-repo-root');

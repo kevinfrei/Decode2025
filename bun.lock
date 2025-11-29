@@ -5,9 +5,8 @@
     "": {
       "name": "ftc-maintenance-sripts",
       "dependencies": {
-        "@fluentui/react": "^8.125.2",
         "@fluentui/react-components": "^9.72.7",
-        "@fluentui/react-icons-mdl2": "^1.4.2",
+        "@fluentui/react-icons": "^2.0.315",
         "@freik/containers": "^0.4.4",
         "@freik/fluentui-tools": "^1.2.4",
         "@freik/react-tools": "^0.3.4",
@@ -27,6 +26,7 @@
         "@types/bun": "1.3.3",
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
+        "prettier-plugin-organize-imports": "^4.3.0",
       },
     },
   },
@@ -161,11 +161,7 @@
 
     "@fluentui/react-hooks": ["@fluentui/react-hooks@8.10.1", "", { "dependencies": { "@fluentui/react-window-provider": "^2.3.1", "@fluentui/set-version": "^8.2.24", "@fluentui/utilities": "^8.17.1", "tslib": "^2.1.0" }, "peerDependencies": { "@types/react": ">=16.8.0 <20.0.0", "react": ">=16.8.0 <20.0.0" } }, "sha512-WbssJvJ0h7wDXoppkipdMXz9PGIH3DO27c11faCM1wiIcuxS6mDSXbAFSunHHWnB7ep47sbsG/QlUkRg6YxfSw=="],
 
-    "@fluentui/react-icon-provider": ["@fluentui/react-icon-provider@1.4.2", "", { "dependencies": { "@fluentui/set-version": "^8.2.24", "@fluentui/style-utilities": "^8.13.5", "tslib": "^2.1.0" }, "peerDependencies": { "@types/react": ">=16.8.0 <20.0.0", "@types/react-dom": ">=16.8.0 <20.0.0", "react": ">=16.8.0 <20.0.0", "react-dom": ">=16.8.0 <20.0.0" } }, "sha512-B91aMPMbomDnf5rfPjP/uFH2w0EoyHUddJ133NV2rWc+fpcoBWirmU+YktXpqjqKoB6h81abU4vBGvidSraywg=="],
-
     "@fluentui/react-icons": ["@fluentui/react-icons@2.0.315", "", { "dependencies": { "@griffel/react": "^1.0.0", "tslib": "^2.1.0" }, "peerDependencies": { "react": ">=16.8.0 <20.0.0" } }, "sha512-IITWAQGgU7I32eHPDHi+TUCUF6malP27wZLUV3bqjGVF/x/lfxvTIx8yqv/cxuwF3+ITGFDpl+278ZYJtOI7ww=="],
-
-    "@fluentui/react-icons-mdl2": ["@fluentui/react-icons-mdl2@1.4.2", "", { "dependencies": { "@fluentui/react-icon-provider": "^1.4.2", "@fluentui/set-version": "^8.2.24", "@fluentui/utilities": "^8.17.1", "@microsoft/load-themed-styles": "^1.10.26", "tslib": "^2.1.0" }, "peerDependencies": { "react": ">=16.8.0 <20.0.0" } }, "sha512-oQbINkBGY2ZhRGlbe/K82KeOcHoqBNCR0MbDel+NGiCI96W1G2CgOMG77LIEddTwdroMsQr9N8PtBvVNb+X1ow=="],
 
     "@fluentui/react-image": ["@fluentui/react-image@9.3.11", "", { "dependencies": { "@fluentui/react-jsx-runtime": "^9.3.3", "@fluentui/react-shared-contexts": "^9.26.0", "@fluentui/react-theme": "^9.2.0", "@fluentui/react-utilities": "^9.25.4", "@griffel/react": "^1.5.32", "@swc/helpers": "^0.5.1" }, "peerDependencies": { "@types/react": ">=16.14.0 <20.0.0", "@types/react-dom": ">=16.9.0 <20.0.0", "react": ">=16.14.0 <20.0.0", "react-dom": ">=16.14.0 <20.0.0" } }, "sha512-aLpz0/C6T0Uit6SmyhOJjYBvndZzfvmKv1vg+JRnE0aHS5jSUPoCLI6apxyMC6/LcqqTBklpqK3AD9kYpUxfqQ=="],
 
@@ -346,6 +342,8 @@
     "prettier": ["prettier@3.6.2", "", { "bin": { "prettier": "bin/prettier.cjs" } }, "sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ=="],
 
     "prettier-plugin-java": ["prettier-plugin-java@2.7.7", "", { "dependencies": { "java-parser": "3.0.1" }, "peerDependencies": { "prettier": "^3.0.0" } }, "sha512-K3N2lrdKzx2FAi67E0UOTLKybX6iitAxYGuiv/emY8v6TzzGzoaKjmhaAyDKIH5iakFqdN+xUwWoauXnE2JZPA=="],
+
+    "prettier-plugin-organize-imports": ["prettier-plugin-organize-imports@4.3.0", "", { "peerDependencies": { "prettier": ">=2.0", "typescript": ">=2.9", "vue-tsc": "^2.1.0 || 3" }, "optionalPeers": ["vue-tsc"] }, "sha512-FxFz0qFhyBsGdIsb697f/EkvHzi5SZOhWAjxcx2dLt+Q532bAlhswcXGYB1yzjZ69kW8UoadFBw7TyNwlq96Iw=="],
 
     "react": ["react@19.2.0", "", {}, "sha512-tmbWg6W31tQLeB5cdIBOicJDJRR2KzXsV7uSK9iNfLWQ5bIZfxuPEHp7M8wiHyHnn0DD1i7w3Zmin0FtkrwoCQ=="],
 
