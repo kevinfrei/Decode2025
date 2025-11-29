@@ -263,11 +263,27 @@ function InlinePoseRefDisplay({ pose }: { pose: PoseRef }): ReactElement {
   );
 }
 
+// Generate the grid row start/end for a span starting at a *zero* based row index
+// "start" and a row count height of "count".
+function rowSpan(offset: number, start: number, count: number): CSSProperties {
+  return {
+    gridRowStart: start + offset,
+    gridRowEnd: start + count + offset,
+    alignSelf: 'center',
+  };
+}
+
 export function NamedBezierList({
   beziers,
 }: {
   beziers: NamedBezier[];
 }): ReactElement {
+  const rowspans: CSSProperties[] = [];
+  let count = 0;
+  for (const b of beziers) {
+    rowspans.push(rowSpan(1, count, b.points.points.length));
+    count += b.points.points.length;
+  }
   const gridStyle: CSSProperties = {
     display: 'grid',
     columnGap: '10pt',
@@ -280,26 +296,61 @@ export function NamedBezierList({
       <div style={gridStyle}>
         <Text size={400}>Name</Text>
         <Text size={400}>Poses</Text>
-        {beziers
-          .map((nb) =>
-            nb.points.points.map((pr, index) => (
-              <>
-                {index === 0 ? (
-                  <Text key={`br-${nb.name}-${index}-1`}>{nb.name}</Text>
-                ) : (
-                  <span key={`br-${nb.name}-${index}-1`} />
-                )}
-                <InlinePoseRefDisplay
-                  key={`br-${nb.name}-${index}-2`}
-                  pose={pr}
-                />
-              </>
-            )),
-          )
-          .flat()}
+        {beziers.map((nb, index) => (
+          <>
+            <Text key={`br-${nb.name}-1`} style={rowspans[index]}>
+              {nb.name}
+            </Text>
+            {nb.points.points.map((pr, index) => (
+              <InlinePoseRefDisplay
+                key={`br-${nb.name}-${index}-2`}
+                pose={pr}
+              />
+            ))}
+          </>
+        ))}
       </div>
       <Button style={{ margin: 10 }}>New Bezier</Button>
     </>
+  );
+}
+
+export function NamedPathChainDisplay({
+  chain,
+}: {
+  chain: NamedPathChain;
+}): ReactElement {
+  // Okay, this fits in a container grid that's 3 columns wide
+  return <></>;
+}
+
+export function PathChainList({
+  pathChains,
+}: {
+  pathChains: NamedPathChain[];
+}): ReactElement {
+  const rowspans: [number,number] = [];
+  let count = 0;
+  for (const pc of pathChains) {
+    rowspans.push(rowSpan(1, count, pc.paths.length + 1));
+    count += pc.paths.length + 1;
+  }
+  const gridStyle: CSSProperties = {
+    display: 'grid',
+    columnGap: '10pt',
+    gridTemplateColumns: '1fr auto auto',
+    justifyItems: 'end',
+    justifySelf: 'start',
+  };
+  return (
+    <div style={gridStyle}>
+      <Text size={400}>Name</Text>
+      <Text size={400}>Field</Text>
+      <Text size={400}>Value(s)</Text>
+      {pathChains.map((npc) => (
+        <NamedPathChainDisplay key={npc.name} chain={npc} />
+      ))}
+    </div>
   );
 }
 
@@ -320,29 +371,13 @@ export function PathsDataDisplay() {
     </Expando>
   );
   const beziers = (
-    <Expando label="Beziers" indent={20} size={500} defaultShow={true}>
+    <Expando label="Beziers" indent={20} size={500}>
       <NamedBezierList beziers={curPathChain.beziers} />
     </Expando>
   );
   const chains = (
-    <Expando label="PathChains" indent={20} size={500}>
-      {[...curPathChain.pathChains, true].map((npc: NamedPathChain | true) =>
-        npc === true ? (
-          <Button key="--new-pc">New PathChain</Button>
-        ) : (
-          <div key={`pc-${npc.name}`}>
-            <div>
-              {npc.name} @ <PathHeadingTypeDisplay ht={npc.heading} />
-            </div>
-            {npc.paths.map((br: BezierRef) => (
-              <BezierRefDisplay
-                key={`pc-${npc.name}-br-${br.toString()}`}
-                b={br}
-              />
-            ))}
-          </div>
-        ),
-      )}
+    <Expando label="PathChains" indent={20} size={500} defaultShow={true}>
+      <PathChainList pathChains={curPathChain.pathChains} />
     </Expando>
   );
   return (
