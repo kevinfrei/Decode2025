@@ -10,6 +10,7 @@ import {
   chkRadiansRef,
   HeadingRef,
   HeadingType,
+  isRef,
   NamedBezier,
   NamedPathChain,
   NamedPose,
@@ -21,94 +22,66 @@ import {
 import { CurPathChainAtom, SelectedFileAtom } from './state/Atoms';
 import { Expando } from './ui-tools/Expando';
 
-function MathToRadianDisplay({ val }: { val: ValueRef }): ReactElement {
+function MathToRadianDisplay({ value }: { value: ValueRef }): ReactElement {
   return (
-    <span style={{ backgroundColor: '#eeddff' }}>
-      Math.toRadians(
-      <ValueRefDisplay val={val} />)
+    <span>
+      <ValueRefDisplay value={value} />
+      <Text> degrees</Text>
     </span>
   );
 }
 
 function AnonymouseValueDisplay({
-  val,
+  value,
 }: {
-  val: AnonymousValue;
+  value: AnonymousValue;
 }): ReactElement {
-  switch (val.type) {
+  switch (value.type) {
     case 'radians':
-      return <MathToRadianDisplay val={{ type: 'double', value: val.value }} />;
+      return (
+        <MathToRadianDisplay value={{ type: 'double', value: value.value }} />
+      );
     case 'double':
-      return (
-        <span style={{ backgroundColor: '#ddffee' }}>
-          {val.value.toFixed(3)}
-        </span>
-      );
+      return <Text>{value.value.toFixed(3)}</Text>;
     case 'int':
-      return (
-        <span style={{ backgroundColor: '#ddffee' }}>
-          {val.value.toFixed(0)}
-        </span>
-      );
+      return <Text>{value.value.toFixed(0)}</Text>;
   }
 }
 
-export function ValueRefDisplay({ val }: { val: ValueRef }): ReactElement {
-  const contents = isString(val) ? val : <AnonymouseValueDisplay val={val} />;
-  return (
-    <span
-      style={{
-        backgroundColor: '#ddeeff',
-        margin: '5pt',
-        padding: '5pt',
-        border: '5pt',
-      }}
-    >
-      {contents}
-    </span>
-  );
-}
-
-function RadiansRefDisplay({ val }: { val: RadiansRef }): ReactElement {
-  return <MathToRadianDisplay val={val.radians} />;
-}
-
-function HeadingRef({ heading }: { heading: HeadingRef }): ReactElement {
-  return chkRadiansRef(heading) ? (
-    <RadiansRefDisplay val={heading} />
+export function ValueRefDisplay({ value }: { value: ValueRef }): ReactElement {
+  return isString(value) ? (
+    <Text>{value}</Text>
   ) : (
-    <ValueRefDisplay val={heading} />
+    <AnonymouseValueDisplay value={value} />
   );
+}
+
+function RadiansRefDisplay({ value }: { value: RadiansRef }): ReactElement {
+  return <MathToRadianDisplay value={value.radians} />;
+}
+
+function HeadingRefDisplay({
+  heading,
+}: {
+  heading?: HeadingRef;
+}): ReactElement {
+  if (isDefined(heading)) {
+    return chkRadiansRef(heading) ? (
+      <RadiansRefDisplay value={heading} />
+    ) : (
+      <ValueRefDisplay value={heading} />
+    );
+  }
+  return <>&nbsp;</>;
 }
 
 function AnonymousPose({ pose }: { pose: AnonymousPose }): ReactElement {
   return (
     <div>
-      Pose: (<ValueRefDisplay val={pose.x} />, <ValueRefDisplay val={pose.y} />
-      {pose.heading ? <HeadingRef heading={pose.heading} /> : <></>})
+      Pose: (<ValueRefDisplay value={pose.x} />,{' '}
+      <ValueRefDisplay value={pose.y} />
+      <HeadingRefDisplay heading={pose.heading} />)
     </div>
-  );
-}
-
-function PoseRefDisplay({
-  pose,
-  first,
-}: {
-  pose: PoseRef;
-  first?: boolean;
-}): ReactElement {
-  const showDivider = isDefined(first) ? !first : false;
-  const prefix = showDivider ? <>,&nbsp;</> : <></>;
-  return isString(pose) ? (
-    <>
-      {prefix}
-      <span style={{ backgroundColor: '#eeddff' }}>{pose}</span>
-    </>
-  ) : (
-    <>
-      {prefix}
-      <AnonymousPose pose={pose} />
-    </>
   );
 }
 
@@ -118,11 +91,7 @@ function BezierDisplay({ b }: { b: AnonymousBezier }): ReactElement {
     <span>
       {b.type}:
       {b.points.map((p, index) => (
-        <PoseRefDisplay
-          key={`${id}-bdpr-${index}`}
-          pose={p}
-          first={index === 0}
-        />
+        <PoseRefDisplay key={`${id}-bdpr-${index}`} pose={p} />
       ))}
     </span>
   );
@@ -141,13 +110,13 @@ function PathHeadingTypeDisplay({ ht }: { ht: HeadingType }): ReactElement {
   let node: ReactElement;
   switch (ht.type) {
     case 'constant':
-      node = <HeadingRef heading={ht.heading} />;
+      node = <HeadingRefDisplay heading={ht.heading} />;
       break;
     case 'interpolated':
       node = (
         <span>
-          <HeadingRef heading={ht.headings[0]} />
-          <HeadingRef heading={ht.headings[1]} />
+          <HeadingRefDisplay heading={ht.headings[0]} />
+          <HeadingRefDisplay heading={ht.headings[1]} />
         </span>
       );
       break;
@@ -170,30 +139,167 @@ export function NamedValueList({
 }): ReactElement {
   const gridStyle: CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: '1fr .5fr auto',
+    columnGap: '10pt',
+    gridTemplateColumns: '1fr auto auto',
+    justifyItems: 'end',
+    justifySelf: 'start',
+  };
+  // TODO: Make this editable, right?
+  return (
+    <>
+      <div style={gridStyle}>
+        <Text size={400}>Name</Text>
+        <Text size={400}>Value</Text>
+        <Text size={400}>Units</Text>
+        {values.map((val) => (
+          <>
+            <Text key={`vr-${val.name}-1`}>{val.name}</Text>
+            <Text key={`vr-${val.name}-2`}>{val.value.value}</Text>
+            <Text key={`vr-${val.name}-3`}>
+              {` ${val.value.type === 'radians' ? 'degrees' : val.value.type}`}
+            </Text>
+          </>
+        ))}
+      </div>
+      <Button style={{ margin: 10 }}> New Value </Button>
+    </>
+  );
+}
+
+export function AnonymousPoseDisplay({
+  pose,
+  noHeading,
+}: {
+  pose: AnonymousPose;
+  noHeading?: boolean;
+}): ReactElement {
+  return noHeading ? (
+    <>
+      <ValueRefDisplay value={pose.x} />
+      <ValueRefDisplay value={pose.y} />
+    </>
+  ) : (
+    <>
+      <ValueRefDisplay value={pose.x} />
+      <ValueRefDisplay value={pose.y} />
+      <HeadingRefDisplay heading={pose.heading} />
+    </>
+  );
+}
+
+export function AnonymousPoseHeader({
+  noHeading,
+}: {
+  noHeading?: boolean;
+}): ReactElement {
+  return noHeading ? (
+    <>
+      <Text size={400}>X</Text>
+      <Text size={400}>Y</Text>
+    </>
+  ) : (
+    <>
+      <Text size={400}>X</Text>
+      <Text size={400}>Y</Text>
+      <Text size={400}>Heading</Text>
+    </>
+  );
+}
+
+export function NamedPoseList({ poses }: { poses: NamedPose[] }): ReactElement {
+  const gridStyle: CSSProperties = {
+    display: 'grid',
+    columnGap: '10pt',
+    gridTemplateColumns: '1fr auto auto auto',
+    justifyItems: 'end',
+    justifySelf: 'start',
   };
   return (
-    <div style={gridStyle}>
-      {values.map((val, index) => (
-        <>
-          <div
-            key={`vr-${val.name}-1`}
-            style={{ gridRow: index + 1, gridColumn: 1 }}
-          >
-            <Text>{val.name}</Text>
-          </div>
-          <div
-            key={`vr-${val.name}-2`}
-            style={{ gridRow: index + 1, gridColumn: 3 }}
-          >
-            <Text>
-              {val.value.value}
-              {val.value.type === 'radians' ? ' degrees' : ''}
-            </Text>
-          </div>
-        </>
-      ))}
-    </div>
+    <>
+      <div style={gridStyle}>
+        <Text size={400}>Name</Text>
+        <AnonymousPoseHeader />
+        {poses.map((pose) => (
+          <>
+            <Text key={`pr-${pose.name}-1`}>{pose.name}</Text>
+            <AnonymousPoseDisplay key={`pr-${pose.name}-2`} pose={pose.pose} />
+          </>
+        ))}
+      </div>
+      <Button style={{ margin: 10 }}>New Pose</Button>
+    </>
+  );
+}
+
+function PoseRefDisplay({
+  pose,
+  noHeading,
+}: {
+  pose: PoseRef;
+  noHeading?: boolean;
+}): ReactElement {
+  return isRef(pose) ? (
+    <Text
+      style={{
+        gridColumnStart: 2,
+        gridColumnEnd: 4 + (noHeading ? 0 : 1),
+        justifySelf: 'center',
+      }}
+    >
+      {pose}
+    </Text>
+  ) : (
+    <AnonymousPoseDisplay noHeading={!!noHeading} pose={pose} />
+  );
+}
+
+function InlinePoseRefDisplay({ pose }: { pose: PoseRef }): ReactElement {
+  return isRef(pose) ? (
+    <Text>{pose}</Text>
+  ) : (
+    <Text>
+      (<ValueRefDisplay value={pose.x} />, <ValueRefDisplay value={pose.y} />)
+    </Text>
+  );
+}
+
+export function NamedBezierList({
+  beziers,
+}: {
+  beziers: NamedBezier[];
+}): ReactElement {
+  const gridStyle: CSSProperties = {
+    display: 'grid',
+    columnGap: '10pt',
+    gridTemplateColumns: '1fr auto',
+    justifyItems: 'end',
+    justifySelf: 'start',
+  };
+  return (
+    <>
+      <div style={gridStyle}>
+        <Text size={400}>Name</Text>
+        <Text size={400}>Poses</Text>
+        {beziers
+          .map((nb) =>
+            nb.points.points.map((pr, index) => (
+              <>
+                {index === 0 ? (
+                  <Text key={`br-${nb.name}-${index}-1`}>{nb.name}</Text>
+                ) : (
+                  <span key={`br-${nb.name}-${index}-1`} />
+                )}
+                <InlinePoseRefDisplay
+                  key={`br-${nb.name}-${index}-2`}
+                  pose={pr}
+                />
+              </>
+            )),
+          )
+          .flat()}
+      </div>
+      <Button style={{ margin: 10 }}>New Bezier</Button>
+    </>
   );
 }
 
@@ -204,38 +310,22 @@ export function PathsDataDisplay() {
     return <div>Please select a file to view.</div>;
   }
   const values = (
-    <Expando label="Values" indent={20}>
+    <Expando label="Values" indent={20} size={500}>
       <NamedValueList values={curPathChain.values} />
     </Expando>
   );
   const poses = (
-    <Expando label="Poses" indent={20}>
-      {[...curPathChain.poses, true].map((val: NamedPose | true) =>
-        val === true ? (
-          <Button key="--new-pr">New Pose</Button>
-        ) : (
-          <div key={`pr-${val.name}`}>
-            {val.name}: <PoseRefDisplay pose={val.pose} />
-          </div>
-        ),
-      )}
+    <Expando label="Poses" indent={20} size={500}>
+      <NamedPoseList poses={curPathChain.poses} />
     </Expando>
   );
   const beziers = (
-    <Expando label="Beziers" indent={20}>
-      {[...curPathChain.beziers, true].map((b: NamedBezier | true) =>
-        b === true ? (
-          <Button key="--new-br">New Curve</Button>
-        ) : (
-          <div key={`br-${b.name}`}>
-            {b.name}: <BezierDisplay b={b.points} />
-          </div>
-        ),
-      )}
+    <Expando label="Beziers" indent={20} size={500} defaultShow={true}>
+      <NamedBezierList beziers={curPathChain.beziers} />
     </Expando>
   );
   const chains = (
-    <Expando label="PathChains" indent={20} as="h1">
+    <Expando label="PathChains" indent={20} size={500}>
       {[...curPathChain.pathChains, true].map((npc: NamedPathChain | true) =>
         npc === true ? (
           <Button key="--new-pc">New PathChain</Button>
