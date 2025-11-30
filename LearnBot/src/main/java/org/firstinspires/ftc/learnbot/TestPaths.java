@@ -28,7 +28,7 @@ public class TestPaths {
     public static Pose step4 = new Pose(org, org, one80);
 
     public static BezierLine start_to_step1 = new BezierLine(start, step1);
-    public static BezierCurve unused1 = new BezierCurve(step1, step4, step1);
+    public static BezierCurve unused1 = new BezierCurve(step1, step2, step4, step1);
     public static BezierCurve unused2 = new BezierLine(new Pose(org, edge), start);
     public static BezierCurve unused3 = new BezierCurve(
         new Pose(edge, 0, 15),

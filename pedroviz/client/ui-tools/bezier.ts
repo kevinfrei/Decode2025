@@ -1,5 +1,9 @@
 import { Point } from '../state/API';
 
+// Note to self: A lof of this stuff looks like a bit of memoization
+// could be *very* helpful, particularly given that I might be animating
+// these things a fair bit.
+
 // De Casteljau algorithm for Bezier curves (2D)
 export function deCasteljau(controlPoints: Point[], t: number): Point {
   let points = controlPoints.map((p) => ({ ...p }));
