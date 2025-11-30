@@ -17,63 +17,95 @@ import {
   RadiansRef,
   ValueRef,
 } from '../server/types';
-import { CurPathChainAtom, SelectedFileAtom } from './state/Atoms';
+import { getBezier, getColorFor, getPose } from './state/API';
+import { ColorsAtom, CurPathChainAtom, SelectedFileAtom } from './state/Atoms';
 import { Expando } from './ui-tools/Expando';
 
-function MathToRadianDisplay({ value }: { value: ValueRef }): ReactElement {
+function MathToRadianDisplay({
+  value,
+  ...props
+}: {
+  value: ValueRef;
+  style?: CSSProperties;
+}): ReactElement {
   return (
     <span>
-      <ValueRefDisplay value={value} />
-      <Text> degrees</Text>
+      <ValueRefDisplay value={value} {...props} />
+      <Text {...props}> degrees</Text>
     </span>
   );
 }
 
-function AnonymouseValueDisplay({
+function AnonymousValueDisplay({
   value,
+  ...props
 }: {
   value: AnonymousValue;
+  style?: CSSProperties;
 }): ReactElement {
   switch (value.type) {
     case 'radians':
       return (
-        <MathToRadianDisplay value={{ type: 'double', value: value.value }} />
+        <MathToRadianDisplay
+          value={{ type: 'double', value: value.value }}
+          {...props}
+        />
       );
     case 'double':
-      return <Text>{value.value.toFixed(3)}</Text>;
+      return <Text {...props}>{value.value.toFixed(3)}</Text>;
     case 'int':
-      return <Text>{value.value.toFixed(0)}</Text>;
+      return <Text {...props}>{value.value.toFixed(0)}</Text>;
   }
 }
 
-export function ValueRefDisplay({ value }: { value: ValueRef }): ReactElement {
+export function ValueRefDisplay({
+  value,
+  ...props
+}: {
+  value: ValueRef;
+  style?: CSSProperties;
+}): ReactElement {
   return isString(value) ? (
-    <Text>{value}</Text>
+    <Text {...props}>{value}</Text>
   ) : (
-    <AnonymouseValueDisplay value={value} />
+    <AnonymousValueDisplay value={value} {...props} />
   );
 }
 
-function RadiansRefDisplay({ value }: { value: RadiansRef }): ReactElement {
-  return <MathToRadianDisplay value={value.radians} />;
+function RadiansRefDisplay({
+  value,
+  ...props
+}: {
+  value: RadiansRef;
+  style?: CSSProperties;
+}): ReactElement {
+  return <MathToRadianDisplay value={value.radians} {...props} />;
 }
 
 function HeadingRefDisplay({
   heading,
+  ...props
 }: {
   heading?: HeadingRef;
+  style?: CSSProperties;
 }): ReactElement {
   if (isDefined(heading)) {
     return chkRadiansRef(heading) ? (
-      <RadiansRefDisplay value={heading} />
+      <RadiansRefDisplay value={heading} {...props} />
     ) : (
-      <ValueRefDisplay value={heading} />
+      <ValueRefDisplay value={heading} {...props} />
     );
   }
   return <>&nbsp;</>;
 }
 
-function AnonymousPose({ pose }: { pose: AnonymousPose }): ReactElement {
+function AnonymousPose({
+  pose,
+  ...props
+}: {
+  pose: AnonymousPose;
+  style?: CSSProperties;
+}): ReactElement {
   return (
     <div>
       Pose: (<ValueRefDisplay value={pose.x} />,{' '}
@@ -123,17 +155,20 @@ export function AnonymousPoseDisplay({
 }: {
   pose: AnonymousPose;
   noHeading?: boolean;
+  style?: CSSProperties;
 }): ReactElement {
+  const colors = useAtomValue(ColorsAtom);
+  const style = { color: colors[getColorFor(pose)] };
   return noHeading ? (
     <>
-      <ValueRefDisplay value={pose.x} />
-      <ValueRefDisplay value={pose.y} />
+      <ValueRefDisplay style={style} value={pose.x} />
+      <ValueRefDisplay style={style} value={pose.y} />
     </>
   ) : (
     <>
-      <ValueRefDisplay value={pose.x} />
-      <ValueRefDisplay value={pose.y} />
-      <HeadingRefDisplay heading={pose.heading} />
+      <ValueRefDisplay style={style} value={pose.x} />
+      <ValueRefDisplay style={style} value={pose.y} />
+      <HeadingRefDisplay style={style} heading={pose.heading} />
     </>
   );
 }
@@ -158,6 +193,7 @@ export function AnonymousPoseHeader({
 }
 
 export function NamedPoseList({ poses }: { poses: NamedPose[] }): ReactElement {
+  const colors = useAtomValue(ColorsAtom);
   const gridStyle: CSSProperties = {
     display: 'grid',
     columnGap: '10pt',
@@ -170,45 +206,31 @@ export function NamedPoseList({ poses }: { poses: NamedPose[] }): ReactElement {
       <div style={gridStyle}>
         <Text size={400}>Name</Text>
         <AnonymousPoseHeader />
-        {poses.map((pose) => (
-          <Fragment key={`pr-${pose.name}-1`}>
-            <Text>{pose.name}</Text>
-            <AnonymousPoseDisplay pose={pose.pose} />
-          </Fragment>
-        ))}
+        {poses.map((pose) => {
+          const color = getColorFor(pose.pose);
+          const style = { color: colors[color % colors.length] };
+          return (
+            <Fragment key={`pr-${pose.name}-1`}>
+              <Text style={style}>{pose.name}</Text>
+              <AnonymousPoseDisplay pose={pose.pose} />
+            </Fragment>
+          );
+        })}
       </div>
       <Button style={{ margin: 10 }}>New Pose</Button>
     </>
   );
 }
 
-function PoseRefDisplay({
-  pose,
-  noHeading,
-}: {
-  pose: PoseRef;
-  noHeading?: boolean;
-}): ReactElement {
-  return isRef(pose) ? (
-    <Text
-      style={{
-        gridColumnStart: 2,
-        gridColumnEnd: 4 + (noHeading ? 0 : 1),
-        justifySelf: 'center',
-      }}
-    >
-      {pose}
-    </Text>
-  ) : (
-    <AnonymousPoseDisplay noHeading={!!noHeading} pose={pose} />
-  );
-}
-
 function InlinePoseRefDisplay({ pose }: { pose: PoseRef }): ReactElement {
+  const colors = useAtomValue(ColorsAtom);
+  const ap = isRef(pose) ? getPose(pose) : pose;
+  const color = getColorFor(ap);
+  const style = { color: colors[color % colors.length] };
   return isRef(pose) ? (
-    <Text>{pose}</Text>
+    <Text style={style}>{pose}</Text>
   ) : (
-    <Text>
+    <Text style={style}>
       (<ValueRefDisplay value={pose.x} />, <ValueRefDisplay value={pose.y} />)
     </Text>
   );
@@ -231,8 +253,9 @@ export function NamedBezierList({
 }: {
   beziers: NamedBezier[];
 }): ReactElement {
+  const colors = useAtomValue(ColorsAtom);
   const rowData: RowData[] = [];
-  let count = 0;
+  let count = 1;
   for (const b of beziers) {
     rowData.push({ offset: count, size: b.points.points.length });
     count += b.points.points.length;
@@ -249,17 +272,21 @@ export function NamedBezierList({
       <div style={gridStyle}>
         <Text size={400}>Name</Text>
         <Text size={400}>Poses</Text>
-        {beziers.map((nb, index) => (
-          <Fragment key={`br-${nb.name}`}>
-            <Text style={rowSpan(1, rowData[index])}>{nb.name}</Text>
-            {nb.points.points.map((pr, index) => (
-              <InlinePoseRefDisplay
-                key={`br-${nb.name}-${index}-2`}
-                pose={pr}
-              />
-            ))}
-          </Fragment>
-        ))}
+        {beziers.map((nb, index) => {
+          const color = getColorFor(nb.points);
+          const style = { color: colors[color % colors.length], ...rowSpan(1, rowData[index])};
+          return (
+            <Fragment key={`br-${nb.name}`}>
+              <Text style={style}>{nb.name}</Text>
+              {nb.points.points.map((pr, index) => (
+                <InlinePoseRefDisplay
+                  key={`br-${nb.name}-${index}-2`}
+                  pose={pr}
+                />
+              ))}
+            </Fragment>
+          );
+        })}
       </div>
       <Button style={{ margin: 10 }}>New Bezier</Button>
     </>
@@ -268,29 +295,31 @@ export function NamedBezierList({
 
 function HeadingTypeDisplay({
   heading,
+  ...props
 }: {
   heading: HeadingType;
+  style?: CSSProperties;
 }): ReactElement {
   switch (heading.type) {
     case 'constant':
       return (
         <>
-          <Text>Constant heading</Text>
-          <HeadingRefDisplay heading={heading.heading} />
+          <Text {...props}>Constant heading</Text>
+          <HeadingRefDisplay heading={heading.heading} {...props} />
         </>
       );
     case 'tangent':
       return (
         <>
-          <Text>Tangent heading</Text>
+          <Text {...props}>Tangent heading</Text>
           <span>&nbsp;</span>
         </>
       );
     case 'interpolated':
       return (
         <>
-          <Text>Linear heading</Text>
-          <span>
+          <Text {...props}>Linear heading</Text>
+          <span {...props}>
             <HeadingRefDisplay heading={heading.headings[0]} />
             <Text> to </Text>
             <HeadingRefDisplay heading={heading.headings[1]} />
@@ -309,11 +338,14 @@ export function NamedPathChainDisplay({
   chain: NamedPathChain;
   rowdata: NestedRowData;
 }): ReactElement {
+  const colors = useAtomValue(ColorsAtom);
   // This renders into a container grid that's 3 columns wide
   return (
     <>
       <Text style={rowSpan(1, rowdata)}>{chain.name}</Text>
       {chain.paths.map((br, index) => {
+        const anonBez = getBezier(br);
+        const color = getColorFor(anonBez);
         if (isRef(br)) {
           // Span both columns for a named curve
           return (
@@ -323,15 +355,17 @@ export function NamedPathChainDisplay({
                 gridColumnStart: 2,
                 gridColumnEnd: 4,
                 justifySelf: 'center',
+                color: colors[color % colors.length]
               }}
             >
               {br}
             </Text>
           );
         } else {
+          const style = {color: colors[color % colors.length], ...rowSpan(1, rowdata.children[index])}
           return (
             <Fragment key={`npc-${index}`}>
-              <Text style={rowSpan(1, rowdata.children[index])}>{br.type}</Text>
+              <Text style={style}>{br.type}</Text>
               {br.points.map((pr, index) => (
                 <InlinePoseRefDisplay key={index} pose={pr} />
               ))}
@@ -408,7 +442,7 @@ export function PathsDataDisplay() {
     return <div>Please select a file to view.</div>;
   }
   const values = (
-    <Expando label="Values" indent={20} size={500}>
+    <Expando label="Values" indent={20} size={500} defaultShow={true}>
       <NamedValueList values={curPathChain.values} />
     </Expando>
   );
@@ -423,7 +457,7 @@ export function PathsDataDisplay() {
     </Expando>
   );
   const chains = (
-    <Expando label="PathChains" indent={20} size={500} defaultShow={true}>
+    <Expando label="PathChains" indent={20} size={500}>
       <PathChainList pathChains={curPathChain.pathChains} />
     </Expando>
   );

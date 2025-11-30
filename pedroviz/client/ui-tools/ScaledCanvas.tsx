@@ -2,7 +2,7 @@ import { useAtomValue } from 'jotai';
 import { ReactElement, useEffect, useRef } from 'react';
 import { NamedPathChain } from '../../server/types';
 import { getBezierPoints, Point } from '../state/API';
-import { CurPathChainAtom, ThemeAtom } from '../state/Atoms';
+import { ColorsAtom, CurPathChainAtom, ThemeAtom } from '../state/Atoms';
 import { bezierDerivative, bezierLength, deCasteljau } from './bezier';
 import { darkOnWhite, lightOnBlack } from './Colors';
 
@@ -13,6 +13,7 @@ const fix = 144;
 
 export function ScaledCanvas(): ReactElement {
   const theme = useAtomValue(ThemeAtom);
+  const colors = useAtomValue(ColorsAtom);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const curPathChainFile = useAtomValue(CurPathChainAtom);
   const pathChains = curPathChainFile.pathChains;
@@ -21,11 +22,10 @@ export function ScaledCanvas(): ReactElement {
       const bps = npc.paths.map(getBezierPoints);
       // TODO: Map each path to a style
       return bps;
-    })
-    .flat(1);
+    }).flat(1);
 
   useEffect(() => {
-    const start = performance.now();
+    // const start = performance.now();
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -55,11 +55,12 @@ export function ScaledCanvas(): ReactElement {
     let i = 0;
 
     let count = 0;
-    points.forEach((curve) => {
-      const len = bezierLength(curve);
+    points.forEach((colorCurve) => {
+      const curveControlPoints = colorCurve[1].map(([,pt])=>pt);
+      const len = bezierLength(curveControlPoints);
       const pts: Point[] = [];
       for (let t = 0; t <= 1.0; t += 1 / len) {
-        pts.push(deCasteljau(curve, t));
+        pts.push(deCasteljau(curveControlPoints, t));
       }
       /*
       ctx.save();
@@ -73,28 +74,28 @@ export function ScaledCanvas(): ReactElement {
       */
       ctx.beginPath();
       ctx.lineWidth = 0.25;
-      ctx.strokeStyle = (theme === 'dark' ? lightOnBlack : darkOnWhite)[
-        count % darkOnWhite.length
-      ];
+      ctx.strokeStyle = colors[colorCurve[0] % colors.length];
       count++;
-      ctx.moveTo(curve[0].x * Scale, curve[0].y * Scale);
+      ctx.moveTo(curveControlPoints[0].x * Scale, curveControlPoints[0].y * Scale);
       for (const pt of pts) {
         ctx.lineTo(pt.x * Scale, pt.y * Scale);
       }
       ctx.lineTo(
-        curve[curve.length - 1].x * Scale,
-        curve[curve.length - 1].y * Scale,
+        curveControlPoints[curveControlPoints.length - 1].x * Scale,
+        curveControlPoints[curveControlPoints.length - 1].y * Scale,
       );
       ctx.stroke();
       ctx.beginPath();
       ctx.lineWidth = 0.5;
-      for (const pt of curve) {
+      for (const [col, pt] of colorCurve[1]) {
+        ctx.strokeStyle = colors[col % colors.length];
         ctx.moveTo(pt.x + PointRadius, pt.y);
         ctx.arc(pt.x, pt.y, PointRadius, 0, 2 * Math.PI);
       }
       ctx.stroke();
-      const tang = bezierDerivative(curve, 0.4);
-      const mid = deCasteljau(curve, 0.4);
+      // These two items wil be usefil for animation in the footure
+      const tang = bezierDerivative(curveControlPoints, 0.4);
+      const mid = deCasteljau(curveControlPoints, 0.4);
       /*
       ctx.beginPath();
       ctx.lineWidth = 0.1;
@@ -109,9 +110,8 @@ export function ScaledCanvas(): ReactElement {
       );
       ctx.stroke();*/
     });
-
+    // const time = performance.now() - start;
     /*
-    const time = performance.now() - start;
     ctx.save();
     ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
     ctx.font = '5px Arial'; // Set font size and family

@@ -2,8 +2,17 @@ import { hasField, isDefined } from '@freik/typechk';
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai/utils';
 import { EmptyPathChainFile, GetPaths, LoadFile } from './API';
+import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
 
 export const ThemeAtom = atom<'dark' | 'light'>('light');
+export const ColorsAtom = atom((get)=>{
+  const theme = get(ThemeAtom);
+  return  (theme === 'dark') ? lightOnBlack : darkOnWhite;
+});
+export const ColorForNumber = atomFamily((index: number)=> atom((get)=>{
+  const colors = get(ColorsAtom);
+  return colors[index % colors.length];
+}));
 
 export const PathsAtom = atom(async () => GetPaths());
 

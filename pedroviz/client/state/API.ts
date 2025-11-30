@@ -1,10 +1,16 @@
+import { isString } from '@freik/typechk';
 import {
   AnonymousBezier,
   AnonymousPose,
   AnonymousValue,
   BezierRef,
+  chkAnonymousBezier,
   chkConstantHeading,
   chkInterpolatedHeading,
+  chkNamedBezier,
+  chkNamedPathChain,
+  chkNamedPose,
+  chkNamedValue,
   chkPathChainFile,
   chkRadiansRef,
   chkTeamPaths,
@@ -26,8 +32,23 @@ const namedValues: Map<string, NamedValue> = new Map();
 const namedPoses: Map<string, NamedPose> = new Map();
 const namedBeziers: Map<string, NamedBezier> = new Map();
 const namedPathChains: Map<string, NamedPathChain> = new Map();
+const colorLookup: Map<string, number> = new Map();
+let colorCount = 0;
 
 export type Point = { x: number; y: number };
+
+export function getColorFor(item: string | NamedPathChain | AnonymousBezier | AnonymousPose): number {
+  if (isString(item)) {
+    if (!colorLookup.has(item)) {
+      colorLookup.set(item, colorCount++);
+    }
+    return colorLookup.get(item);
+  }
+  if (chkNamedPathChain(item)) {
+    return getColorFor(item.name);
+  } 
+  return getColorFor(JSON.stringify(item));
+}
 
 export async function GetPaths(): Promise<TeamPaths> {
   const teamFileList = await fetchApi('getpaths', chkTeamPaths, {});
@@ -88,22 +109,26 @@ export function pointFromPose(pr: AnonymousPose): Point {
   return { x: getValue(pr.x), y: getValue(pr.y) };
 }
 
-export function pointFromPoseRef(pr: PoseRef): Point {
+export function getPose(pr: PoseRef): AnonymousPose {
   try {
-    return pointFromPose(isRef(pr) ? namedPoses.get(pr).pose : pr);
+    return isRef(pr) ? namedPoses.get(pr).pose : pr;
   } catch (e) {
-    console.error(`invalid PoseRef ${pr}`);
+    console.error(`Invalid PoseRef ${pr}`);
     throw e;
   }
+}
+
+export function pointFromPoseRef(pr: PoseRef): [number, Point] {
+  return [getColorFor(getPose(pr)), pointFromPose(getPose(pr))];
 }
 
 export function getBezier(br: BezierRef): AnonymousBezier {
   return isRef(br) ? namedBeziers.get(br).points : br;
 }
 
-export function getBezierPoints(br: BezierRef): Point[] {
+export function getBezierPoints(br: BezierRef): [number, [number, Point][]] {
   const ab = getBezier(br);
-  return ab.points.map(pointFromPoseRef);
+  return [getColorFor(ab), ab.points.map(pointFromPoseRef)]
 }
 
 export function getValueFromHeaderRef(hr: HeadingRef): number {
