@@ -1,5 +1,5 @@
 type RGB = [number, number, number];
-
+type HSL = [number, number, number];
 /*
     For reference: To invert the brightness, but not the hue, of an image:
     R = 1 - (G + B) / 2
@@ -42,64 +42,22 @@ function hex(flt: number): string {
   return (txt.length === 2 ? txt : `0${txt}`)[0];
 }
 
-type LAB = [number, number, number];
-
-function rgbToLab([r, g, b]: RGB): LAB {
-  const srgb = [r, g, b].map((v) => {
-    const c = v / 255;
-    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-  });
-
-  const [R, G, B] = srgb;
-  let X = R * 0.4124 + G * 0.3576 + B * 0.1805;
-  let Y = R * 0.2126 + G * 0.7152 + B * 0.0722;
-  let Z = R * 0.0193 + G * 0.1192 + B * 0.9505;
-
-  X /= 0.95047;
-  Y /= 1.0;
-  Z /= 1.08883;
-
-  const f = (t: number) =>
-    t > 0.008856 ? Math.pow(t, 1 / 3) : 7.787 * t + 16 / 116;
-
-  const fx = f(X),
-    fy = f(Y),
-    fz = f(Z);
-  const L = 116 * fy - 16;
-  const a = 500 * (fx - fy);
-  const bVal = 200 * (fy - fz);
-  return [L, a, bVal];
-}
-
-// Compute hue angle in LAB a*b* plane
-function labHue([_, a, b]: LAB): number {
-  let angle = Math.atan2(b, a); // radians
-  if (angle < 0) angle += 2 * Math.PI;
-  return angle;
-}
-
-// LAB-based color cycling sort
-export function colorCycleSortLAB(colors: RGB[]): RGB[] {
-  const withHue = colors.map((c) => {
-    const lab = rgbToLab(c);
-    return { rgb: c, angle: labHue(lab) };
-  });
-
-  // Sort by LAB hue angle
-  withHue.sort((x, y) => x.angle - y.angle);
-
-  // Interleave extremes to maximize separation
-  const ordered: RGB[] = [];
-  let left = 0,
-    right = withHue.length - 1;
-  while (left <= right) {
-    ordered.push(withHue[left].rgb);
-    if (left !== right) ordered.push(withHue[right].rgb);
-    left++;
-    right--;
+// Get the next prime equal to or larger than num
+function nextPrime(num: number): number {
+  // Unmemoized version of a sieve :D
+  function isPrimeOdd(val: number): boolean {
+    for (let i = 3; i * i <= val; i += 2) {
+      if (isPrimeOdd(i) && val % i === 0) {
+        return false;
+      }
+    }
+    return true;
   }
-
-  return ordered;
+  function nextPrimeOdd(val: number): number {
+    return isPrimeOdd(val) ? val : nextPrimeOdd(val + 2);
+  }
+  const int = Math.trunc(num);
+  return nextPrimeOdd(int % 2 === 0 ? int + 1 : int);
 }
 
 // Generate N distinct colors visible against background
@@ -110,47 +68,36 @@ export function GenerateColors(n: number, bg: RGB = [255, 255, 255]): string[] {
   const bgContrast = 2.0;
   let ldelta = 0;
   let sdelta = 0;
-  let i = 0;
+  let h = 0;
   let k = 1.2;
+  // I'm going to look for N colors. To sort them in a 'nothing close is similar'
+  // way, let's find the next largest prime number, divide it by 6 (assuming ppl
+  // clearly differentiate 6 colors around the color wheel) and then step by that
+  // number of points arond the color wheel, to make sure that we never have
+  // similar colors next to each other.
+  const numCount = nextPrime(Math.max(n, 6));
+  const circleStep = 360 / numCount;
+  const step = Math.trunc(numCount / 6);
   while (colors.length < n) {
     // oversample
-    const h = ((i * 359) / n) % 360;
     const l = basel + ldelta;
     const s = bases + sdelta; // vivid saturation
     const rgb = hslToRgb(h, s, l).map(Math.round) as RGB;
+    colors.push(rgb);
 
-    if (contrastRatio(rgb, bg) >= bgContrast) {
-      let add = true;
-      for (const c of colors) {
-        // Try not to add visually identical colors
-        if (contrastRatio(c, rgb) < k) {
-          add = false;
-          break;
-        }
-      }
-      if (add) {
-        colors.push(rgb);
-        console.log(colors.length);
-      } else {
-        // Make l and s 'wander' a little bit
-        ldelta = ((ldelta + 20) % 19) - 9;
-        if (ldelta === 0) {
-          sdelta = ((sdelta + 20) % 19) - 9;
-        }
-        if (sdelta === 9) {
-          // Drop our contrast ratio cut-off
-          k = k * (1 - 0.01 / n);
-          // console.log(k);
-        }
-      }
+    // Make l and s 'wander' a little bit
+    ldelta = ((ldelta + 20) % 19) - 9;
+    if (ldelta === 0) {
+      sdelta = ((sdelta + 20) % 19) - 9;
     }
-    i++;
+    h += circleStep * step;
+    if (h > 360) {
+      h -= 360;
+    }
   }
-  console.log(i);
+  console.log(colors);
 
-  return colorCycleSortLAB(colors).map(
-    (rgb) => '#' + hex(rgb[0]) + hex(rgb[1]) + hex(rgb[2]),
-  );
+  return colors.map((rgb) => '#' + hex(rgb[0]) + hex(rgb[1]) + hex(rgb[2]));
 }
 
 // Example usage:

@@ -429,11 +429,11 @@ export function PathsDataDisplay() {
     </Expando>
   );
   return (
-    <div>
+    <>
       {values}
       {poses}
       {beziers}
       {chains}
-    </div>
+    </>
   );
 }
