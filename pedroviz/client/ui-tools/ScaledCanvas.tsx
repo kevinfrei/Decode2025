@@ -2,72 +2,17 @@ import { useAtomValue } from 'jotai';
 import { ReactElement, useEffect, useRef } from 'react';
 import { NamedPathChain } from '../../server/types';
 import { getBezierPoints, Point } from '../state/API';
-import { CurPathChainAtom } from '../state/Atoms';
+import { CurPathChainAtom, ThemeAtom } from '../state/Atoms';
 import { bezierDerivative, bezierLength, deCasteljau } from './bezier';
-import { GenerateColors } from './Colors';
+import { darkOnWhite, lightOnBlack } from './Colors';
 
 const Scale = 1;
 const PointRadius = 1;
 
-const styles = [
-  '#700',
-  '#540',
-  '#380',
-  '#063',
-  '#069',
-  '#107',
-  '#a0a',
-  '#802',
-  '#530',
-  '#590',
-  '#062',
-  '#099',
-  '#017',
-  '#405',
-  '#803',
-  '#620',
-  '#790',
-  '#071',
-  '#0a9',
-  '#127',
-  '#305',
-  '#815',
-  '#610',
-  '#891',
-  '#160',
-];
-const dark = [
-  '#f77',
-  '#fd4',
-  '#af7',
-  '#5fa',
-  '#8df',
-  '#76f',
-  '#f9f',
-  '#f79',
-  '#fb5',
-  '#cf8',
-  '#5f8',
-  '#9ef',
-  '#67f',
-  '#c4f',
-  '#f7a',
-  '#f95',
-  '#df8',
-  '#6f6',
-  '#9fe',
-  '#79e',
-  '#a5e',
-  '#e8c',
-  '#e76',
-  '#ef9',
-  '#7e6',
-];
-
 const fix = 144;
 
 export function ScaledCanvas(): ReactElement {
-  const someCOlors = GenerateColors(27);
+  const theme = useAtomValue(ThemeAtom);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const curPathChainFile = useAtomValue(CurPathChainAtom);
   const pathChains = curPathChainFile.pathChains;
@@ -80,6 +25,7 @@ export function ScaledCanvas(): ReactElement {
     .flat(1);
 
   useEffect(() => {
+    const start = performance.now();
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -115,6 +61,7 @@ export function ScaledCanvas(): ReactElement {
       for (let t = 0; t <= 1.0; t += 1 / len) {
         pts.push(deCasteljau(curve, t));
       }
+      /*
       ctx.save();
       ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
       ctx.font = '3px Arial'; // Set font size and family
@@ -123,10 +70,13 @@ export function ScaledCanvas(): ReactElement {
       ctx.textBaseline = 'middle'; // Set vertical alignment (e.g., "top", "middle", "bottom")
       ctx.fillText(`Text${i}`, 45 + 15 * i++, fix - (80 + 5 * i));
       ctx.restore();
-
+      */
       ctx.beginPath();
       ctx.lineWidth = 0.25;
-      ctx.strokeStyle = styles[(count++ % styles.length) % count++];
+      ctx.strokeStyle = (theme === 'dark' ? lightOnBlack : darkOnWhite)[
+        count % darkOnWhite.length
+      ];
+      count++;
       ctx.moveTo(curve[0].x * Scale, curve[0].y * Scale);
       for (const pt of pts) {
         ctx.lineTo(pt.x * Scale, pt.y * Scale);
@@ -147,7 +97,7 @@ export function ScaledCanvas(): ReactElement {
       const mid = deCasteljau(curve, 0.4);
       /*
       ctx.beginPath();
-      ctx.lineWidth = 1;
+      ctx.lineWidth = 0.1;
       ctx.strokeStyle = 'red';
       ctx.moveTo(
         mid.x * Scale - (tang.x * Scale) / 4,
@@ -157,9 +107,34 @@ export function ScaledCanvas(): ReactElement {
         mid.x * Scale + (tang.x * Scale) / 4,
         mid.y * Scale + (tang.y * Scale) / 4,
       );
-      ctx.stroke();
-      */
+      ctx.stroke();*/
     });
+
+    /*
+    const time = performance.now() - start;
+    ctx.save();
+    ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+    ctx.font = '5px Arial'; // Set font size and family
+    ctx.fillStyle = 'green'; // Set fill color for the text
+    ctx.textAlign = 'center'; // Set text alignment (e.g., "start", "end", "center")
+    ctx.textBaseline = 'middle'; // Set vertical alignment (e.g., "top", "middle", "bottom")
+    ctx.fillText(`Time: ${time}`, 50, 20);
+    ctx.restore();
+    // Draw the colors
+    for (let j = 0; j < darkOnWhite.length; j++) {
+      ctx.save();
+      ctx.beginPath()
+      ctx.fillStyle = darkOnWhite[(j + 7) % darkOnWhite.length];
+      ctx.fillRect(j*4, 0, 4, 4);
+      ctx.stroke();
+      ctx.beginPath()
+      ctx.fillStyle = lightOnBlack[(j+7)% lightOnBlack.length];
+      ctx.fillRect(j*4, 5, 4, 4);
+      ctx.stroke();
+      ctx.beginPath()
+      ctx.restore();
+    }
+    */
   }, [curPathChainFile, canvasRef]);
 
   return <canvas className="field" ref={canvasRef} />;
