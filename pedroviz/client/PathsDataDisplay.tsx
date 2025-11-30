@@ -1,12 +1,10 @@
 import { Button, Text } from '@fluentui/react-components';
 import { isDefined, isString } from '@freik/typechk';
 import { useAtomValue } from 'jotai';
-import { CSSProperties, ReactElement, useId } from 'react';
+import { CSSProperties, ReactElement } from 'react';
 import {
-  AnonymousBezier,
   AnonymousPose,
   AnonymousValue,
-  BezierRef,
   chkRadiansRef,
   HeadingRef,
   HeadingType,
@@ -82,53 +80,6 @@ function AnonymousPose({ pose }: { pose: AnonymousPose }): ReactElement {
       <ValueRefDisplay value={pose.y} />
       <HeadingRefDisplay heading={pose.heading} />)
     </div>
-  );
-}
-
-function BezierDisplay({ b }: { b: AnonymousBezier }): ReactElement {
-  const id = useId();
-  return (
-    <span>
-      {b.type}:
-      {b.points.map((p, index) => (
-        <PoseRefDisplay key={`${id}-bdpr-${index}`} pose={p} />
-      ))}
-    </span>
-  );
-}
-
-function BezierRefDisplay({ b }: { b: BezierRef }): ReactElement {
-  return isString(b) ? (
-    <span style={{ backgroundColor: '#eeffdd' }}>{b}</span>
-  ) : (
-    <BezierDisplay b={b} />
-  );
-}
-
-function PathHeadingTypeDisplay({ ht }: { ht: HeadingType }): ReactElement {
-  let res = ht.type[0].toLocaleUpperCase() + ht.type.substring(1);
-  let node: ReactElement;
-  switch (ht.type) {
-    case 'constant':
-      node = <HeadingRefDisplay heading={ht.heading} />;
-      break;
-    case 'interpolated':
-      node = (
-        <span>
-          <HeadingRefDisplay heading={ht.headings[0]} />
-          <HeadingRefDisplay heading={ht.headings[1]} />
-        </span>
-      );
-      break;
-    case 'tangent':
-      node = <></>;
-      break;
-  }
-  return (
-    <>
-      {res}
-      {node}
-    </>
   );
 }
 
@@ -263,12 +214,14 @@ function InlinePoseRefDisplay({ pose }: { pose: PoseRef }): ReactElement {
   );
 }
 
+type RowData = { offset: number; size: number };
+
 // Generate the grid row start/end for a span starting at a *zero* based row index
 // "start" and a row count height of "count".
-function rowSpan(offset: number, start: number, count: number): CSSProperties {
+function rowSpan(offset: number, rd: RowData): CSSProperties {
   return {
-    gridRowStart: start + offset,
-    gridRowEnd: start + count + offset,
+    gridRowStart: rd.offset + offset,
+    gridRowEnd: rd.offset + rd.size + offset,
     alignSelf: 'center',
   };
 }
@@ -278,10 +231,10 @@ export function NamedBezierList({
 }: {
   beziers: NamedBezier[];
 }): ReactElement {
-  const rowspans: CSSProperties[] = [];
+  const rowData: RowData[] = [];
   let count = 0;
   for (const b of beziers) {
-    rowspans.push(rowSpan(1, count, b.points.points.length));
+    rowData.push({ offset: count, size: b.points.points.length });
     count += b.points.points.length;
   }
   const gridStyle: CSSProperties = {
@@ -298,7 +251,7 @@ export function NamedBezierList({
         <Text size={400}>Poses</Text>
         {beziers.map((nb, index) => (
           <>
-            <Text key={`br-${nb.name}-1`} style={rowspans[index]}>
+            <Text key={`br-${nb.name}-1`} style={rowSpan(1, rowData[index])}>
               {nb.name}
             </Text>
             {nb.points.points.map((pr, index) => (
@@ -315,13 +268,81 @@ export function NamedBezierList({
   );
 }
 
+function HeadingTypeDisplay({
+  heading,
+}: {
+  heading: HeadingType;
+}): ReactElement {
+  switch (heading.type) {
+    case 'constant':
+      return (
+        <>
+          <Text>Constant heading</Text>
+          <HeadingRefDisplay heading={heading.heading} />
+        </>
+      );
+    case 'tangent':
+      return (
+        <>
+          <Text>Tangent heading</Text>
+          <span>&nbsp;</span>
+        </>
+      );
+    case 'interpolated':
+      return (
+        <>
+          <Text>Linear heading</Text>
+          <span>
+            <HeadingRefDisplay heading={heading.headings[0]} />
+            <Text> to </Text>
+            <HeadingRefDisplay heading={heading.headings[1]} />
+          </span>
+        </>
+      );
+  }
+}
+
+type NestedRowData = RowData & { children: RowData[] };
+
 export function NamedPathChainDisplay({
   chain,
+  rowdata,
 }: {
   chain: NamedPathChain;
+  rowdata: NestedRowData;
 }): ReactElement {
-  // Okay, this fits in a container grid that's 3 columns wide
-  return <></>;
+  // This renders into a container grid that's 3 columns wide
+  return (
+    <>
+      <Text style={rowSpan(1, rowdata)}>{chain.name}</Text>
+      {chain.paths.map((br, index) => {
+        if (isRef(br)) {
+          // Span both columns for a named curve
+          return (
+            <Text
+              style={{
+                gridColumnStart: 2,
+                gridColumnEnd: 4,
+                justifySelf: 'center',
+              }}
+            >
+              {br}
+            </Text>
+          );
+        } else {
+          return (
+            <>
+              <Text style={rowSpan(1, rowdata.children[index])}>{br.type}</Text>
+              {br.points.map((pr) => (
+                <InlinePoseRefDisplay pose={pr} />
+              ))}
+            </>
+          );
+        }
+      })}
+      <HeadingTypeDisplay heading={chain.heading} />
+    </>
+  );
 }
 
 export function PathChainList({
@@ -329,11 +350,23 @@ export function PathChainList({
 }: {
   pathChains: NamedPathChain[];
 }): ReactElement {
-  const rowspans: [number,number] = [];
-  let count = 0;
+  // I need to collect row spans for:
+  // 1- The name, a running total of all prior path chains, plus a total count
+  //    of this path's chains.
+  // 2- The type/name of each bezier of the chain, which is a running count of
+  //    the prior rows, plus the count of the current curve's control points
+  let count = 1;
+  let nestedRowData: NestedRowData[] = [];
   for (const pc of pathChains) {
-    rowspans.push(rowSpan(1, count, pc.paths.length + 1));
-    count += pc.paths.length + 1;
+    const children: RowData[] = [];
+    const offset = count;
+    for (const b of pc.paths) {
+      const size = isRef(b) ? 1 : b.points.length;
+      children.push({ offset: count, size });
+      count += size;
+    }
+    count++; // Heading row
+    nestedRowData.push({ offset, size: count - offset, children });
   }
   const gridStyle: CSSProperties = {
     display: 'grid',
@@ -343,14 +376,29 @@ export function PathChainList({
     justifySelf: 'start',
   };
   return (
-    <div style={gridStyle}>
-      <Text size={400}>Name</Text>
-      <Text size={400}>Field</Text>
-      <Text size={400}>Value(s)</Text>
-      {pathChains.map((npc) => (
-        <NamedPathChainDisplay key={npc.name} chain={npc} />
-      ))}
-    </div>
+    <>
+      <div style={gridStyle}>
+        <Text size={400}>Name</Text>
+        <Text
+          size={400}
+          style={{
+            gridColumnStart: 2,
+            gridColumnEnd: 4,
+            justifySelf: 'center',
+          }}
+        >
+          Paths
+        </Text>
+        {pathChains.map((npc, index) => (
+          <NamedPathChainDisplay
+            key={npc.name}
+            chain={npc}
+            rowdata={nestedRowData[index]}
+          />
+        ))}
+      </div>
+      <Button style={{ margin: 10 }}>New PathChain</Button>
+    </>
   );
 }
 
@@ -371,7 +419,7 @@ export function PathsDataDisplay() {
     </Expando>
   );
   const beziers = (
-    <Expando label="Beziers" indent={20} size={500}>
+    <Expando label="Bezier Lines/Curves" indent={20} size={500}>
       <NamedBezierList beziers={curPathChain.beziers} />
     </Expando>
   );
