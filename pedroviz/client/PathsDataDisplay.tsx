@@ -1,7 +1,7 @@
 import { Button, Text } from '@fluentui/react-components';
 import { isDefined, isString } from '@freik/typechk';
 import { useAtomValue } from 'jotai';
-import { CSSProperties, ReactElement } from 'react';
+import { CSSProperties, Fragment, ReactElement } from 'react';
 import {
   AnonymousPose,
   AnonymousValue,
@@ -103,13 +103,13 @@ export function NamedValueList({
         <Text size={400}>Value</Text>
         <Text size={400}>Units</Text>
         {values.map((val) => (
-          <>
-            <Text key={`vr-${val.name}-1`}>{val.name}</Text>
-            <Text key={`vr-${val.name}-2`}>{val.value.value}</Text>
-            <Text key={`vr-${val.name}-3`}>
+          <Fragment key={`vr-${val.name}`}>
+            <Text>{val.name}</Text>
+            <Text>{val.value.value}</Text>
+            <Text>
               {` ${val.value.type === 'radians' ? 'degrees' : val.value.type}`}
             </Text>
-          </>
+          </Fragment>
         ))}
       </div>
       <Button style={{ margin: 10 }}> New Value </Button>
@@ -171,10 +171,10 @@ export function NamedPoseList({ poses }: { poses: NamedPose[] }): ReactElement {
         <Text size={400}>Name</Text>
         <AnonymousPoseHeader />
         {poses.map((pose) => (
-          <>
-            <Text key={`pr-${pose.name}-1`}>{pose.name}</Text>
-            <AnonymousPoseDisplay key={`pr-${pose.name}-2`} pose={pose.pose} />
-          </>
+          <Fragment key={`pr-${pose.name}-1`}>
+            <Text>{pose.name}</Text>
+            <AnonymousPoseDisplay pose={pose.pose} />
+          </Fragment>
         ))}
       </div>
       <Button style={{ margin: 10 }}>New Pose</Button>
@@ -250,17 +250,15 @@ export function NamedBezierList({
         <Text size={400}>Name</Text>
         <Text size={400}>Poses</Text>
         {beziers.map((nb, index) => (
-          <>
-            <Text key={`br-${nb.name}-1`} style={rowSpan(1, rowData[index])}>
-              {nb.name}
-            </Text>
+          <Fragment key={`br-${nb.name}`}>
+            <Text style={rowSpan(1, rowData[index])}>{nb.name}</Text>
             {nb.points.points.map((pr, index) => (
               <InlinePoseRefDisplay
                 key={`br-${nb.name}-${index}-2`}
                 pose={pr}
               />
             ))}
-          </>
+          </Fragment>
         ))}
       </div>
       <Button style={{ margin: 10 }}>New Bezier</Button>
@@ -320,6 +318,7 @@ export function NamedPathChainDisplay({
           // Span both columns for a named curve
           return (
             <Text
+              key={`npc-${br}-${index}`}
               style={{
                 gridColumnStart: 2,
                 gridColumnEnd: 4,
@@ -331,12 +330,12 @@ export function NamedPathChainDisplay({
           );
         } else {
           return (
-            <>
+            <Fragment key={`npc-${index}`}>
               <Text style={rowSpan(1, rowdata.children[index])}>{br.type}</Text>
-              {br.points.map((pr) => (
-                <InlinePoseRefDisplay pose={pr} />
+              {br.points.map((pr, index) => (
+                <InlinePoseRefDisplay key={index} pose={pr} />
               ))}
-            </>
+            </Fragment>
           );
         }
       })}

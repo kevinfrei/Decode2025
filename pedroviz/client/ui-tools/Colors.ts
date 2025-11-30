@@ -39,15 +39,18 @@ function hslToRgb(h: number, s: number, l: number): RGB {
 
 function hex(flt: number): string {
   const txt = flt.toString(16);
-  return (txt.length === 2 ? txt : `0${txt}`)[0];
+  return txt.length === 2 ? txt : `0${txt}`;
+}
+function col(rgb: RGB): string {
+  return '#' + hex(rgb[0]) + hex(rgb[1]) + hex(rgb[2]);
 }
 
 // Get the next prime equal to or larger than num
 function nextPrime(num: number): number {
-  // Unmemoized version of a sieve :D
+  // Sue me.
   function isPrimeOdd(val: number): boolean {
     for (let i = 3; i * i <= val; i += 2) {
-      if (isPrimeOdd(i) && val % i === 0) {
+      if (val % i === 0) {
         return false;
       }
     }
@@ -63,13 +66,13 @@ function nextPrime(num: number): number {
 // Generate N distinct colors visible against background
 export function GenerateColors(n: number, bg: RGB = [255, 255, 255]): string[] {
   const colors: RGB[] = [];
-  const basel = 70 - 45 * luminance(bg);
-  const bases = 85;
-  const bgContrast = 2.0;
+  const basel = 80 - 10 * luminance(bg);
+  const bases = 90;
+  const bgContrast = 1.1;
   let ldelta = 0;
   let sdelta = 0;
   let h = 0;
-  let k = 1.2;
+  let k = 1.04;
   // I'm going to look for N colors. To sort them in a 'nothing close is similar'
   // way, let's find the next largest prime number, divide it by 6 (assuming ppl
   // clearly differentiate 6 colors around the color wheel) and then step by that
@@ -77,32 +80,41 @@ export function GenerateColors(n: number, bg: RGB = [255, 255, 255]): string[] {
   // similar colors next to each other.
   const numCount = nextPrime(Math.max(n, 6));
   const circleStep = 360 / numCount;
-  const step = Math.trunc(numCount / 6);
-  while (colors.length < n) {
-    // oversample
-    const l = basel + ldelta;
-    const s = bases + sdelta; // vivid saturation
-    const rgb = hslToRgb(h, s, l).map(Math.round) as RGB;
-    colors.push(rgb);
-
-    // Make l and s 'wander' a little bit
-    ldelta = ((ldelta + 20) % 19) - 9;
-    if (ldelta === 0) {
-      sdelta = ((sdelta + 20) % 19) - 9;
-    }
-    h += circleStep * step;
+  let lastColor: RGB | null = null;
+  for (; colors.length < numCount; h += circleStep) {
     if (h > 360) {
       h -= 360;
     }
+    // oversample
+    let l = basel + ldelta;
+    let s = bases + sdelta; // vivid saturation
+    let rgb = hslToRgb(h, s, l).map(Math.round) as RGB;
+    if (contrastRatio(rgb, bg) < bgContrast) {
+      // Skip colors that don't show up well enough against the background
+      continue;
+    }
+    if (lastColor !== null && contrastRatio(rgb, lastColor) < k) {
+      // Make l and s 'wander' a little bit
+      sdelta = ((sdelta + 20) % 19) - 9;
+      if (sdelta === 1) {
+        ldelta = ((ldelta + 20) % 19) - 9;
+      }
+      h -= circleStep;
+    } else {
+      colors.push(rgb);
+      lastColor = rgb;
+    }
   }
-  console.log(colors);
-
-  return colors.map((rgb) => '#' + hex(rgb[0]) + hex(rgb[1]) + hex(rgb[2]));
+  const step = Math.trunc(numCount / 7);
+  const res: string[] = [];
+  let i = 0;
+  while (res.length < n) {
+    res.push(col(colors[i]));
+    i = (i + step) % colors.length;
+  }
+  return res;
 }
 
 // Example usage:
-const darkOnWhite = GenerateColors(25, [255, 250, 245]);
-const lightOnBlack = GenerateColors(25, [5, 10, 0]);
-
-console.log('Against white:', darkOnWhite);
-console.log('Against black:', lightOnBlack);
+export const darkOnWhite = GenerateColors(37, [255, 250, 245]);
+export const lightOnBlack = GenerateColors(37, [5, 10, 0]);
