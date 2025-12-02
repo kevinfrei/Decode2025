@@ -2,6 +2,12 @@ import { hasField, isDefined } from '@freik/typechk';
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai/utils';
 import {
+  AnonymousBezier,
+  AnonymousPose,
+  AnonymousValue,
+  chkAnonymousBezier,
+  chkAnonymousPose,
+  chkAnonymousValue,
   NamedBezier,
   NamedPathChain,
   NamedPose,
@@ -52,22 +58,25 @@ export const SelectedTeamAtom = atom(
 export const SelectedFileBackingAtom = atom('');
 export const SelectedFileAtom = atom(
   async (get) => {
-    const selTeam = await get(SelectedTeamAtom);
-    const paths = await get(PathsAtom);
-    const files = paths[selTeam];
-    if (files && files.length === 1) {
-      return files[0];
-    }
     return get(SelectedFileBackingAtom);
   },
   // TODO: When you set the file, udpate the file contents
-  // automagically? That wouldn't work with the automatic
-  // selection thing happening in here, but if I moved that
-  // into the UI, I could actually keep the dependencies
-  // "correct" (and potentially much more atomic, resulting
-  // in fewer UI updates hopefully)
-  (_, set, val) => {
+  // automagically. I should be able to actually keep the
+  // dependencies "correct" (and potentially much more atomic,
+  // resulting in fewer UI updates hopefully)
+  async (get, set, val) => {
+    const file = get(SelectedFileBackingAtom);
+    const team = await get(SelectedTeamAtom);
     set(SelectedFileBackingAtom, val);
+    if (val !== file) {
+      // TODO: clear any AtomFamiliy cache
+      const pcf = await LoadFile(team, file);
+      // Set all teh names
+      set(NamedValuesAtom, pcf.values);
+      set(NamedPosesAtom, pcf.poses);
+      set(NamedBeziersAtom, pcf.beziers);
+      set(NamedPathChainsAtom, pcf.pathChains);
+    }
   },
 );
 
@@ -139,6 +148,57 @@ export const NamedPathChainsAtom = atom(
       namedPathChains.set(np.name, np);
     }
   },
+);
+
+export const PathChainNamesAtom = atom((get) =>
+  get(NamedPathChainsAtom).keys(),
+);
+
+export const PathChainFor = atomFamily((name: string) =>
+  atom(
+    (get) => get(NamedPathChainsAtom).get(name),
+    (get, set, args: NamedPathChain) => {
+      const theMap = new Map(get(NamedPathChainsAtom));
+      theMap.set(name, args);
+      set(NamedPathChainsAtom, theMap.values());
+    },
+  ),
+);
+
+export const BezierFor = atomFamily((name: string) =>
+  atom(
+    (get) => get(NamedBeziersAtom).get(name),
+    (get, set, args: NamedBezier | AnonymousBezier) => {
+      const theMap = new Map(get(NamedBeziersAtom));
+      theMap.set(
+        name,
+        chkAnonymousBezier(args) ? { name, points: args } : args,
+      );
+      set(NamedBeziersAtom, theMap.values());
+    },
+  ),
+);
+
+export const PoseFor = atomFamily((name: string) =>
+  atom(
+    (get) => get(NamedPosesAtom).get(name),
+    (get, set, args: NamedPose | AnonymousPose) => {
+      const theMap = new Map(get(NamedPosesAtom));
+      theMap.set(name, chkAnonymousPose(args) ? { name, pose: args } : args);
+      set(NamedPosesAtom, theMap.values());
+    },
+  ),
+);
+
+export const ValueFor = atomFamily((name: string) =>
+  atom(
+    (get) => get(NamedValuesAtom).get(name),
+    (get, set, args: NamedValue | AnonymousValue) => {
+      const theMap = new Map(get(NamedValuesAtom));
+      theMap.set(name, chkAnonymousValue(args) ? { name, value: args } : args);
+      set(NamedValuesAtom, theMap.values());
+    },
+  ),
 );
 
 export const CurPathChainAtom = atom(async (get) => {
