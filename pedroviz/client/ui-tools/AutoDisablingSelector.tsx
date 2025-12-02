@@ -26,6 +26,11 @@ export function AutoDisablingSelector({
   const onChange: MenuProps['onCheckedValueChange'] = (_, { checkedItems }) => {
     setSelected(checkedItems[0]);
   };
+  if (items.length === 1 && selected !== items[0]) {
+    // If we only have 1 item go ahead & select it, but schedule it in the future
+    // so we don't screw up the render cycle in an unpredictable manner.
+    setTimeout(() => setSelected(items[0]), 0);
+  }
   return (
     <Menu>
       <MenuTrigger>

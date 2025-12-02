@@ -9,16 +9,21 @@ import {
   HeadingRef,
   HeadingType,
   isRef,
-  NamedBezier,
   NamedPathChain,
-  NamedPose,
   NamedValue,
   PoseRef,
   RadiansRef,
   ValueRef,
 } from '../server/types';
 import { getBezier, getColorFor, getPose } from './state/API';
-import { ColorsAtom, CurPathChainAtom, SelectedFileAtom } from './state/Atoms';
+import {
+  ColorsAtom,
+  NamedBeziersAtom,
+  NamedPathChainsAtom,
+  NamedPosesAtom,
+  NamedValuesAtom,
+  SelectedFileAtom,
+} from './state/Atoms';
 import { Expando } from './ui-tools/Expando';
 
 function MathToRadianDisplay({
@@ -134,11 +139,8 @@ export function NamedValueElem({ value }: { value: NamedValue }): ReactElement {
   );
 }
 
-export function NamedValueList({
-  values,
-}: {
-  values: NamedValue[];
-}): ReactElement {
+export function NamedValueList(): ReactElement {
+  const values = [...useAtomValue(NamedValuesAtom).values()];
   const gridStyle: CSSProperties = {
     display: 'grid',
     columnGap: '10pt',
@@ -205,7 +207,8 @@ export function AnonymousPoseHeader({
   );
 }
 
-export function NamedPoseList({ poses }: { poses: NamedPose[] }): ReactElement {
+export function NamedPoseList(): ReactElement {
+  const poses = [...useAtomValue(NamedPosesAtom).values()];
   const colors = useAtomValue(ColorsAtom);
   const gridStyle: CSSProperties = {
     display: 'grid',
@@ -261,11 +264,8 @@ function rowSpan(offset: number, rd: RowData): CSSProperties {
   };
 }
 
-export function NamedBezierList({
-  beziers,
-}: {
-  beziers: NamedBezier[];
-}): ReactElement {
+export function NamedBezierList(): ReactElement {
+  const beziers = [...useAtomValue(NamedBeziersAtom).values()];
   const colors = useAtomValue(ColorsAtom);
   const rowData: RowData[] = [];
   let count = 1;
@@ -397,11 +397,8 @@ export function NamedPathChainDisplay({
   );
 }
 
-export function PathChainList({
-  pathChains,
-}: {
-  pathChains: NamedPathChain[];
-}): ReactElement {
+export function PathChainList(): ReactElement {
+  const pathChains = [...useAtomValue(NamedPathChainsAtom).values()];
   // I need to collect row spans for:
   // 1- The name, a running total of all prior path chains, plus a total count
   //    of this path's chains.
@@ -455,37 +452,24 @@ export function PathChainList({
 }
 
 export function PathsDataDisplay() {
-  const curPathChain = useAtomValue(CurPathChainAtom);
   const selFile = useAtomValue(SelectedFileAtom);
-  if (!curPathChain || selFile.length === 0) {
+  if (selFile.length === 0) {
     return <div>Please select a file to view.</div>;
   }
-  const values = (
-    <Expando label="Values" indent={20} size={500} defaultShow={true}>
-      <NamedValueList values={curPathChain.values} />
-    </Expando>
-  );
-  const poses = (
-    <Expando label="Poses" indent={20} size={500}>
-      <NamedPoseList poses={curPathChain.poses} />
-    </Expando>
-  );
-  const beziers = (
-    <Expando label="Bezier Lines/Curves" indent={20} size={500}>
-      <NamedBezierList beziers={curPathChain.beziers} />
-    </Expando>
-  );
-  const chains = (
-    <Expando label="PathChains" indent={20} size={500}>
-      <PathChainList pathChains={curPathChain.pathChains} />
-    </Expando>
-  );
   return (
     <>
-      {values}
-      {poses}
-      {beziers}
-      {chains}
+      <Expando label="Values" indent={20} size={500} defaultShow={true}>
+        <NamedValueList />
+      </Expando>
+      <Expando label="Poses" indent={20} size={500}>
+        <NamedPoseList />
+      </Expando>
+      <Expando label="Bezier Lines/Curves" indent={20} size={500}>
+        <NamedBezierList />
+      </Expando>
+      <Expando label="PathChains" indent={20} size={500}>
+        <PathChainList />
+      </Expando>
     </>
   );
 }
