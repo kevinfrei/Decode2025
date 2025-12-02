@@ -26,7 +26,10 @@ and edit PedroPath's. The _reasons_ for this as opposed to just using
 - [ ] Reflect those changes in the code
   - [ ] Checksum the code to detect external edits?
 - [ ] Allow editing points by dragging & dropping on the canvas
+- [ ] Highlight hovered-over paths/curves/points (both directions)
 - [ ] Animate the robot along the path
+- [ ] Put the field graphic under the canvas
+- [ ] Have a grid key near/under the canvas
 - [ ] Enable "warning" lines: warn if the robot crosses a line on a path
 - [ ] Specify different alliance paths
   - [ ] Bonus: Reflect a path along a line or axis (with or without a bot
