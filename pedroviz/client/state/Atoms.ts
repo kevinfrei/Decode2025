@@ -1,18 +1,32 @@
 import { hasField, isDefined } from '@freik/typechk';
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai/utils';
-import { EmptyPathChainFile, GetPaths, LoadFile } from './API';
+import {
+  NamedBezier,
+  NamedPathChain,
+  NamedPose,
+  NamedValue,
+} from '../../server/types';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
+import { EmptyPathChainFile, GetPaths, LoadFile } from './API';
+import {
+  namedBeziers,
+  namedPathChains,
+  namedPoses,
+  namedValues,
+} from './validation';
 
 export const ThemeAtom = atom<'dark' | 'light'>('light');
-export const ColorsAtom = atom((get)=>{
+export const ColorsAtom = atom((get) => {
   const theme = get(ThemeAtom);
-  return  (theme === 'dark') ? lightOnBlack : darkOnWhite;
+  return theme === 'dark' ? lightOnBlack : darkOnWhite;
 });
-export const ColorForNumber = atomFamily((index: number)=> atom((get)=>{
-  const colors = get(ColorsAtom);
-  return colors[index % colors.length];
-}));
+export const ColorForNumber = atomFamily((index: number) =>
+  atom((get) => {
+    const colors = get(ColorsAtom);
+    return colors[index % colors.length];
+  }),
+);
 
 export const PathsAtom = atom(async () => GetPaths());
 
@@ -46,6 +60,12 @@ export const SelectedFileAtom = atom(
     }
     return get(SelectedFileBackingAtom);
   },
+  // TODO: When you set the file, udpate the file contents
+  // automagically? That wouldn't work with the automatic
+  // selection thing happening in here, but if I moved that
+  // into the UI, I could actually keep the dependencies
+  // "correct" (and potentially much more atomic, resulting
+  // in fewer UI updates hopefully)
   (_, set, val) => {
     set(SelectedFileBackingAtom, val);
   },
@@ -73,6 +93,54 @@ export const FilesForSelectedTeam = atom(async (get) => {
   return [];
 });
 
+export const NamedValuesAtom = atom(
+  (get) => {
+    return namedValues;
+  },
+  (get, set, val: Iterable<NamedValue>) => {
+    namedValues.clear();
+    for (const nv of val) {
+      namedValues.set(nv.name, nv);
+    }
+  },
+);
+
+export const NamedPosesAtom = atom(
+  (get) => {
+    return namedPoses;
+  },
+  (get, set, val: Iterable<NamedPose>) => {
+    namedPoses.clear();
+    for (const np of val) {
+      namedPoses.set(np.name, np);
+    }
+  },
+);
+
+export const NamedBeziersAtom = atom(
+  (get) => {
+    return namedBeziers;
+  },
+  (get, set, val: Iterable<NamedBezier>) => {
+    namedBeziers.clear();
+    for (const nb of val) {
+      namedBeziers.set(nb.name, nb);
+    }
+  },
+);
+
+export const NamedPathChainsAtom = atom(
+  (get) => {
+    return namedPathChains;
+  },
+  (get, set, val: Iterable<NamedPathChain>) => {
+    namedPathChains.clear();
+    for (const np of val) {
+      namedPathChains.set(np.name, np);
+    }
+  },
+);
+
 export const CurPathChainAtom = atom(async (get) => {
   const paths = await get(PathsAtom);
   const selTeam = await get(SelectedTeamAtom);
@@ -86,14 +154,15 @@ export const CurPathChainAtom = atom(async (get) => {
       const res = await LoadFile(selTeam, selFile);
       // console.log("here's the result:");
       // console.log(res);
+      // This logs dependencies, so it will reload if I set them.
+      // TODO: Make this entire thing go away, using the
+      // selected file generate this stuff
+      const values = get(NamedValuesAtom);
+      const poses = get(NamedPosesAtom);
+      const curves = get(NamedBeziersAtom);
+      const paths = get(NamedPathChainsAtom);
       return res;
     }
   }
   return EmptyPathChainFile;
-});
-
-export const ValuesAtom = atom(async (get) => {
-  // Register the dependency...
-  await get(SelectedFileAtom);
-  // Everything after this is just the local API
 });

@@ -13,7 +13,7 @@ export function TeamSelector(): ReactElement {
   const [team, setTeam] = useAtom(SelectedTeamAtom);
   return (
     <AutoDisablingSelector
-      prompt="Select a team"
+      prompt="Select a team/bot"
       items={teams}
       selected={team}
       setSelected={setTeam}
