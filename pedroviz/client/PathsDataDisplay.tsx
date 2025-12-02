@@ -1,7 +1,7 @@
-import { Button, Text } from '@fluentui/react-components';
+import { Button, Input, InputProps, Text } from '@fluentui/react-components';
 import { isDefined, isString } from '@freik/typechk';
 import { useAtomValue } from 'jotai';
-import { CSSProperties, Fragment, ReactElement } from 'react';
+import { CSSProperties, Fragment, ReactElement, useState } from 'react';
 import {
   AnonymousPose,
   AnonymousValue,
@@ -115,6 +115,25 @@ function AnonymousPose({
   );
 }
 
+export function NamedValueElem({ value }: { value: NamedValue }): ReactElement {
+  const [val, setVal] = useState(value.value.value);
+  const onChange: InputProps['onChange'] = (ev, data) => {
+    const newVal = Number.parseFloat(data.value);
+    if (!isNaN(newVal)) {
+      setVal(newVal);
+    }
+  };
+  return (
+    <>
+      <Text>{value.name}</Text>
+      <Input type="number" value={val.toString()} onChange={onChange} />
+      <Text>
+        {` ${value.value.type === 'radians' ? 'degrees' : value.value.type}`}
+      </Text>
+    </>
+  );
+}
+
 export function NamedValueList({
   values,
 }: {
@@ -135,13 +154,7 @@ export function NamedValueList({
         <Text size={400}>Value</Text>
         <Text size={400}>Units</Text>
         {values.map((val) => (
-          <Fragment key={`vr-${val.name}`}>
-            <Text>{val.name}</Text>
-            <Text>{val.value.value}</Text>
-            <Text>
-              {` ${val.value.type === 'radians' ? 'degrees' : val.value.type}`}
-            </Text>
-          </Fragment>
+          <NamedValueElem key={val.name} value={val} />
         ))}
       </div>
       <Button style={{ margin: 10 }}> New Value </Button>
@@ -274,7 +287,10 @@ export function NamedBezierList({
         <Text size={400}>Poses</Text>
         {beziers.map((nb, index) => {
           const color = getColorFor(nb.points);
-          const style = { color: colors[color % colors.length], ...rowSpan(1, rowData[index])};
+          const style = {
+            color: colors[color % colors.length],
+            ...rowSpan(1, rowData[index]),
+          };
           return (
             <Fragment key={`br-${nb.name}`}>
               <Text style={style}>{nb.name}</Text>
@@ -355,14 +371,17 @@ export function NamedPathChainDisplay({
                 gridColumnStart: 2,
                 gridColumnEnd: 4,
                 justifySelf: 'center',
-                color: colors[color % colors.length]
+                color: colors[color % colors.length],
               }}
             >
               {br}
             </Text>
           );
         } else {
-          const style = {color: colors[color % colors.length], ...rowSpan(1, rowdata.children[index])}
+          const style = {
+            color: colors[color % colors.length],
+            ...rowSpan(1, rowdata.children[index]),
+          };
           return (
             <Fragment key={`npc-${index}`}>
               <Text style={style}>{br.type}</Text>

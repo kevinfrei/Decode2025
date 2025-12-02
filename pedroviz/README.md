@@ -21,15 +21,16 @@ and edit PedroPath's. The _reasons_ for this as opposed to just using
 
 - [x] Read simple path from code
 - [x] Display that path on the canvas.
-- [ ] Animate the robot along the path
-- [ ] Allow editing paths in a text field
+- [ ] Allow creation & editing values in a text field
+  - [ ] Edit an existing named value, pose, curve, chain
+- [ ] Reflect those changes in the code
+  - [ ] Checksum the code to detect external edits?
 - [ ] Allow editing points by dragging & dropping on the canvas
+- [ ] Animate the robot along the path
 - [ ] Enable "warning" lines: warn if the robot crosses a line on a path
 - [ ] Specify different alliance paths
   - [ ] Bonus: Reflect a path along a line or axis (with or without a bot
         offset?)
-- [ ] Reflect those changes in the code
-  - [ ] Checksum the code to detect external edits?
 - [ ] Support additional parts of the path builder
   - [ ] setMaxPowerScaling, etc...
 - [ ] Maintain any code that I don't actually parse (keep chunks of code that
