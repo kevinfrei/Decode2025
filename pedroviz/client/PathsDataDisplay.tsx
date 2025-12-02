@@ -1,7 +1,7 @@
 import { Button, Input, InputProps, Text } from '@fluentui/react-components';
 import { isDefined, isString } from '@freik/typechk';
-import { useAtomValue } from 'jotai';
-import { CSSProperties, Fragment, ReactElement, useState } from 'react';
+import { useAtom, useAtomValue } from 'jotai';
+import { CSSProperties, Fragment, ReactElement } from 'react';
 import {
   AnonymousPose,
   AnonymousValue,
@@ -10,7 +10,6 @@ import {
   HeadingType,
   isRef,
   NamedPathChain,
-  NamedValue,
   PoseRef,
   RadiansRef,
   ValueRef,
@@ -21,8 +20,9 @@ import {
   NamedBeziersAtom,
   NamedPathChainsAtom,
   NamedPosesAtom,
-  NamedValuesAtom,
   SelectedFileAtom,
+  ValueAtomFor,
+  ValueNamesAtom,
 } from './state/Atoms';
 import { Expando } from './ui-tools/Expando';
 
@@ -120,27 +120,32 @@ function AnonymousPose({
   );
 }
 
-export function NamedValueElem({ value }: { value: NamedValue }): ReactElement {
-  const [val, setVal] = useState(value.value.value);
+export function NamedValueElem({ name }: { name: string }): ReactElement {
+  const [val, setVal] = useAtom(ValueAtomFor(name));
   const onChange: InputProps['onChange'] = (ev, data) => {
     const newVal = Number.parseFloat(data.value);
     if (!isNaN(newVal)) {
-      setVal(newVal);
+      const nv: AnonymousValue = { type: val.value.type, value: newVal };
+      setVal(nv);
     }
   };
   return (
     <>
-      <Text>{value.name}</Text>
-      <Input type="number" value={val.toString()} onChange={onChange} />
+      <Text>{name}</Text>
+      <Input
+        type="number"
+        value={val.value.value.toString()}
+        onChange={onChange}
+      />
       <Text>
-        {` ${value.value.type === 'radians' ? 'degrees' : value.value.type}`}
+        {` ${val.value.type === 'radians' ? 'degrees' : val.value.type}`}
       </Text>
     </>
   );
 }
 
 export function NamedValueList(): ReactElement {
-  const values = [...useAtomValue(NamedValuesAtom).values()];
+  const names = useAtomValue(ValueNamesAtom);
   const gridStyle: CSSProperties = {
     display: 'grid',
     columnGap: '10pt',
@@ -155,8 +160,8 @@ export function NamedValueList(): ReactElement {
         <Text size={400}>Name</Text>
         <Text size={400}>Value</Text>
         <Text size={400}>Units</Text>
-        {values.map((val) => (
-          <NamedValueElem key={val.name} value={val} />
+        {names.map((val) => (
+          <NamedValueElem key={val} name={val} />
         ))}
       </div>
       <Button style={{ margin: 10 }}> New Value </Button>
