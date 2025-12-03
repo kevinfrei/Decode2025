@@ -18,13 +18,14 @@ import {
   NamedValue,
 } from '../../server/types';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
-import { GetPaths, LoadFile } from './API';
 import {
+  GetPaths,
+  LoadFile,
   namedBeziers,
   namedPathChains,
   namedPoses,
   namedValues,
-} from './validation';
+} from './API';
 
 export const ThemeAtom = atom<'dark' | 'light'>('light');
 export const ColorsAtom = atom((get) => {

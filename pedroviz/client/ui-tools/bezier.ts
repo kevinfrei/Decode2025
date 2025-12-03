@@ -1,4 +1,4 @@
-import { Point } from '../state/API';
+import { Point } from '../state/types';
 
 // Note to self: A lof of this stuff looks like a bit of memoization
 // could be *very* helpful, particularly given that I might be animating

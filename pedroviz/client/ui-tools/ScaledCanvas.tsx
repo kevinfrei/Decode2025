@@ -1,7 +1,7 @@
 import { useAtomValue } from 'jotai';
 import { ReactElement, useEffect, useRef } from 'react';
 import { NamedPathChain } from '../../server/types';
-import { getBezierPoints, Point } from '../state/API';
+import { getBezierPoints } from '../state/API';
 import {
   ColorsAtom,
   NamedBeziersAtom,
@@ -9,6 +9,7 @@ import {
   NamedPosesAtom,
   NamedValuesAtom,
 } from '../state/Atoms';
+import { Point } from '../state/types';
 import { bezierLength, deCasteljau } from './bezier';
 
 const Scale = 1;
