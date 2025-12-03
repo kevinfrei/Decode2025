@@ -12,3 +12,5 @@ export type IndexedPCF = PathChainFile & {
   namedBeziers: Map<string, NamedBezier>;
   namedPathChains: Map<string, NamedPathChain>;
 };
+
+export type Point = { x: number; y: number };
