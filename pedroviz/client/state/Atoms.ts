@@ -19,6 +19,12 @@ import {
 } from '../../server/types';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
 import { EmptyPathChainFile, GetPaths, LoadFile } from './API';
+import {
+  namedBeziers,
+  namedPathChains,
+  namedPoses,
+  namedValues,
+} from './validation';
 
 export const ThemeAtom = atom<'dark' | 'light'>('light');
 export const ColorsAtom = atom((get) => {
@@ -108,11 +114,12 @@ export const NamedValuesAtom = atom(
       const nvba = new Map(get(NamedValuesBackerAtom));
       nvba.set(val.name, val);
       set(NamedValuesBackerAtom, nvba);
+      namedValues.set(val.name, val);
     } else {
-      console.log("List of NV's", val);
       const nv = new Map([...val].map((val) => [val.name, val]));
-      console.log('Map:', nv);
       set(NamedValuesBackerAtom, nv);
+      namedValues.clear();
+      nv.forEach((n) => namedValues.set(n.name, n));
     }
   },
 );
@@ -122,11 +129,14 @@ export const ValueNamesAtom = atom((get) => [
 export const ValueAtomFor = atomFamily((name: string) =>
   atom(
     (get) => get(NamedValuesBackerAtom).get(name),
-    (_, set, args: NamedValue | AnonymousValue) =>
+    (_, set, args: NamedValue | AnonymousValue) => {
+      console.log('Got a new values', args);
       set(
         NamedValuesAtom,
         chkAnonymousValue(args) ? { name, value: args } : args,
-      ),
+      );
+      console.log('Set the new value');
+    },
   ),
 );
 
@@ -138,9 +148,12 @@ export const NamedPosesAtom = atom(
       const npba = new Map(get(NamedPosesBackerAtom));
       npba.set(val.name, val);
       set(NamedPosesBackerAtom, npba);
+      namedPoses.set(val.name, val);
     } else {
       const np = new Map([...val].map((val) => [val.name, val]));
       set(NamedPosesBackerAtom, np);
+      namedPoses.clear();
+      np.forEach((p) => namedPoses.set(p.name, p));
     }
   },
 );
@@ -163,9 +176,12 @@ export const NamedBeziersAtom = atom(
       const nbba = new Map(get(NamedBeziersBackerAtom));
       nbba.set(val.name, val);
       set(NamedBeziersBackerAtom, nbba);
+      namedBeziers.set(val.name, val);
     } else {
       const nb = new Map([...val].map((val) => [val.name, val]));
       set(NamedBeziersBackerAtom, nb);
+      namedBeziers.clear();
+      nb.forEach((b) => namedBeziers.set(b.name, b));
     }
   },
 );
@@ -193,9 +209,12 @@ export const NamedPathChainsAtom = atom(
       const npcba = new Map(get(NamedPathChainsBackerAtom));
       npcba.set(val.name, val);
       set(NamedPathChainsBackerAtom, npcba);
+      namedPathChains.set(val.name, val);
     } else {
       const npc = new Map([...val].map((val) => [val.name, val]));
       set(NamedPathChainsBackerAtom, npc);
+      namedPathChains.clear();
+      npc.forEach((pc) => namedPathChains.set(pc.name, pc));
     }
   },
 );

@@ -17,6 +17,7 @@ public class TestPaths {
 
     public static double org = 15.0;
     public static double edge = 50.0;
+    public static double extra = 25.0;
     public static double one80 = Math.toRadians(180);
     public static double ninety = Math.toRadians(90);
     public static int sixty = 60;
@@ -26,6 +27,7 @@ public class TestPaths {
     public static Pose step2 = new Pose(edge, edge, 35);
     public static Pose step3 = new Pose(org, edge, Math.toRadians(sixty));
     public static Pose step4 = new Pose(org, org, one80);
+    public static Pose stepb = new Pose(extra, extra, Math.toRadians(sixty));
 
     public static BezierLine start_to_step1 = new BezierLine(start, step1);
     public static BezierCurve unused1 = new BezierCurve(step1, step2, step4, step1);
@@ -58,13 +60,13 @@ public class TestPaths {
             .pathBuilder()
             .addPath(start_to_step1)
             .addPath(unused1)
-            .addPath(new BezierCurve(step1, new Pose(10, edge), step4, new Pose(edge, 10), step1))
+            .addPath(new BezierCurve(step1, new Pose(10, extra), step4, new Pose(edge, 10), step1))
             .setLinearHeadingInterpolation(0, ninety)
             .build();
 
         Path2 = follower
             .pathBuilder()
-            .addPath(new BezierLine(step1, step2))
+            .addPath(new BezierCurve(step1, stepb, step2))
             .setConstantHeadingInterpolation(ninety)
             .build();
 
