@@ -1,4 +1,4 @@
-import { hasField, isDefined } from '@freik/typechk';
+import { hasField } from '@freik/typechk';
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai/utils';
 import {
@@ -18,7 +18,7 @@ import {
   NamedValue,
 } from '../../server/types';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
-import { EmptyPathChainFile, GetPaths, LoadFile } from './API';
+import { GetPaths, LoadFile } from './API';
 import {
   namedBeziers,
   namedPathChains,
@@ -140,7 +140,7 @@ export const ValueAtomFor = atomFamily((name: string) =>
   ),
 );
 
-const NamedPosesBackerAtom = atom<Map<String, NamedPose>>(new Map());
+const NamedPosesBackerAtom = atom<Map<string, NamedPose>>(new Map());
 export const NamedPosesAtom = atom(
   (get) => get(NamedPosesBackerAtom),
   (get, set, val: Iterable<NamedPose> | NamedPose) => {
@@ -228,24 +228,12 @@ export const PathChainAtomFor = atomFamily((name: string) =>
   ),
 );
 
-export const CurPathChainAtom = atom(async (get) => {
-  const paths = await get(PathsAtom);
-  const selTeam = await get(SelectedTeamAtom);
-  const selFile = await get(SelectedFileAtom);
-  // console.log('Checking field', selTeam);
-  if (hasField(paths, selTeam)) {
-    // console.log('Checking file', selFile);
-    const files = paths[selTeam];
-    if (isDefined(files) && files.indexOf(selFile) >= 0) {
-      // console.log('Has team & file', selTeam, selFile);
-      const res = await LoadFile(selTeam, selFile);
-      // console.log("here's the result:");
-      // console.log(res);
-      // This logs dependencies, so it will reload if I set them.
-      // TODO: Make this entire thing go away, using the
-      // selected file generate this stuff
-      return res;
-    }
-  }
-  return EmptyPathChainFile;
-});
+export const AllNamesAtom = atom<Set<string>>(
+  (get) =>
+    new Set<string>([
+      ...get(ValueNamesAtom),
+      ...get(PoseNamesAtom),
+      ...get(BezierNamesAtom),
+      ...get(PathChainNamesAtom),
+    ]),
+);

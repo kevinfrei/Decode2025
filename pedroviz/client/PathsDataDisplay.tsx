@@ -1,23 +1,7 @@
-import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogBody,
-  DialogContent,
-  DialogSurface,
-  DialogTitle,
-  DialogTrigger,
-  Field,
-  Input,
-  InputProps,
-  Radio,
-  RadioGroup,
-  RadioGroupProps,
-  Text,
-} from '@fluentui/react-components';
+import { Button, Input, InputProps, Text } from '@fluentui/react-components';
 import { isDefined, isString } from '@freik/typechk';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { CSSProperties, Fragment, ReactElement, useState } from 'react';
+import { useAtom, useAtomValue } from 'jotai';
+import { CSSProperties, Fragment, ReactElement } from 'react';
 import {
   AnonymousPose,
   AnonymousValue,
@@ -26,18 +10,17 @@ import {
   HeadingType,
   isRef,
   NamedPathChain,
-  NamedValue,
   PoseRef,
   RadiansRef,
   ValueRef,
 } from '../server/types';
+import { NewNamedValue } from './NewNamedValue';
 import { getBezier, getColorFor, getPose } from './state/API';
 import {
   ColorsAtom,
   NamedBeziersAtom,
   NamedPathChainsAtom,
   NamedPosesAtom,
-  NamedValuesAtom,
   SelectedFileAtom,
   ValueAtomFor,
   ValueNamesAtom,
@@ -125,6 +108,7 @@ export function NamedValueElem({ name }: { name: string }): ReactElement {
         type="number"
         value={val.value.value.toString()}
         onChange={onChange}
+        input={{ style: { textAlign: 'right' } }}
       />
       <Text>
         {` ${val.value.type === 'radians' ? 'degrees' : val.value.type}`}
@@ -133,71 +117,17 @@ export function NamedValueElem({ name }: { name: string }): ReactElement {
   );
 }
 
-const validName: RegExp = /^[A-Za-z_][a-zA-Z0-9_]*$/;
-
 export function NamedValueList(): ReactElement {
   const names = useAtomValue(ValueNamesAtom);
-  const setNamedValue = useSetAtom(NamedValuesAtom);
-  const [name, setName] = useState('newValName');
-  const [value, setValue] = useState(0);
-  const [valType, setValType] = useState<'int' | 'double' | 'degrees'>(
-    'double',
-  );
-
   const gridStyle: CSSProperties = {
     display: 'grid',
     columnGap: '10pt',
     gridTemplateColumns: '1fr auto auto',
     justifyItems: 'end',
     justifySelf: 'start',
+    alignItems: 'center',
   };
 
-  const checkName = (nm: string): [string, 'error' | 'none'] => {
-    if (names.includes(nm)) {
-      return ['Please use a unique name', 'error'];
-    } else if (!validName.test(nm)) {
-      return ['Please enter a valid Java variable name', 'error'];
-    }
-    return ['', 'none'];
-  };
-  const checkValue = (vl: string): [string, 'error' | 'none'] => {
-    if (valType !== 'int' && isNaN(Number.parseFloat(vl))) {
-      return ['Please enter a valid floating point number', 'error'];
-    } else if (valType === 'int' && isNaN(Number.parseInt(vl))) {
-      return ['Please enter a valid integer', 'error'];
-    }
-    return ['', 'none'];
-  };
-
-  const [validNameMessage, nameValidationState] = checkName(name);
-  const [validValueMessage, valueValidationState] = checkValue(value);
-
-  const saveEnabled =
-    nameValidationState === 'none' && valueValidationState === 'none';
-  const typeChange: RadioGroupProps['onChange'] = (_, data) => {
-    switch (data.value) {
-      case 'int':
-      case 'double':
-      case 'degrees':
-        setValType(data.value);
-    }
-  };
-  const valueChange: InputProps['onChange'] = (_, data) => {
-    setValue(Number.parseFloat(data.value));
-  };
-  const nameChange: InputProps['onChange'] = (_, data) => {
-    setName(data.value);
-  };
-
-  const saveValue = () => {
-    const nv: NamedValue = {
-      name,
-      value: { type: valType === 'degrees' ? 'radians' : valType, value },
-    };
-    setNamedValue(nv);
-  };
-
-  // TODO: Make this editable, right?
   return (
     <>
       <div style={gridStyle}>
@@ -208,57 +138,7 @@ export function NamedValueList(): ReactElement {
           <NamedValueElem key={val} name={val} />
         ))}
       </div>
-      <Dialog>
-        <DialogTrigger disableButtonEnhancement>
-          <Button style={{ margin: 10 }}>New Value</Button>
-        </DialogTrigger>
-        <DialogSurface>
-          <DialogBody>
-            <DialogTitle>New value field</DialogTitle>
-            <DialogContent>
-              <div className="col3div">
-                <Field className="col1" label="Type">
-                  <RadioGroup value={valType} onChange={typeChange}>
-                    <Radio value="double" label="double" />
-                    <Radio value="int" label="int" />
-                    <Radio value="degrees" label="degrees" />
-                  </RadioGroup>
-                </Field>
-                <Field
-                  className="col2"
-                  label="Name"
-                  validationMessage={validNameMessage}
-                  validationState={nameValidationState}
-                >
-                  <Input value={name} onChange={nameChange} />
-                </Field>
-                <Field
-                  className="col3"
-                  label="Value"
-                  validationMessage={validValueMessage}
-                  validationState={valueValidationState}
-                >
-                  <Input value={value.toString()} onChange={valueChange} />
-                </Field>
-              </div>
-            </DialogContent>
-            <DialogActions>
-              <DialogTrigger disableButtonEnhancement>
-                <Button
-                  disabled={!saveEnabled}
-                  appearance="primary"
-                  onClick={saveValue}
-                >
-                  Save
-                </Button>
-              </DialogTrigger>
-              <DialogTrigger disableButtonEnhancement>
-                <Button appearance="secondary">Cancel</Button>
-              </DialogTrigger>
-            </DialogActions>
-          </DialogBody>
-        </DialogSurface>
-      </Dialog>
+      <NewNamedValue />
     </>
   );
 }
