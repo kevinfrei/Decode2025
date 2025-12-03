@@ -26,103 +26,74 @@ import {
 } from './state/Atoms';
 import { Expando } from './ui-tools/Expando';
 
+type ItemWithStyle<Type> = { item: Type; style?: CSSProperties };
+
 function MathToRadianDisplay({
-  value,
+  item,
   ...props
-}: {
-  value: ValueRef;
-  style?: CSSProperties;
-}): ReactElement {
+}: ItemWithStyle<ValueRef>): ReactElement {
   return (
     <span>
-      <ValueRefDisplay value={value} {...props} />
+      <ValueRefDisplay item={item} {...props} />
       <Text {...props}> degrees</Text>
     </span>
   );
 }
 
 function AnonymousValueDisplay({
-  value,
+  item,
   ...props
-}: {
-  value: AnonymousValue;
-  style?: CSSProperties;
-}): ReactElement {
-  switch (value.type) {
+}: ItemWithStyle<AnonymousValue>): ReactElement {
+  switch (item.type) {
     case 'radians':
       return (
         <MathToRadianDisplay
-          value={{ type: 'double', value: value.value }}
+          item={{ type: 'double', value: item.value }}
           {...props}
         />
       );
     case 'double':
-      return <Text {...props}>{value.value.toFixed(3)}</Text>;
+      return <Text {...props}>{item.value.toFixed(3)}</Text>;
     case 'int':
-      return <Text {...props}>{value.value.toFixed(0)}</Text>;
+      return <Text {...props}>{item.value.toFixed(0)}</Text>;
   }
 }
 
 export function ValueRefDisplay({
-  value,
+  item,
   ...props
-}: {
-  value: ValueRef;
-  style?: CSSProperties;
-}): ReactElement {
-  return isString(value) ? (
-    <Text {...props}>{value}</Text>
+}: ItemWithStyle<ValueRef>): ReactElement {
+  return isString(item) ? (
+    <Text {...props}>{item}</Text>
   ) : (
-    <AnonymousValueDisplay value={value} {...props} />
+    <AnonymousValueDisplay item={item} {...props} />
   );
 }
 
 function RadiansRefDisplay({
-  value,
+  item,
   ...props
-}: {
-  value: RadiansRef;
-  style?: CSSProperties;
-}): ReactElement {
-  return <MathToRadianDisplay value={value.radians} {...props} />;
+}: ItemWithStyle<RadiansRef>): ReactElement {
+  return <MathToRadianDisplay item={item.radians} {...props} />;
 }
 
 function HeadingRefDisplay({
-  heading,
+  item,
   ...props
-}: {
-  heading?: HeadingRef;
-  style?: CSSProperties;
-}): ReactElement {
-  if (isDefined(heading)) {
-    return chkRadiansRef(heading) ? (
-      <RadiansRefDisplay value={heading} {...props} />
+}: ItemWithStyle<HeadingRef>): ReactElement {
+  if (isDefined(item)) {
+    return chkRadiansRef(item) ? (
+      <RadiansRefDisplay item={item} {...props} />
     ) : (
-      <ValueRefDisplay value={heading} {...props} />
+      <ValueRefDisplay item={item} {...props} />
     );
   }
   return <>&nbsp;</>;
 }
 
-function AnonymousPose({
-  pose,
-  ...props
-}: {
-  pose: AnonymousPose;
-  style?: CSSProperties;
-}): ReactElement {
-  return (
-    <div>
-      Pose: (<ValueRefDisplay value={pose.x} />,{' '}
-      <ValueRefDisplay value={pose.y} />
-      <HeadingRefDisplay heading={pose.heading} />)
-    </div>
-  );
-}
-
 export function NamedValueElem({ name }: { name: string }): ReactElement {
   const [val, setVal] = useAtom(ValueAtomFor(name));
-  const onChange: InputProps['onChange'] = (ev, data) => {
+  const onChange: InputProps['onChange'] = (_, data) => {
     const newVal = Number.parseFloat(data.value);
     if (!isNaN(newVal)) {
       const nv: AnonymousValue = { type: val.value.type, value: newVal };
@@ -169,26 +140,26 @@ export function NamedValueList(): ReactElement {
   );
 }
 
+export type AnonymousPoseDisplayProps = {
+  pose: AnonymousPose;
+  noHeading?: boolean;
+};
 export function AnonymousPoseDisplay({
   pose,
   noHeading,
-}: {
-  pose: AnonymousPose;
-  noHeading?: boolean;
-  style?: CSSProperties;
-}): ReactElement {
+}: AnonymousPoseDisplayProps): ReactElement {
   const colors = useAtomValue(ColorsAtom);
   const style = { color: colors[getColorFor(pose)] };
   return noHeading ? (
     <>
-      <ValueRefDisplay style={style} value={pose.x} />
-      <ValueRefDisplay style={style} value={pose.y} />
+      <ValueRefDisplay style={style} item={pose.x} />
+      <ValueRefDisplay style={style} item={pose.y} />
     </>
   ) : (
     <>
-      <ValueRefDisplay style={style} value={pose.x} />
-      <ValueRefDisplay style={style} value={pose.y} />
-      <HeadingRefDisplay style={style} heading={pose.heading} />
+      <ValueRefDisplay style={style} item={pose.x} />
+      <ValueRefDisplay style={style} item={pose.y} />
+      <HeadingRefDisplay style={style} item={pose.heading} />
     </>
   );
 }
@@ -252,7 +223,7 @@ function InlinePoseRefDisplay({ pose }: { pose: PoseRef }): ReactElement {
     <Text style={style}>{pose}</Text>
   ) : (
     <Text style={style}>
-      (<ValueRefDisplay value={pose.x} />, <ValueRefDisplay value={pose.y} />)
+      (<ValueRefDisplay item={pose.x} />, <ValueRefDisplay item={pose.y} />)
     </Text>
   );
 }
@@ -326,7 +297,7 @@ function HeadingTypeDisplay({
       return (
         <>
           <Text {...props}>Constant heading</Text>
-          <HeadingRefDisplay heading={heading.heading} {...props} />
+          <HeadingRefDisplay item={heading.heading} {...props} />
         </>
       );
     case 'tangent':
@@ -341,9 +312,9 @@ function HeadingTypeDisplay({
         <>
           <Text {...props}>Linear heading</Text>
           <span {...props}>
-            <HeadingRefDisplay heading={heading.headings[0]} />
+            <HeadingRefDisplay item={heading.headings[0]} />
             <Text> to </Text>
-            <HeadingRefDisplay heading={heading.headings[1]} />
+            <HeadingRefDisplay item={heading.headings[1]} />
           </span>
         </>
       );
