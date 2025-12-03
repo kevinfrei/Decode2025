@@ -2,7 +2,13 @@ import { useAtomValue } from 'jotai';
 import { ReactElement, useEffect, useRef } from 'react';
 import { NamedPathChain } from '../../server/types';
 import { getBezierPoints, Point } from '../state/API';
-import { ColorsAtom, CurPathChainAtom } from '../state/Atoms';
+import {
+  ColorsAtom,
+  NamedBeziersAtom,
+  NamedPathChainsAtom,
+  NamedPosesAtom,
+  NamedValuesAtom,
+} from '../state/Atoms';
 import { bezierLength, deCasteljau } from './bezier';
 
 const Scale = 1;
@@ -13,11 +19,16 @@ const fix = 144;
 export function ScaledCanvas(): ReactElement {
   const colors = useAtomValue(ColorsAtom);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const curPathChainFile = useAtomValue(CurPathChainAtom);
-  const pathChains = curPathChainFile.pathChains;
-  const points = pathChains
-    .map((npc: NamedPathChain) => npc.paths.map(getBezierPoints))
-    .flat(1);
+  // const curPathChainFile = useAtomValue(CurPathChainAtom);
+  const pathChains = useAtomValue(NamedPathChainsAtom);
+  const beziers = useAtomValue(NamedBeziersAtom);
+  const poses = useAtomValue(NamedPosesAtom);
+  const values = useAtomValue(NamedValuesAtom);
+  const points = [
+    ...pathChains
+      .values()
+      .map((npc: NamedPathChain) => npc.paths.map(getBezierPoints)),
+  ].flat(1);
 
   useEffect(() => {
     // const start = performance.now();
@@ -132,7 +143,7 @@ export function ScaledCanvas(): ReactElement {
       ctx.restore();
     }
     */
-  }, [curPathChainFile, canvasRef]);
+  }, [pathChains, beziers, poses, values, canvasRef]);
 
   return <canvas className="field" ref={canvasRef} />;
 }
