@@ -50,7 +50,7 @@ test('getPathFiles finds path files', async () => {
 test('getPathFiles finds no path files', async () => {
   const repoRoot = await getTestRepoPath();
   const pathFiles = await getPathFiles(repoRoot, 'TeamB');
-  expect(pathFiles).toBeEmpty();
+  expect(pathFiles).toEqual([]);
 });
 
 test('raw endpoint invocation', async () => {
