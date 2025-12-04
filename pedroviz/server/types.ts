@@ -138,6 +138,7 @@ export const chkNamedPathChain = chkObjectOfExactType<NamedPathChain>({
   paths: chkArrayOf(chkBezierRef),
   heading: chkHeadingType,
 });
+
 export const chkPathChainFile = chkObjectOfExactType<PathChainFile>({
   name: isString,
   values: chkArrayOf(chkNamedValue),
