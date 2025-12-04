@@ -1,4 +1,4 @@
-import { isString, isUndefined } from '@freik/typechk';
+import { isString } from '@freik/typechk';
 import {
   AnonymousBezier,
   AnonymousPose,
@@ -6,7 +6,6 @@ import {
   BezierRef,
   chkConstantHeading,
   chkInterpolatedHeading,
-  chkNamedPathChain,
   chkPathChainFile,
   chkRadiansRef,
   chkTeamPaths,
@@ -30,19 +29,17 @@ export let namedPoses: Map<string, NamedPose> = new Map();
 export let namedBeziers: Map<string, NamedBezier> = new Map();
 export let namedPathChains: Map<string, NamedPathChain> = new Map();
 
-function noDanglingRefsOnValue(av: AnonymousValue, id: string): boolean {
-  return true;
-}
+// Some of the logic seems a little odd, because I want the validation to fully
+// run on everything so I'm avoiding any logical short-circuiting...
 
 function foundValueRef(vr: ValueRef, id: string): boolean {
   if (isRef(vr)) {
     if (!namedValues.has(vr) && !namedPoses.has(vr)) {
-      console.error(id, `'s "${vr}" value reference appears to be undefined.`);
+      console.error(`${id}'s "${vr}" value reference appears to be undefined.`);
       return false;
     }
-    return true;
   }
-  return noDanglingRefsOnValue(vr, id);
+  return true;
 }
 
 function foundHeadingRef(hr: HeadingRef, id: string): boolean {
@@ -53,17 +50,19 @@ function foundHeadingRef(hr: HeadingRef, id: string): boolean {
 }
 
 function noDanglingRefsOnPose(pose: AnonymousPose, id: string): boolean {
-  return (
-    (pose.heading ? foundHeadingRef(pose.heading, `${id}'s heading`) : true) &&
-    foundValueRef(pose.x, `${id}'s x coordinate`) &&
-    foundValueRef(pose.y, `${id}'s y coordinate`)
-  );
+  let res = true;
+  if (pose.heading) {
+    res = foundHeadingRef(pose.heading, `${id}'s heading`);
+  }
+  res = foundValueRef(pose.x, `${id}'s x coordinate`) && res;
+  res = foundValueRef(pose.y, `${id}'s y coordinate`) && res;
+  return res;
 }
 
 function noDanglingRefsOnPoseRef(pr: PoseRef, id: string): boolean {
   if (isRef(pr)) {
     if (!namedPoses.has(pr)) {
-      console.error(id, `'s "${pr}" pose reference appears to be undefined`);
+      console.error(`${id}'s "${pr}" pose reference appears to be undefined`);
       return false;
     }
     return true;
@@ -72,9 +71,18 @@ function noDanglingRefsOnPoseRef(pr: PoseRef, id: string): boolean {
 }
 
 function noDanglingRefsOnBezier(curve: AnonymousBezier, id: string): boolean {
-  return curve.points.every((pr, index) =>
-    noDanglingRefsOnPoseRef(pr, `${id}'s element ${index}`),
-  );
+  let res = true;
+  curve.points.forEach((pr, index) => {
+    res = noDanglingRefsOnPoseRef(pr, `${id}'s element ${index}`) && res;
+  });
+  if (curve.type === 'line' && curve.points.length !== 2) {
+    console.error(`${id}'s line doesn't have 2 points`);
+    res = false;
+  } else if (curve.type === 'curve' && curve.points.length < 2) {
+    console.error(`${id}'s line doesn't have enough points`);
+    res = false;
+  }
+  return res;
 }
 
 function noDanglingRefsOnBezierRef(br, id: string): boolean {
@@ -93,21 +101,18 @@ function noDanglingRefsOnChain(
   heading: HeadingType,
   id: string,
 ): boolean {
+  let res = true;
   if (chkConstantHeading(heading)) {
-    if (!foundHeadingRef(heading.heading, `${id}'s constant heading ref`)) {
-      return false;
-    }
+    res = foundHeadingRef(heading.heading, `${id}'s constant heading ref`);
   } else if (chkInterpolatedHeading(heading)) {
-    if (
-      !foundHeadingRef(heading.headings[0], `${id}'s start heading ref`) ||
-      !foundHeadingRef(heading.headings[1], `${id}'s end heading ref`)
-    ) {
-      return false;
-    }
+    res = foundHeadingRef(heading.headings[0], `${id}'s start heading ref`);
+    res =
+      foundHeadingRef(heading.headings[1], `${id}'s end heading ref`) && res;
   }
-  return brs.every((br, index) =>
-    noDanglingRefsOnBezierRef(br, `${id}'s element ${index}`),
-  );
+  brs.forEach((br, index) => {
+    res = noDanglingRefsOnBezierRef(br, `${id}'s path element ${index}`) && res;
+  });
+  return res;
 }
 
 export function RegisterFreshFile(pcf: PathChainFile): void {
@@ -118,22 +123,21 @@ export function RegisterFreshFile(pcf: PathChainFile): void {
 }
 
 export function validatePathChainFile(pcf: PathChainFile): boolean {
-  // console.error('checking', pcf);
-  const goodValues = pcf.values.every((nv) =>
-    noDanglingRefsOnValue(nv.value, nv.name),
-  );
-  const goodPoses = pcf.poses.every((pr) =>
-    noDanglingRefsOnPose(pr.pose, pr.name),
-  );
-  const goodBeziers = pcf.beziers.every((br, index) =>
-    noDanglingRefsOnBezier(br.points, `${br.name}'s element ${index}`),
-  );
-  const goodPathChains = pcf.pathChains.every((npc) =>
-    noDanglingRefsOnChain(npc.paths, npc.heading, npc.name),
-  );
-  if (!goodValues) {
-    console.log('Bad value');
-  }
+  let goodPoses = true;
+  pcf.poses.forEach((pr) => {
+    goodPoses = noDanglingRefsOnPose(pr.pose, pr.name) && goodPoses;
+  });
+  let goodBeziers = true;
+  pcf.beziers.forEach((br, index) => {
+    goodBeziers =
+      noDanglingRefsOnBezier(br.points, `${br.name}'s element ${index}`) &&
+      goodBeziers;
+  });
+  let goodPathChains = true;
+  pcf.pathChains.forEach((npc) => {
+    goodPathChains =
+      noDanglingRefsOnChain(npc.paths, npc.heading, npc.name) && goodPathChains;
+  });
   if (!goodPoses) {
     console.log('Bad Pose');
   }
@@ -143,23 +147,20 @@ export function validatePathChainFile(pcf: PathChainFile): boolean {
   if (!goodPathChains) {
     console.log('Bad PathChain');
   }
-  return goodBeziers && goodPathChains && goodPoses && goodValues;
+  return goodBeziers && goodPathChains && goodPoses;
 }
 
 const colorLookup: Map<string, number> = new Map();
 let colorCount = 0;
 
 export function getColorFor(
-  item: string | NamedPathChain | AnonymousBezier | AnonymousPose,
+  item: string | AnonymousBezier | AnonymousPose,
 ): number {
   if (isString(item)) {
     if (!colorLookup.has(item)) {
       colorLookup.set(item, colorCount++);
     }
     return colorLookup.get(item);
-  }
-  if (chkNamedPathChain(item)) {
-    return getColorFor(item.name);
   }
   return getColorFor(JSON.stringify(item));
 }
@@ -189,9 +190,6 @@ export async function LoadFile(
     chkPathChainFile,
     EmptyPathChainFile,
   );
-  if (isUndefined(pcf)) {
-    return EmptyPathChainFile;
-  }
   RegisterFreshFile(pcf);
   return validatePathChainFile(pcf) ? pcf : EmptyPathChainFile;
 }
