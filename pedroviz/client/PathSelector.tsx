@@ -6,13 +6,13 @@ import {
   SelectedTeamAtom,
   TeamsAtom,
 } from './state/Atoms';
-import { AutoDisablingSelector } from './ui-tools/AutoDisablingSelector';
+import { AutoSelector } from './ui-tools/AutoSelector';
 
 export function TeamSelector(): ReactElement {
   const teams = useAtomValue(TeamsAtom); //['TeamCode', 'LearnBot'];
   const [team, setTeam] = useAtom(SelectedTeamAtom);
   return (
-    <AutoDisablingSelector
+    <AutoSelector
       prompt="Select a team/bot"
       items={teams}
       selected={team}
@@ -26,7 +26,7 @@ export function FileSelector(): ReactElement {
   const files = useAtomValue(FilesForSelectedTeam); // ['Path1.java', 'MyPaths.java'];
   const [file, setFile] = useAtom(SelectedFileAtom);
   return (
-    <AutoDisablingSelector
+    <AutoSelector
       prompt="Select a file"
       items={files}
       selected={file}
