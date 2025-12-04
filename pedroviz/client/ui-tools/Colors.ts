@@ -41,6 +41,7 @@ function hex(flt: number): string {
   const txt = flt.toString(16);
   return txt.length === 2 ? txt : `0${txt}`;
 }
+
 function col(rgb: RGB): string {
   return '#' + hex(rgb[0]) + hex(rgb[1]) + hex(rgb[2]);
 }
