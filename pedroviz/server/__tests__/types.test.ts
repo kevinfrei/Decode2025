@@ -1,14 +1,32 @@
-import { isString } from '@freik/typechk';
 import { expect, test } from 'bun:test';
-import { chkAnonymousBezier, chkAnonymousPose, chkAnonymousValue, chkBezierRef, chkConstantHeading, chkHeadingRef, chkHeadingType, chkInterpolatedHeading, chkNamedBezier, chkNamedPathChain, chkNamedPose, chkNamedValue, chkPoseRef, chkRadiansRef, chkTangentHeading, chkTeamPaths, chkValueRef, isRef } from '../types';
+import {
+  chkAnonymousBezier,
+  chkAnonymousPose,
+  chkAnonymousValue,
+  chkBezierRef,
+  chkConstantHeading,
+  chkHeadingRef,
+  chkHeadingType,
+  chkInterpolatedHeading,
+  chkNamedBezier,
+  chkNamedPathChain,
+  chkNamedPose,
+  chkNamedValue,
+  chkPoseRef,
+  chkRadiansRef,
+  chkTangentHeading,
+  chkTeamPaths,
+  chkValueRef,
+  isRef,
+} from '../types';
 
-test("Parsed file types validation", () => {
+test('Parsed file types validation', () => {
   const aRef = 'asdf';
   const notARef = 1;
   expect(isRef(aRef)).toBeTrue();
   expect(isRef(notARef)).toBeFalse();
-  const aTeamPath = { 'path': ['path1', 'path2/path3'] };
-  const notATeamPath = { 'path': 1 };
+  const aTeamPath = { path: ['path1', 'path2/path3'] };
+  const notATeamPath = { path: 1 };
   expect(chkTeamPaths(aTeamPath)).toBeTrue();
   expect(chkTeamPaths(notATeamPath)).toBeFalse();
   const anonValI = { type: 'int', value: 1 };
@@ -42,23 +60,29 @@ test("Parsed file types validation", () => {
   expect(chkAnonymousPose(anonPoseXY)).toBeTrue();
   expect(chkAnonymousPose(anonPoseXYH)).toBeTrue();
   expect(chkAnonymousPose(badAnonPose)).toBeFalse();
-  const namedPose1 = {name: 'me', pose:anonPoseXYH};
+  const namedPose1 = { name: 'me', pose: anonPoseXYH };
   expect(chkNamedPose(namedPose1)).toBeTrue();
-  expect(chkNamedPose({...namedPose1, dumb:2})).toBeFalse();
+  expect(chkNamedPose({ ...namedPose1, dumb: 2 })).toBeFalse();
   expect(chkPoseRef('ab')).toBeTrue();
   expect(chkPoseRef(anonPoseXY)).toBeTrue();
-  const anonBezL = {type: 'line', points:['a', 'b']};
-  const anonBezC = {type: 'curve', points: ['a', {x: 'a', y: {type: 'int', value: 1}}, 'b']};
-  expect(chkAnonymousBezier(anonBezL)) .toBeTrue();
+  const anonBezL = { type: 'line', points: ['a', 'b'] };
+  const anonBezC = {
+    type: 'curve',
+    points: ['a', { x: 'a', y: { type: 'int', value: 1 } }, 'b'],
+  };
+  expect(chkAnonymousBezier(anonBezL)).toBeTrue();
   expect(chkAnonymousBezier(anonBezC)).toBeTrue();
-  expect(chkNamedBezier({name: 'bez', points: anonBezC})).toBeTrue();
-  expect(chkNamedBezier({name: 'bez', points: anonBezL})).toBeTrue();
+  expect(chkNamedBezier({ name: 'bez', points: anonBezC })).toBeTrue();
+  expect(chkNamedBezier({ name: 'bez', points: anonBezL })).toBeTrue();
   expect(chkBezierRef('a')).toBeTrue();
   expect(chkBezierRef(anonBezC)).toBeTrue();
-  expect(chkBezierRef(Symbol("lol"))).toBeFalse();
-  const tangHead = {type: 'tangent'};
-  const constHead = {type: 'constant', heading: 'heading'};
-  const linHead = {type: 'interpolated', headings: [{radians: 'ref'}, anonValI]};
+  expect(chkBezierRef(Symbol('lol'))).toBeFalse();
+  const tangHead = { type: 'tangent' };
+  const constHead = { type: 'constant', heading: 'heading' };
+  const linHead = {
+    type: 'interpolated',
+    headings: [{ radians: 'ref' }, anonValI],
+  };
   expect(chkTangentHeading(tangHead)).toBeTrue();
   expect(chkConstantHeading(tangHead)).toBeFalse();
   expect(chkInterpolatedHeading(tangHead)).toBeFalse();
@@ -68,11 +92,10 @@ test("Parsed file types validation", () => {
   expect(chkTangentHeading(linHead)).toBeFalse();
   expect(chkConstantHeading(linHead)).toBeFalse();
   expect(chkInterpolatedHeading(linHead)).toBeTrue();
-  expect(chkHeadingType(tangHead)) .toBeTrue();
-  expect(chkHeadingType(constHead)) .toBeTrue();
-  expect(chkHeadingType(linHead)) .toBeTrue();
-  const npc = {name: 'path1', paths: [anonBezC, 'bezRef'], heading: tangHead};
+  expect(chkHeadingType(tangHead)).toBeTrue();
+  expect(chkHeadingType(constHead)).toBeTrue();
+  expect(chkHeadingType(linHead)).toBeTrue();
+  const npc = { name: 'path1', paths: [anonBezC, 'bezRef'], heading: tangHead };
   expect(chkNamedPathChain(npc)).toBeTrue();
-  expect(chkNamedPathChain({...npc, headings: [1]})).toBeFalse();
+  expect(chkNamedPathChain({ ...npc, headings: [1] })).toBeFalse();
 });
-

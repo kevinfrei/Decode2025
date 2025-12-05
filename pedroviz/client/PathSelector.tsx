@@ -18,7 +18,7 @@ export function TeamSelector(): ReactElement {
       selected={team}
       setSelected={setTeam}
       /* This is just while testing */
-      default="LearnBot"
+      // default="LearnBot"
     />
   );
 }
