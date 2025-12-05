@@ -6,27 +6,140 @@ import {
   webLightTheme,
 } from '@fluentui/react-components';
 import '@testing-library/jest-dom';
-import { render, waitFor } from '@testing-library/react';
-import { describe, test } from 'bun:test';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
+import { describe, expect, test } from 'bun:test';
 import { Provider, useAtom } from 'jotai';
-import { getStore } from '../state/Storage';
-
-import { expect } from 'bun:test';
 import { ReactElement } from 'react';
+import { AnonymousBezier, PathChainFile, TeamPaths } from '../../server/types';
+import { PathSelector } from '../PathSelector';
+import { EmptyPathChainFile } from '../state/API';
 import { ColorForNumber, ColorsAtom, ThemeAtom } from '../state/Atoms';
+import { getStore } from '../state/Storage';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
 import './jest-dom-types-fix';
 
-function FluentFixture({ change }: { change: boolean }): ReactElement {
+// Mocks & phony data for my tests:
+const teamPaths: TeamPaths = {
+  team1: ['path1.java', 'path2.java'],
+  team2: ['path3.java', 'path4.java'],
+};
+
+const testPathChainFile: PathChainFile = {
+  ...EmptyPathChainFile,
+  name: 'path1.java',
+};
+
+const simpleBez: AnonymousBezier = {
+  type: 'curve',
+  points: [{ x: 'val1', y: 'val1' }, 'pose1', 'pose2'],
+};
+const fullPathChainFile: PathChainFile = {
+  name: 'path3.java',
+  values: [
+    { name: 'val1', value: { type: 'int', value: 1 } },
+    { name: 'val2', value: { type: 'double', value: 2.5 } },
+    { name: 'val3', value: { type: 'radians', value: 90 } },
+  ],
+  poses: [
+    { name: 'pose1', pose: { x: { type: 'double', value: 2.5 }, y: 'val1' } },
+    {
+      name: 'pose2',
+      pose: { x: 'val2', y: 'val1', heading: { type: 'radians', value: 60 } },
+    },
+    {
+      name: 'pose3',
+      pose: { x: 'val1', y: 'val2', heading: 'val3' },
+    },
+  ],
+  beziers: [
+    { name: 'bez1', points: { type: 'line', points: ['pose1', 'pose2'] } },
+    {
+      name: 'bez2',
+      points: simpleBez,
+    },
+  ],
+  pathChains: [
+    {
+      name: 'pc1',
+      paths: ['bez1', 'bez2'],
+      heading: { type: 'tangent' },
+    },
+    {
+      name: 'pc2',
+      paths: ['bez2', { type: 'line', points: ['pose1', 'pose3'] }],
+      heading: { type: 'constant', heading: 'pose3' },
+    },
+    {
+      name: 'pc3',
+      paths: ['bez1', { type: 'curve', points: ['pose1', 'pose3', 'pose2'] }],
+      heading: {
+        type: 'interpolated',
+        headings: ['pose2', { radians: { type: 'int', value: 135 } }],
+      },
+    },
+  ],
+};
+
+const status = {
+  status: 200,
+  headers: { 'Content-Type': 'application/json' },
+};
+
+async function MyFetchFunc(
+  key: string | URL | Request,
+  init?: RequestInit,
+): Promise<Response> {
+  switch (key) {
+    case '/api/getpaths': {
+      const body = JSON.stringify(teamPaths);
+      return new Response(body, status);
+    }
+    case '/api/loadpath/team1/path2.java': {
+      const body = JSON.stringify(testPathChainFile);
+      return new Response(body, status);
+    }
+    case '/api/loadpath/team2/path3.java': {
+      const body = JSON.stringify(fullPathChainFile);
+      return new Response(body, status);
+    }
+  }
+  return new Response('ERROR', { status: 404 });
+}
+MyFetchFunc.preconnect = () => {};
+
+function FluentFixture({
+  change,
+  children,
+}: {
+  change: boolean;
+  children: ReactElement;
+}): ReactElement {
   const [theTheme, setTheme] = useAtom(ThemeAtom);
   const theme = theTheme === 'dark' ? webDarkTheme : webLightTheme;
   if (change && theTheme === 'light') {
     setTimeout(() => setTheme('dark'), 0);
   }
+  return <FluentProvider theme={theme}>{children}</FluentProvider>;
+}
+
+function JotaiProvider({
+  children,
+  change,
+}: {
+  children: ReactElement;
+  change?: boolean;
+}): ReactElement {
+  const store = getStore();
   return (
-    <FluentProvider theme={theme}>
-      <div />
-    </FluentProvider>
+    <Provider store={store}>
+      <FluentFixture change={false || change}>{children}</FluentFixture>
+    </Provider>
   );
 }
 
@@ -34,17 +147,17 @@ describe('simple atom validation', () => {
   test('Themes & colors', async () => {
     const store = getStore();
     render(
-      <Provider store={store}>
-        <FluentFixture change={false} />
-      </Provider>,
+      <JotaiProvider>
+        <div />
+      </JotaiProvider>,
     );
     expect(store.get(ThemeAtom)).toEqual('light');
-    waitFor(() => {});
+    await waitFor(() => {});
     expect(store.get(ThemeAtom)).toEqual('light');
     render(
-      <Provider store={store}>
-        <FluentFixture change={true} />
-      </Provider>,
+      <JotaiProvider change={true}>
+        <div />
+      </JotaiProvider>,
     );
     const beforeColors = store.get(ColorsAtom);
     expect(beforeColors).toBe(darkOnWhite);
@@ -57,5 +170,29 @@ describe('simple atom validation', () => {
       const color = store.get(ColorForNumber(i));
       expect(color).toBe(lightOnBlack[i % lightOnBlack.length]);
     }
+  });
+  test('More Atoms', async () => {
+    globalThis.fetch = MyFetchFunc;
+    const store = getStore();
+    await act(async () => {
+      render(
+        <JotaiProvider>
+          <PathSelector />
+        </JotaiProvider>,
+      );
+    });
+    // Need to cover Paths & Teams atoms
+    let open = screen.getByText('Select a team/bot');
+    expect(open).toBeEnabled();
+    let path = screen.getByText('Select a file');
+    expect(path).toBeDisabled();
+    fireEvent.click(open);
+    await waitFor(async () => {});
+    let select = screen.getByText('team2');
+    expect(select).toBeEnabled();
+    fireEvent.click(open);
+    /*    await waitFor(async () => {
+      expect(await store.get(SelectedTeamAtom)).toBe('team2');
+    });*/
   });
 });
