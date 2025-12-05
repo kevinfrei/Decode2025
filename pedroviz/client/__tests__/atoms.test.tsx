@@ -19,7 +19,13 @@ import { ReactElement } from 'react';
 import { AnonymousBezier, PathChainFile, TeamPaths } from '../../server/types';
 import { PathSelector } from '../PathSelector';
 import { EmptyPathChainFile } from '../state/API';
-import { ColorForNumber, ColorsAtom, ThemeAtom } from '../state/Atoms';
+import {
+  ColorForNumber,
+  ColorsAtom,
+  SelectedFileAtom,
+  SelectedTeamAtom,
+  ThemeAtom,
+} from '../state/Atoms';
 import { getStore } from '../state/Storage';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
 import './jest-dom-types-fix';
@@ -190,9 +196,18 @@ describe('simple atom validation', () => {
     await waitFor(async () => {});
     let select = screen.getByText('team2');
     expect(select).toBeEnabled();
-    fireEvent.click(open);
-    /*    await waitFor(async () => {
+    fireEvent.click(select);
+    await waitFor(async () => {
       expect(await store.get(SelectedTeamAtom)).toBe('team2');
-    });*/
+    });
+    await waitFor(async () => {
+      expect(await store.get(SelectedFileAtom)).toBe('');
+    });
+    // The second menu should now be enabled
+    expect(path).toBeEnabled();
+    fireEvent.click(open);
+    // This is where I'm stuck, now (this doesn't work yet)
+    // let selectFile = screen.getByText('path3');
+    // expect(selectFile).toBeDefined();
   });
 });
