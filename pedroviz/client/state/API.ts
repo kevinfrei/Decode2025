@@ -1,5 +1,6 @@
 import { isString } from '@freik/typechk';
 import {
+  accError,
   AnonymousBezier,
   AnonymousPose,
   AnonymousValue,
@@ -9,9 +10,12 @@ import {
   chkPathChainFile,
   chkRadiansRef,
   chkTeamPaths,
+  ErrorOr,
   HeadingRef,
   HeadingType,
+  isError,
   isRef,
+  makeError,
   NamedBezier,
   NamedPathChain,
   NamedPose,
@@ -29,69 +33,67 @@ export let namedPoses: Map<string, NamedPose> = new Map();
 export let namedBeziers: Map<string, NamedBezier> = new Map();
 export let namedPathChains: Map<string, NamedPathChain> = new Map();
 
+export type ValidRes = ErrorOr<true>;
 // Some of the logic seems a little odd, because I want the validation to fully
 // run on everything so I'm avoiding any logical short-circuiting...
 
-function foundValueRef(vr: ValueRef, id: string): boolean {
+function foundValueRef(vr: ValueRef, id: string): ValidRes {
   if (isRef(vr)) {
     if (!namedValues.has(vr) && !namedPoses.has(vr)) {
-      console.error(`${id}'s "${vr}" value reference appears to be undefined.`);
-      return false;
+      return makeError(
+        `${id}'s "${vr}" value reference appears to be undefined.`,
+      );
     }
   }
   return true;
 }
 
-function foundHeadingRef(hr: HeadingRef, id: string): boolean {
+function foundHeadingRef(hr: HeadingRef, id: string): ValidRes {
   if (chkRadiansRef(hr)) {
     return foundValueRef(hr.radians, `${id}'s Radians ref`);
   }
   return foundValueRef(hr, id);
 }
 
-function noDanglingRefsOnPose(pose: AnonymousPose, id: string): boolean {
-  let res = true;
+function noDanglingRefsOnPose(pose: AnonymousPose, id: string): ValidRes {
+  let res: ValidRes = true;
   if (pose.heading) {
     res = foundHeadingRef(pose.heading, `${id}'s heading`);
   }
-  res = foundValueRef(pose.x, `${id}'s x coordinate`) && res;
-  res = foundValueRef(pose.y, `${id}'s y coordinate`) && res;
-  return res;
+  res = accError(foundValueRef(pose.x, `${id}'s x coordinate`), res);
+  return accError(foundValueRef(pose.y, `${id}'s y coordinate`), res);
 }
 
-function noDanglingRefsOnPoseRef(pr: PoseRef, id: string): boolean {
+function noDanglingRefsOnPoseRef(pr: PoseRef, id: string): ValidRes {
   if (isRef(pr)) {
-    if (!namedPoses.has(pr)) {
-      console.error(`${id}'s "${pr}" pose reference appears to be undefined`);
-      return false;
-    }
-    return true;
+    return namedPoses.has(pr)
+      ? true
+      : makeError(`${id}'s "${pr}" pose reference appears to be undefined`);
   }
   return noDanglingRefsOnPose(pr, id);
 }
 
-function noDanglingRefsOnBezier(curve: AnonymousBezier, id: string): boolean {
-  let res = true;
+function noDanglingRefsOnBezier(curve: AnonymousBezier, id: string): ValidRes {
+  let res: ValidRes = true;
   curve.points.forEach((pr, index) => {
-    res = noDanglingRefsOnPoseRef(pr, `${id}'s element ${index}`) && res;
+    res = accError(
+      noDanglingRefsOnPoseRef(pr, `${id}'s element ${index}`),
+      res,
+    );
   });
   if (curve.type === 'line' && curve.points.length !== 2) {
-    console.error(`${id}'s line doesn't have 2 points`);
-    res = false;
+    return accError(res, makeError(`${id}'s line doesn't have 2 points`));
   } else if (curve.type === 'curve' && curve.points.length < 2) {
-    console.error(`${id}'s line doesn't have enough points`);
-    res = false;
+    return accError(res, makeError(`${id}'s line doesn't have enough points`));
   }
   return res;
 }
 
-function noDanglingRefsOnBezierRef(br, id: string): boolean {
+function noDanglingRefsOnBezierRef(br, id: string): ValidRes {
   if (isRef(br)) {
-    if (!namedBeziers.has(br)) {
-      console.error(`${id}'s bezier reference appears to be undefined`);
-      return false;
-    }
-    return true;
+    return namedBeziers.has(br)
+      ? true
+      : makeError(`${id}'s bezier reference appears to be undefined`);
   }
   return noDanglingRefsOnBezier(br, id);
 }
@@ -100,17 +102,22 @@ function noDanglingRefsOnChain(
   brs: BezierRef[],
   heading: HeadingType,
   id: string,
-): boolean {
-  let res = true;
+): ValidRes {
+  let res: ValidRes = true;
   if (chkConstantHeading(heading)) {
     res = foundHeadingRef(heading.heading, `${id}'s constant heading ref`);
   } else if (chkInterpolatedHeading(heading)) {
     res = foundHeadingRef(heading.headings[0], `${id}'s start heading ref`);
-    res =
-      foundHeadingRef(heading.headings[1], `${id}'s end heading ref`) && res;
+    res = accError(
+      foundHeadingRef(heading.headings[1], `${id}'s end heading ref`),
+      res,
+    );
   }
   brs.forEach((br, index) => {
-    res = noDanglingRefsOnBezierRef(br, `${id}'s path element ${index}`) && res;
+    res = accError(
+      noDanglingRefsOnBezierRef(br, `${id}'s path element ${index}`),
+      res,
+    );
   });
   return res;
 }
@@ -122,32 +129,24 @@ export function RegisterFreshFile(pcf: PathChainFile): void {
   namedPathChains = new Map(pcf.pathChains.map((npc) => [npc.name, npc]));
 }
 
-export function validatePathChainFile(pcf: PathChainFile): boolean {
-  let goodPoses = true;
+export function validatePathChainFile(pcf: PathChainFile): true | string[] {
+  let good: ValidRes = true;
   pcf.poses.forEach((pr) => {
-    goodPoses = noDanglingRefsOnPose(pr.pose, pr.name) && goodPoses;
+    good = accError(noDanglingRefsOnPose(pr.pose, pr.name), good);
   });
-  let goodBeziers = true;
   pcf.beziers.forEach((br, index) => {
-    goodBeziers =
-      noDanglingRefsOnBezier(br.points, `${br.name}'s element ${index}`) &&
-      goodBeziers;
+    good = accError(
+      noDanglingRefsOnBezier(br.points, `${br.name}'s element ${index}`),
+      good,
+    );
   });
-  let goodPathChains = true;
   pcf.pathChains.forEach((npc) => {
-    goodPathChains =
-      noDanglingRefsOnChain(npc.paths, npc.heading, npc.name) && goodPathChains;
+    good = accError(
+      noDanglingRefsOnChain(npc.paths, npc.heading, npc.name),
+      good,
+    );
   });
-  if (!goodPoses) {
-    console.log('Bad Pose');
-  }
-  if (!goodBeziers) {
-    console.log('Bad Bezier');
-  }
-  if (!goodPathChains) {
-    console.log('Bad PathChain');
-  }
-  return goodBeziers && goodPathChains && goodPoses;
+  return isError(good) ? good.errors() : true;
 }
 
 const colorLookup: Map<string, number> = new Map();

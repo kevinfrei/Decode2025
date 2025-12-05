@@ -4,11 +4,42 @@ import {
   chkObjectOfExactType,
   chkTupleOf,
   isArrayOfString,
+  isDefined,
+  isFunction,
   isNumber,
   isRecordOf,
   isString,
 } from '@freik/typechk';
 
+export type ErrorVal = { errors: () => string[] };
+export type ErrorOr<T> = T | ErrorVal;
+
+export const isError = chkObjectOfExactType<ErrorVal>({ errors: isFunction });
+export function makeError(
+  error: string | string[] | ErrorVal,
+  more?: string | string[] | ErrorVal,
+): ErrorVal {
+  const errors = [];
+  errors.push(
+    isString(error) ? [error] : isError(error) ? error.errors() : error,
+  );
+  if (isDefined(more)) {
+    errors.push(isString(more) ? [more] : isError(more) ? more.errors() : more);
+  }
+  return { errors: () => errors };
+}
+export function addError<T>(
+  maybeErr: ErrorOr<T>,
+  moreErrors: string | string[] | ErrorVal,
+): ErrorVal {
+  if (isError(maybeErr)) {
+    return makeError(maybeErr, moreErrors);
+  }
+  return makeError(moreErrors);
+}
+export function accError<T>(maybe: ErrorOr<T>, prev: ErrorOr<T>): ErrorOr<T> {
+  return isError(prev) ? addError(maybe, prev) : maybe;
+}
 export type TeamPaths = Record<string, string[]>;
 
 export type AnonymousValue = {
@@ -53,6 +84,8 @@ export type PathChainFile = {
   beziers: NamedBezier[];
   pathChains: NamedPathChain[];
 };
+
+export type MaybePathFile = ErrorOr<PathChainFile>;
 
 export function chkTeamPaths(t: unknown): t is TeamPaths {
   return isRecordOf(t, isString, isArrayOfString);
