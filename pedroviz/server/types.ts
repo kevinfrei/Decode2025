@@ -11,10 +11,16 @@ import {
   isString,
 } from '@freik/typechk';
 
-export type ErrorVal = { errors: () => string[] };
+export type ErrorVal = {
+  errors: () => string[];
+  [Symbol.toPrimitive]: (hint: string) => unknown;
+};
 export type ErrorOr<T> = T | ErrorVal;
 
-export const isError = chkObjectOfExactType<ErrorVal>({ errors: isFunction });
+export const isError = chkObjectOfExactType<ErrorVal>({
+  errors: isFunction,
+  [Symbol.toPrimitive]: isFunction,
+});
 export function makeError(
   error: string | string[] | ErrorVal,
   more?: string | string[] | ErrorVal,
@@ -26,7 +32,10 @@ export function makeError(
   if (isDefined(more)) {
     errors.push(isString(more) ? [more] : isError(more) ? more.errors() : more);
   }
-  return { errors: () => errors };
+  return {
+    errors: () => errors,
+    [Symbol.toPrimitive]: (hint: string) => (hint === 'boolean' ? false : null),
+  };
 }
 export function addError<T>(
   maybeErr: ErrorOr<T>,

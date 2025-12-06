@@ -131,12 +131,10 @@ export const ValueAtomFor = atomFamily((name: string) =>
   atom(
     (get) => get(NamedValuesBackerAtom).get(name),
     (_, set, args: NamedValue | AnonymousValue) => {
-      console.log('Got a new values', args);
       set(
         NamedValuesAtom,
         chkAnonymousValue(args) ? { name, value: args } : args,
       );
-      console.log('Set the new value');
     },
   ),
 );
