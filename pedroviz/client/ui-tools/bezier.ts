@@ -70,7 +70,7 @@ const controlPoints: Point[] = [
   { x: 200, y: 200 },
 ];
 
-console.log('Point at t=0.5:', deCasteljau(controlPoints, 0.5));
-console.log('Derivative at t=0.5:', bezierDerivative(controlPoints, 0.5));
-console.log('Arc length:', bezierLength(controlPoints, 200));
+// console.log('Point at t=0.5:', deCasteljau(controlPoints, 0.5));
+// console.log('Derivative at t=0.5:', bezierDerivative(controlPoints, 0.5));
+// console.log('Arc length:', bezierLength(controlPoints, 200));
 */

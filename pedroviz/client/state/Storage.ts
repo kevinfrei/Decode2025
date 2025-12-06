@@ -26,10 +26,11 @@ export async function fetchApi<T>(
     const res = await fetched.json();
     if (chk(res)) {
       return res;
-    } else {
-      console.log('Invalid result for', key);
-      console.log(res);
     }
+    // else {
+    //   console.log('Invalid result for', key);
+    //   console.log(res);
+    // }
   }
   return def;
 }

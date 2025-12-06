@@ -193,7 +193,7 @@ describe('simple atom validation', () => {
     let path = screen.getByText('Select a file');
     expect(path).toBeDisabled();
     fireEvent.click(open);
-    await waitFor(async () => {});
+    await act(async () => {});
     let select = screen.getByText('team2');
     expect(select).toBeEnabled();
     fireEvent.click(select);
@@ -209,5 +209,8 @@ describe('simple atom validation', () => {
     // This is where I'm stuck, now (this doesn't work yet)
     // let selectFile = screen.getByText('path3');
     // expect(selectFile).toBeDefined();
+    /*    await waitFor(async () => {
+      expect(await store.get(SelectedTeamAtom)).toBe('team2');
+    });*/
   });
 });
