@@ -17,6 +17,7 @@ import { describe, expect, test } from 'bun:test';
 import { Provider, useAtom } from 'jotai';
 import { ReactElement } from 'react';
 import { AnonymousBezier, PathChainFile, TeamPaths } from '../../server/types';
+import { select_a_bot, select_a_file } from '../constants';
 import { PathSelector } from '../PathSelector';
 import { EmptyPathChainFile } from '../state/API';
 import {
@@ -150,7 +151,7 @@ function JotaiProvider({
   );
 }
 
-describe('simple atom validation', () => {
+describe('"Simple" atom validation', () => {
   test('Themes & colors', async () => {
     const store = getStore();
     render(
@@ -178,7 +179,7 @@ describe('simple atom validation', () => {
       expect(color).toBe(lightOnBlack[i % lightOnBlack.length]);
     }
   });
-  test('More Atoms', async () => {
+  test('File/Path Selection Atoms', async () => {
     globalThis.fetch = MyFetchFunc;
     const store = getStore();
     await act(async () => {
@@ -189,9 +190,9 @@ describe('simple atom validation', () => {
       );
     });
     // Need to cover Paths & Teams atoms
-    let open = screen.getByText('Select a team/bot');
+    let open = screen.getByText(select_a_bot);
     expect(open).toBeEnabled();
-    let path = screen.getByText('Select a file');
+    let path = screen.getByText(select_a_file);
     expect(path).toBeDisabled();
     await act(async () => fireEvent.click(open));
     let select = screen.getByText('team2');

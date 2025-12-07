@@ -1,5 +1,6 @@
 import { useAtom, useAtomValue } from 'jotai';
 import { ReactElement } from 'react';
+import { select_a_bot, select_a_file } from './constants';
 import {
   FilesForSelectedTeam,
   SelectedFileAtom,
@@ -13,7 +14,7 @@ export function TeamSelector(): ReactElement {
   const [team, setTeam] = useAtom(SelectedTeamAtom);
   return (
     <AutoSelector
-      prompt="Select a team/bot"
+      prompt={select_a_bot}
       items={teams}
       selected={team}
       setSelected={setTeam}
@@ -29,7 +30,7 @@ export function FileSelector(): ReactElement {
   const [file, setFile] = useAtom(SelectedFileAtom);
   return (
     <AutoSelector
-      prompt="Select a file"
+      prompt={select_a_file}
       items={files}
       selected={file}
       setSelected={setFile}
