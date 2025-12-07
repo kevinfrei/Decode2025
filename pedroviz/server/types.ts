@@ -34,7 +34,8 @@ export function makeError(
   }
   return {
     errors: () => errors,
-    [Symbol.toPrimitive]: (hint: string) => (hint === 'boolean' ? false : null),
+    [Symbol.toPrimitive]: (hint: string) =>
+      hint === 'string' ? errors.join('\n') : null,
   };
 }
 export function addError<T>(

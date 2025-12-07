@@ -129,7 +129,7 @@ export function RegisterFreshFile(pcf: PathChainFile): void {
   namedPathChains = new Map(pcf.pathChains.map((npc) => [npc.name, npc]));
 }
 
-export function validatePathChainFile(pcf: PathChainFile): true | string[] {
+export function validatePathChainFile(pcf: PathChainFile): ErrorOr<true> {
   let good: ValidRes = true;
   pcf.poses.forEach((pr) => {
     good = accError(noDanglingRefsOnPose(pr.pose, pr.name), good);
@@ -146,7 +146,7 @@ export function validatePathChainFile(pcf: PathChainFile): true | string[] {
       good,
     );
   });
-  return isError(good) ? good.errors() : true;
+  return isError(good) ? good : true;
 }
 
 const colorLookup: Map<string, number> = new Map();
@@ -190,7 +190,11 @@ export async function LoadFile(
     EmptyPathChainFile,
   );
   RegisterFreshFile(pcf);
-  return validatePathChainFile(pcf) ? pcf : EmptyPathChainFile;
+  if (validatePathChainFile(pcf) === true) {
+    return pcf;
+  } else {
+    return EmptyPathChainFile;
+  }
 }
 
 export async function SavePath(
@@ -225,7 +229,7 @@ export function getPose(pr: PoseRef): AnonymousPose {
   try {
     return isRef(pr) ? namedPoses.get(pr).pose : pr;
   } catch (e) {
-    console.error(`Invalid PoseRef ${pr}`);
+    // console.error(`Invalid PoseRef ${pr}`);
     throw e;
   }
 }

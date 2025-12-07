@@ -78,8 +78,8 @@
     "pvstart": "NODE_ENV=production bun pedroviz/index.tsx"
   },
   "dependencies": {
-    "@fluentui/react-components": "^9.72.7",
-    "@fluentui/react-icons": "^2.0.315",
+    "@fluentui/react-components": "^9.72.8",
+    "@fluentui/react-icons": "^2.0.316",
     "@freik/containers": "^0.4.4",
     "@freik/fluentui-tools": "^1.2.4",
     "@freik/react-tools": "^0.3.4",
