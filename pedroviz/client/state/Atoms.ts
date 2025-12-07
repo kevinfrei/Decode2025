@@ -85,6 +85,7 @@ export const SelectedFileAtom = atom(
   },
 );
 
+/*
 export const FilesForTeamFamily = atomFamily((team: string) =>
   atom(async (get) => {
     const paths = await get(PathsAtom);
@@ -94,6 +95,7 @@ export const FilesForTeamFamily = atomFamily((team: string) =>
     return [];
   }),
 );
+*/
 
 export const FilesForSelectedTeam = atom(async (get) => {
   const selTeam = await get(SelectedTeamAtom);

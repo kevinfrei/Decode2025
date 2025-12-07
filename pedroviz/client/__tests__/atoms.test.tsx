@@ -22,6 +22,7 @@ import { EmptyPathChainFile } from '../state/API';
 import {
   ColorForNumber,
   ColorsAtom,
+  FilesForSelectedTeam,
   SelectedFileAtom,
   SelectedTeamAtom,
   ThemeAtom,
@@ -192,11 +193,10 @@ describe('simple atom validation', () => {
     expect(open).toBeEnabled();
     let path = screen.getByText('Select a file');
     expect(path).toBeDisabled();
-    fireEvent.click(open);
-    await act(async () => {});
+    await act(async () => fireEvent.click(open));
     let select = screen.getByText('team2');
     expect(select).toBeEnabled();
-    fireEvent.click(select);
+    await act(async () => fireEvent.click(select));
     await waitFor(async () => {
       expect(await store.get(SelectedTeamAtom)).toBe('team2');
     });
@@ -205,12 +205,20 @@ describe('simple atom validation', () => {
     });
     // The second menu should now be enabled
     expect(path).toBeEnabled();
-    fireEvent.click(open);
+    await act(async () => fireEvent.click(path));
     // This is where I'm stuck, now (this doesn't work yet)
-    // let selectFile = screen.getByText('path3');
-    // expect(selectFile).toBeDefined();
-    /*    await waitFor(async () => {
-      expect(await store.get(SelectedTeamAtom)).toBe('team2');
-    });*/
+    let selectFile = screen.getByText('path3.java');
+    expect(selectFile).toBeDefined();
+    expect(selectFile).toBeEnabled();
+    await act(async () => fireEvent.click(selectFile));
+    await waitFor(async () => {
+      expect(await store.get(SelectedFileAtom)).toBe('path3.java');
+    });
+    await act(async () => {
+      await store.set(SelectedTeamAtom, 'team3');
+    });
+    await act(async () => {
+      expect(await store.get(FilesForSelectedTeam)).toEqual([]);
+    });
   });
 });
