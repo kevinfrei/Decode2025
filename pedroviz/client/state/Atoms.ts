@@ -47,19 +47,29 @@ export const TeamsAtom = atom(async (get) => {
 });
 export const SelectedTeamBackingAtom = atom('');
 export const SelectedTeamAtom = atom(
-  async (get) => {
-    const allTeams = await get(TeamsAtom);
-    if (allTeams.length === 1) {
-      return allTeams[0];
-    }
-    return get(SelectedTeamBackingAtom);
-  },
-  (_, set, val) => {
+  async (get) => get(SelectedTeamBackingAtom),
+  (get, set, val) => {
+    const cur = get(SelectedTeamBackingAtom);
     // Clear the selected file when the team is changed
-    set(SelectedFileBackingAtom, '');
+    if (cur !== val) {
+      set(SelectedFileBackingAtom, '');
+    }
     set(SelectedTeamBackingAtom, val);
   },
 );
+
+export const FilesForSelectedTeam = atom(async (get) => {
+  const selTeam = await get(SelectedTeamAtom);
+  const thePaths = await get(PathsAtom);
+  if (selTeam === '') {
+    return [];
+  }
+  if (hasField(thePaths, selTeam)) {
+    return thePaths[selTeam];
+  }
+  return [];
+});
+
 export const SelectedFileBackingAtom = atom('');
 export const SelectedFileAtom = atom(
   async (get) => {
@@ -84,30 +94,6 @@ export const SelectedFileAtom = atom(
     }
   },
 );
-
-/*
-export const FilesForTeamFamily = atomFamily((team: string) =>
-  atom(async (get) => {
-    const paths = await get(PathsAtom);
-    if (hasField(paths, team)) {
-      return paths[team].sort();
-    }
-    return [];
-  }),
-);
-*/
-
-export const FilesForSelectedTeam = atom(async (get) => {
-  const selTeam = await get(SelectedTeamAtom);
-  if (selTeam === '') {
-    return [];
-  }
-  const thePaths = await get(PathsAtom);
-  if (hasField(thePaths, selTeam)) {
-    return thePaths[selTeam];
-  }
-  return [];
-});
 
 const NamedValuesBackerAtom = atom<Map<string, NamedValue>>(new Map());
 export const NamedValuesAtom = atom(

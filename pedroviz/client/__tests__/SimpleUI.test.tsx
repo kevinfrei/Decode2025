@@ -151,7 +151,7 @@ function JotaiProvider({
   );
 }
 
-describe('"Simple" atom validation', () => {
+describe('Simplest UI validation', () => {
   test('Themes & colors', async () => {
     const store = getStore();
     render(
