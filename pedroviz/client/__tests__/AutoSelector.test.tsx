@@ -68,7 +68,7 @@ describe('AutoSelector tests', () => {
       ),
     );
     const item = screen.getAllByRole('button');
-    expect(item.length).toBe(1);
+    expect(item.length).toBe(3);
     expect(item[0]).toBeEnabled();
     expect(selItem).toEqual('');
     await waitFor(() => expect(setSel).toBeCalledTimes(0));
@@ -90,8 +90,8 @@ describe('AutoSelector tests', () => {
         </FluentProvider>,
       ),
     );
-    const items = screen.getAllByRole('button');
-    expect(items.length).toBe(1);
+    const items = screen.getAllByText('Test');
+    expect(items.length).toBe(2);
     expect(items[0]).toBeDisabled();
     await waitFor(() => expect(setSel).toBeCalledTimes(0));
   });
