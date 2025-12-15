@@ -259,7 +259,7 @@ export async function LoadFile(
     lastLoadedFile.file === file &&
     lastLoadedFile.data !== null
   ) {
-    console.log('using cachewd file for', team, file);
+    console.log('using cached file for', team, file);
     return lastLoadedFile.data;
   }
   lastLoadedFile.team = team;
@@ -270,8 +270,8 @@ export async function LoadFile(
     chkPathChainFile,
     EmptyPathChainFile,
   );
-  console.log('loaded file from server for', team, file);
-  console.log(pcf);
+  // console.log('loaded file from server for', team, file);
+  // console.log(pcf);
   const indexFile = MakeIndexedFile(pcf);
   if (isError(indexFile)) {
     return makeError(`Loaded file ${team}/${file} has dangling references.`);
