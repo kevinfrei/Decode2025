@@ -1,9 +1,11 @@
 import { hasField } from '@freik/typechk';
-import { atom } from 'jotai';
+import { atom, WritableAtom } from 'jotai';
 import { atomFamily } from 'jotai-family';
 import { focusAtom } from 'jotai-optics';
 import { atomWithStorage } from 'jotai/utils';
+import { SetStateAction } from 'react';
 import {
+  AnonymousPose,
   chkNamedBezier,
   chkNamedPathChain,
   chkNamedPose,
@@ -105,6 +107,21 @@ export const SelectedFileAtom = atom(
   },
 );
 
+function makeItemFromNameFamily<T>(
+  theAtom: WritableAtom<Map<string, T>, [SetStateAction<Map<string, T>>], void>,
+) {
+  return atomFamily((name: string) =>
+    atom(
+      (get) => get(theAtom).get(name),
+      (get, set, val: T) => {
+        const mappedItems = new Map(get(theAtom));
+        mappedItems.set(name, val);
+        set(theAtom, mappedItems);
+      },
+    ),
+  );
+}
+
 export const MappedFileAtom = atom(EmptyMappedFile);
 export const MappedValuesAtom = focusAtom(MappedFileAtom, (optic) =>
   optic.prop('namedValues'),
@@ -117,6 +134,23 @@ export const MappedBeziersAtom = focusAtom(MappedFileAtom, (optic) =>
 );
 export const MappedPathChainsAtom = focusAtom(MappedFileAtom, (optic) =>
   optic.prop('namedPathChains'),
+);
+export const ValueAtomFamily = makeItemFromNameFamily(MappedValuesAtom);
+export const PoseAtomFamily = makeItemFromNameFamily(MappedPosesAtom);
+export const BezierAtomFamily = makeItemFromNameFamily(MappedBeziersAtom);
+export const PathChainAtomFamily = makeItemFromNameFamily(MappedPathChainsAtom);
+
+export const PoseFromNameAtoms = atomFamily((name: string) =>
+  atom(
+    (get) => {
+      get(MappedPosesAtom).get(name);
+    },
+    (get, set, val: AnonymousPose) => {
+      const mappedPoses = new Map(get(MappedPosesAtom));
+      mappedPoses.set(name, val);
+      set(MappedPosesAtom, mappedPoses);
+    },
+  ),
 );
 
 let fileData: IndexedFile = MakeIndexedFile(EmptyPathChainFile) as IndexedFile;
