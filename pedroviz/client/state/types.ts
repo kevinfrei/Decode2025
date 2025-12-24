@@ -58,6 +58,14 @@ export const chkConcreteHeadingType: typecheck<ConcreteHeadingType> = chkAnyOf(
   chkConcreteConstantHeading,
   chkConcreteInterpolatedHeading,
 );
+
+export type MappedIndex = {
+  namedValues: Map<string, AnonymousValue>;
+  namedPoses: Map<string, AnonymousPose>;
+  namedBeziers: Map<string, AnonymousBezier>;
+  namedPathChains: Map<string, AnonymousPathChain>;
+};
+
 export type IndexedPCF = PathChainFile & {
   namedValues: Map<string, number>;
   namedPoses: Map<string, number>;
