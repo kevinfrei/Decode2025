@@ -1,6 +1,7 @@
 import { hasField } from '@freik/typechk';
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai-family';
+import { focusAtom } from 'jotai-optics';
 import { atomWithStorage } from 'jotai/utils';
 import {
   chkNamedBezier,
@@ -16,6 +17,7 @@ import {
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
 import { EmptyPathChainFile, GetPaths, LoadFile } from './API';
 import { MakeIndexedFile } from './IndexedFile';
+import { EmptyMappedFile } from './NamesToData';
 import { IndexedFile } from './types';
 
 export const ThemeAtom = atomWithStorage<'dark' | 'light'>(
@@ -101,6 +103,20 @@ export const SelectedFileAtom = atom(
     const team = await get(SelectedTeamAtom);
     set(SelectedFileBackingAtom, val);
   },
+);
+
+export const MappedFileAtom = atom(EmptyMappedFile);
+export const MappedValuesAtom = focusAtom(MappedFileAtom, (optic) =>
+  optic.prop('namedValues'),
+);
+export const MappedPosesAtom = focusAtom(MappedFileAtom, (optic) =>
+  optic.prop('namedPoses'),
+);
+export const MappedBeziersAtom = focusAtom(MappedFileAtom, (optic) =>
+  optic.prop('namedBeziers'),
+);
+export const MappedPathChainsAtom = focusAtom(MappedFileAtom, (optic) =>
+  optic.prop('namedPathChains'),
 );
 
 let fileData: IndexedFile = MakeIndexedFile(EmptyPathChainFile) as IndexedFile;
