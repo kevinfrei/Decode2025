@@ -18,32 +18,30 @@ import {
   ValueRef,
 } from '../../server/types';
 import { ValidRes } from './API';
-import { AnonymousPathChain, IndexedFile, Point } from './types';
+import { AnonymousPathChain, MappedIndex, Point } from './types';
 
-export function MakeIndexedFile(pcf: PathChainFile): ErrorOr<IndexedFile> {
-  const values = new Map<string, AnonymousValue>(
+export function MakeMappedIndexedFile(
+  pcf: PathChainFile,
+): ErrorOr<MappedIndex> {
+  const namedValues = new Map<string, AnonymousValue>(
     pcf.values.map((nv) => [nv.name, nv.value]),
   );
-  const namedValues = [...pcf.values];
-  const poses = new Map<string, AnonymousPose>(
+  const namedPoses = new Map<string, AnonymousPose>(
     pcf.poses.map((np) => [np.name, np.pose]),
   );
-  const namedPoses = [...pcf.poses];
-  const beziers = new Map<string, AnonymousBezier>(
+  const namedBeziers = new Map<string, AnonymousBezier>(
     pcf.beziers.map((nb) => [nb.name, nb.points]),
   );
-  const namedBeziers = [...pcf.beziers];
-  const pathChains = new Map<string, AnonymousPathChain>(
+  const namedPathChains = new Map<string, AnonymousPathChain>(
     pcf.pathChains.map((npc) => [
       npc.name,
       { paths: npc.paths, heading: npc.heading },
     ]),
   );
-  const namedPathChains = [...pcf.pathChains];
 
   function checkValueRef(vr: ValueRef, id: string): ValidRes {
     if (isRef(vr)) {
-      if (!values.has(vr) && !poses.has(vr)) {
+      if (!namedValues.has(vr)) {
         return makeError(
           `${id}'s "${vr}" value reference appears to be undefined.`,
         );
@@ -67,9 +65,10 @@ export function MakeIndexedFile(pcf: PathChainFile): ErrorOr<IndexedFile> {
     res = accError(checkValueRef(pose.x, `${id}'s x coordinate`), res);
     return accError(checkValueRef(pose.y, `${id}'s y coordinate`), res);
   }
+
   function checkPoseRef(pr: PoseRef, id: string): ValidRes {
     if (isRef(pr)) {
-      return poses.has(pr)
+      return namedPoses.has(pr)
         ? true
         : makeError(`${id}'s "${pr}" pose reference appears to be undefined`);
     }
@@ -94,7 +93,7 @@ export function MakeIndexedFile(pcf: PathChainFile): ErrorOr<IndexedFile> {
 
   function checkBezierRef(br: BezierRef, id: string): ValidRes {
     if (isRef(br)) {
-      return beziers.has(br)
+      return namedBeziers.has(br)
         ? true
         : makeError(`${id}'s bezier reference appears to be undefined`);
     }
@@ -129,14 +128,17 @@ export function MakeIndexedFile(pcf: PathChainFile): ErrorOr<IndexedFile> {
 
   function validateUniqueNames(): ValidRes {
     const allNames = new Set<string>([
-      ...values.keys(),
-      ...poses.keys(),
-      ...beziers.keys(),
-      ...pathChains.keys(),
+      ...namedValues.keys(),
+      ...namedPoses.keys(),
+      ...namedBeziers.keys(),
+      ...namedPathChains.keys(),
     ]);
     if (
       allNames.size !==
-      values.size + poses.size + beziers.size + pathChains.size
+      namedValues.size +
+        namedPoses.size +
+        namedBeziers.size +
+        namedPathChains.size
     ) {
       // TODO: Provide a detailed diagnostic of which names are duplicated
       return makeError(
@@ -148,13 +150,13 @@ export function MakeIndexedFile(pcf: PathChainFile): ErrorOr<IndexedFile> {
 
   function validatePathChainIndex(): ErrorOr<true> {
     let good: ValidRes = true;
-    poses.forEach((pr, name) => {
+    namedPoses.forEach((pr, name) => {
       good = accError(checkPoseRef(pr, name), good);
     });
-    beziers.forEach((br, name) => {
+    namedBeziers.forEach((br, name) => {
       good = accError(checkBezierRef(br, name), good);
     });
-    pathChains.forEach((apc, name) => {
+    namedPathChains.forEach((apc, name) => {
       good = accError(checkAnonymousPathChain(apc, name), good);
     });
     good = accError(validateUniqueNames(), good);
@@ -166,97 +168,49 @@ export function MakeIndexedFile(pcf: PathChainFile): ErrorOr<IndexedFile> {
     return res;
   }
 
-  function getValueRefValue(vr: ValueRef): number {
-    const av = isRef(vr) ? values.get(vr) : vr;
-    if (isUndefined(av)) {
-      throw new Error(`Invalid ValueRef ${vr}`);
-    }
-    return numFromVal(av);
-  }
+  return { namedValues, namedBeziers, namedPoses, namedPathChains };
+}
 
-  function getPoseRefPoint(pr: PoseRef): Point {
-    let ap: AnonymousPose = isRef(pr) ? poses.get(pr) : pr;
-    try {
-      return { x: getValueRefValue(ap.x), y: getValueRefValue(ap.y) };
-    } catch (e) {
-      throw new Error(`${e} from invalid PoseRef ${pr}`);
-    }
-  }
-
-  function getBezierRefPoints(br: BezierRef): Point[] {
-    const ab: AnonymousBezier = isRef(br) ? beziers.get(br) : br;
-    return ab.points.map(getPoseRefPoint);
-  }
-
-  function getHeadingRefValue(hr: HeadingRef): number {
-    if (isRef(hr)) {
-      return getValueRefValue(hr);
-    } else if (chkRadiansRef(hr)) {
-      return (Math.PI * getValueRefValue(hr.radians)) / 180.0;
-    } else {
-      return getValueRefValue(hr);
-    }
-  }
-
-  return {
-    getValueNames(): string[] {
-      return Array.from(values.keys());
-    },
-    getPoseNames(): string[] {
-      return Array.from(poses.keys());
-    },
-    getBezierNames(): string[] {
-      return Array.from(beziers.keys());
-    },
-    getPathChainNames(): string[] {
-      return Array.from(pathChains.keys());
-    },
-    getValue(name: string): AnonymousValue | undefined {
-      return values.get(name);
-    },
-    getPose(name: string): AnonymousPose | undefined {
-      return poses.get(name);
-    },
-    getBezier(name: string): AnonymousBezier | undefined {
-      return beziers.get(name);
-    },
-    getPathChain(name: string): AnonymousPathChain | undefined {
-      return pathChains.get(name);
-    },
-    setValue(name: string, value: AnonymousValue): void {
-      values.set(name, value);
-    },
-    setPose(name: string, pose: AnonymousPose): void {
-      poses.set(name, pose);
-    },
-    setBezier(name: string, bezier: AnonymousBezier): void {
-      beziers.set(name, bezier);
-    },
-    setPathChain(name: string, pathChain: AnonymousPathChain): void {
-      pathChains.set(name, pathChain);
-    },
-    getValueRefValue,
-    getPoseRefPoint,
-    getBezierRefPoints,
-    getHeadingRefValue,
-
-    getValues: () => namedValues,
-    getPoses: () => namedPoses,
-    getBeziers: () => namedBeziers,
-    getPathChains: () => namedPathChains,
-    dump: () => {
-      return (
-        pcf.values.length +
-        ' values, ' +
-        pcf.poses.length +
-        ' poses, ' +
-        pcf.beziers.length +
-        ' beziers, ' +
-        pcf.pathChains.length +
-        ' pathChains.'
+export function getValueRefValue(idx: MappedIndex, vr: ValueRef): number {
+  let av = vr;
+  const seen = new Set<string>();
+  while (isRef(av)) {
+    if (seen.has(av)) {
+      throw new Error(
+        `Circular reference for ${vr} (${av} triggered the cycle)`,
       );
-    },
-  };
+    }
+    seen.add(av);
+    av = idx.namedValues.get(av);
+  }
+  if (isUndefined(av)) {
+    throw new Error(`Invalid ValueRef ${vr}`);
+  }
+  return numFromVal(av);
+}
+
+export function getPoseRefPoint(idx: MappedIndex, pr: PoseRef): Point {
+  let ap: AnonymousPose = isRef(pr) ? idx.namedPoses.get(pr) : pr;
+  try {
+    return { x: getValueRefValue(idx, ap.x), y: getValueRefValue(idx, ap.y) };
+  } catch (e) {
+    throw new Error(`${e} from invalid PoseRef ${pr}`);
+  }
+}
+
+export function getBezierRefPoints(idx: MappedIndex, br: BezierRef): Point[] {
+  const ab: AnonymousBezier = isRef(br) ? idx.namedBeziers.get(br) : br;
+  return ab.points.map((p) => getPoseRefPoint(idx, p));
+}
+
+export function getHeadingRefValue(idx: MappedIndex, hr: HeadingRef): number {
+  if (isRef(hr)) {
+    return getValueRefValue(idx, hr);
+  } else if (chkRadiansRef(hr)) {
+    return (Math.PI * getValueRefValue(idx, hr.radians)) / 180.0;
+  } else {
+    return getValueRefValue(idx, hr);
+  }
 }
 
 // Evaluation from the parsed code representation:

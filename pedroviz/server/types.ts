@@ -58,7 +58,7 @@ export type AnonymousValue = {
   type: 'int' | 'double' | 'radians';
   value: number;
 };
-export type NamedValue = { name: string; value: AnonymousValue };
+export type NamedValue = { name: string; value: ValueRef };
 export type ValueRef = AnonymousValue | string;
 export type RadiansRef = { radians: ValueRef };
 export type HeadingRef = RadiansRef | ValueRef;

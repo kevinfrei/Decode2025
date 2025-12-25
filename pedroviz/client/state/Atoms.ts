@@ -10,6 +10,7 @@ import {
   chkNamedPathChain,
   chkNamedPose,
   chkNamedValue,
+  ErrorOr,
   isError,
   NamedBezier,
   NamedPathChain,
@@ -17,10 +18,9 @@ import {
   NamedValue,
 } from '../../server/types';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
-import { EmptyPathChainFile, GetPaths, LoadFile } from './API';
-import { MakeIndexedFile } from './IndexedFile';
+import { GetPaths, LoadAndIndexFile } from './API';
 import { EmptyMappedFile } from './NamesToData';
-import { IndexedFile } from './types';
+import { IndexedFile, MappedIndex } from './types';
 
 export const ThemeAtom = atomWithStorage<'dark' | 'light'>(
   'theme',
@@ -104,6 +104,11 @@ export const SelectedFileAtom = atom(
   async (get, set, val: string) => {
     const team = await get(SelectedTeamAtom);
     set(SelectedFileBackingAtom, val);
+    const maybeIdx: ErrorOr<MappedIndex> = await LoadAndIndexFile(team, val);
+    if (isError(maybeIdx)) {
+      return;
+    }
+    set(MappedFileAtom, mappedIndex);
   },
 );
 
