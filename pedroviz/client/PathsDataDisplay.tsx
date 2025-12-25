@@ -455,10 +455,6 @@ export function PathsDataDisplay({
   if (selFile.length === 0) {
     return <div>Ple ase select a file to view.</div>;
   }
-  const values = file.getValues();
-  const poses = file.getPoses();
-  const beziers = file.getBeziers();
-  const pathChains = file.getPathChains();
   return (
     <>
       <Expando label="Values" indent={20} size={500} defaultShow={defaultShow}>
