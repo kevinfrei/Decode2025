@@ -11,6 +11,9 @@ import {
   isString,
 } from '@freik/typechk';
 
+declare const brand: unique symbol;
+export type Nominal<T, Brand extends string> = T & { readonly [brand]: Brand };
+
 export type ErrorVal = {
   errors: () => string[];
   [Symbol.toPrimitive]: (hint: string) => unknown;
@@ -52,24 +55,30 @@ export function addError<T>(
 export function accError<T>(maybe: ErrorOr<T>, prev: ErrorOr<T>): ErrorOr<T> {
   return isError(prev) ? addError(maybe, prev) : maybe;
 }
-export type TeamPaths = Record<string, string[]>;
+
+export type Team = Nominal<string, 'Team'>;
+export type Path = Nominal<string, 'Path'>;
+export type TeamPaths = Record<Team, Path[]>;
 
 export type AnonymousValue = {
   type: 'int' | 'double' | 'radians';
   value: number;
 };
-export type NamedValue = { name: string; value: ValueRef };
-export type ValueRef = AnonymousValue | string;
+export type ValueName = Nominal<string, 'Value'>;
+export type NamedValue = { name: ValueName; value: ValueRef };
+export type ValueRef = AnonymousValue | ValueName;
 export type RadiansRef = { radians: ValueRef };
 export type HeadingRef = RadiansRef | ValueRef;
 
+export type PoseName = Nominal<string, 'Pose'>;
 export type AnonymousPose = { x: ValueRef; y: ValueRef; heading?: HeadingRef };
-export type NamedPose = { name: string; pose: AnonymousPose };
-export type PoseRef = AnonymousPose | string;
+export type NamedPose = { name: PoseName; pose: AnonymousPose };
+export type PoseRef = AnonymousPose | PoseName;
 
+export type BezierName = Nominal<string, 'Bezier'>;
 export type AnonymousBezier = { type: 'line' | 'curve'; points: PoseRef[] };
-export type NamedBezier = { name: string; points: AnonymousBezier };
-export type BezierRef = AnonymousBezier | string;
+export type NamedBezier = { name: BezierName; points: AnonymousBezier };
+export type BezierRef = AnonymousBezier | BezierName;
 
 // Reversed headings are not yet handled
 export type ReversedHeading = { reversed?: boolean };
@@ -88,9 +97,10 @@ export type HeadingType = // ReversedHeading & HeadingTiming ( FacingHeading | .
   TangentHeading | ConstantHeading | InterpolatedHeading;
 
 // No such thing as an anonymous PathChain
+export type PathChainName = Nominal<string, 'PathChain'>;
 // Also: I'm not yet handling global vs. last heading modifiers
 export type NamedPathChain = {
-  name: string;
+  name: PathChainName;
   paths: BezierRef[];
   heading: HeadingType;
 };
@@ -199,8 +209,6 @@ export const chkPathChainFile = chkObjectOfExactType<PathChainFile>({
 });
 
 // Not used yet, but these are the results of evaluating the various types
-declare const brand: unique symbol;
-export type Nominal<T, Brand extends string> = T & { readonly [brand]: Brand };
 export type RealValue = Nominal<number, 'Value'>;
 export type RealPoint = { x: RealValue; y: RealValue };
 export type RealBezier = RealPoint[];

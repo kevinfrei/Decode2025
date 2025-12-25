@@ -16,21 +16,23 @@ import {
   RadioGroup,
   RadioGroupProps,
 } from '@fluentui/react-components';
-import { useAtomValue, useSetAtom } from 'jotai';
+import { useAtomValue } from 'jotai';
+import { useAtomCallback } from 'jotai/utils';
 import { useState } from 'react';
-import { NamedValue } from '../server/types';
-import { AllNamesAtom, NamedValuesAtom } from './state/Atoms';
+import { ValueRef } from '../server/types';
+import { MappedValuesAtom, ValueAtomFamily } from './state/Atoms';
 
 const validName: RegExp = /^[A-Za-z_][a-zA-Z0-9_]*$/;
 
 export function NewNamedValue(): ReactElement {
-  const allNames = useAtomValue(AllNamesAtom);
-
-  const setNamedValue = useSetAtom(NamedValuesAtom);
   const [name, setName] = useState('newValName');
   const [valStr, setValStr] = useState('0.000');
   const [valType, setValType] = useState<'int' | 'double' | 'degrees'>(
     'double',
+  );
+  const allNames = useAtomValue(MappedValuesAtom);
+  const setNamedValue = useAtomCallback((_, set, val: ValueRef) =>
+    set(ValueAtomFamily(name), val),
   );
 
   const checkName = (nm: string): [string, 'error' | 'none'] => {
@@ -91,14 +93,11 @@ export function NewNamedValue(): ReactElement {
   };
 
   const saveValue = () => {
-    const nv: NamedValue = {
-      name,
-      value: {
-        type: valType === 'degrees' ? 'radians' : valType,
-        value: Number.parseFloat(valStr),
-      },
+    const vr: ValueRef = {
+      type: valType === 'degrees' ? 'radians' : valType,
+      value: Number.parseFloat(valStr),
     };
-    setNamedValue(nv);
+    setNamedValue(vr);
   };
 
   return (

@@ -61,8 +61,8 @@ export const chkConcreteHeadingType: typecheck<ConcreteHeadingType> = chkAnyOf(
 
 export type MappedIndex = {
   namedValues: Map<string, ValueRef>;
-  namedPoses: Map<string, AnonymousPose>;
-  namedBeziers: Map<string, AnonymousBezier>;
+  namedPoses: Map<string, PoseRef>;
+  namedBeziers: Map<string, BezierRef>;
   namedPathChains: Map<string, AnonymousPathChain>;
 };
 

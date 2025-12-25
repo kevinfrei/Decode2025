@@ -36,6 +36,7 @@ import {
   PathChainFile,
   PoseRef,
   RadiansRef,
+  ValueName,
   ValueRef,
 } from './types';
 
@@ -215,9 +216,9 @@ function tryMatchingNamedValues(
     return;
   }
   if (chkAnonymousValue(valRef)) {
-    return { name, value: valRef };
+    return { name: name as ValueName, value: valRef };
   } else if (!isString(valRef.radians)) {
-    return { name, value: valRef.radians };
+    return { name: name as ValueName, value: valRef.radians };
   }
 }
 

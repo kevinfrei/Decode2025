@@ -1,13 +1,13 @@
 import {
   AnonymousBezier,
   AnonymousPose,
-  AnonymousValue,
   PathChainFile,
+  ValueRef,
 } from '../../server/types';
 import { AnonymousPathChain, MappedIndex } from './types';
 
 export function MakeMappedIndex(pcf: PathChainFile): MappedIndex {
-  const namedValues = new Map<string, AnonymousValue>(
+  const namedValues = new Map<string, ValueRef>(
     pcf.values.map((nv) => [nv.name, nv.value]),
   );
   const namedPoses = new Map<string, AnonymousPose>(

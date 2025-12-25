@@ -23,13 +23,13 @@ import { AnonymousPathChain, MappedIndex, Point } from './types';
 export function MakeMappedIndexedFile(
   pcf: PathChainFile,
 ): ErrorOr<MappedIndex> {
-  const namedValues = new Map<string, AnonymousValue>(
+  const namedValues = new Map<string, ValueRef>(
     pcf.values.map((nv) => [nv.name, nv.value]),
   );
-  const namedPoses = new Map<string, AnonymousPose>(
+  const namedPoses = new Map<string, PoseRef>(
     pcf.poses.map((np) => [np.name, np.pose]),
   );
-  const namedBeziers = new Map<string, AnonymousBezier>(
+  const namedBeziers = new Map<string, BezierRef>(
     pcf.beziers.map((nb) => [nb.name, nb.points]),
   );
   const namedPathChains = new Map<string, AnonymousPathChain>(
@@ -190,16 +190,38 @@ export function getValueRefValue(idx: MappedIndex, vr: ValueRef): number {
 }
 
 export function getPoseRefPoint(idx: MappedIndex, pr: PoseRef): Point {
-  let ap: AnonymousPose = isRef(pr) ? idx.namedPoses.get(pr) : pr;
-  try {
-    return { x: getValueRefValue(idx, ap.x), y: getValueRefValue(idx, ap.y) };
-  } catch (e) {
-    throw new Error(`${e} from invalid PoseRef ${pr}`);
+  let ap = pr;
+  const seen = new Set<string>();
+  while (isRef(ap)) {
+    if (seen.has(ap)) {
+      throw new Error(
+        `Circular reference for ${pr} (${ap} triggered the cycle)`,
+      );
+    }
+    seen.add(ap);
+    ap = idx.namedPoses.get(ap);
   }
+  if (isUndefined(ap)) {
+    throw new Error(`Invalid PoseRef ${pr}`);
+  }
+  return { x: getValueRefValue(idx, ap.x), y: getValueRefValue(idx, ap.y) };
 }
 
 export function getBezierRefPoints(idx: MappedIndex, br: BezierRef): Point[] {
-  const ab: AnonymousBezier = isRef(br) ? idx.namedBeziers.get(br) : br;
+  let ab = br;
+  const seen = new Set<string>();
+  while (isRef(ab)) {
+    if (seen.has(ab)) {
+      throw new Error(
+        `Circular reference for ${br} (${ab} triggered the cycle)`,
+      );
+    }
+    seen.add(ab);
+    ab = idx.namedBeziers.get(ab);
+  }
+  if (isUndefined(ab)) {
+    throw new Error(`Invalid BezierRef ${br}`);
+  }
   return ab.points.map((p) => getPoseRefPoint(idx, p));
 }
 
