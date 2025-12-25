@@ -6,6 +6,7 @@ import { atomWithStorage } from 'jotai/utils';
 import { SetStateAction } from 'react';
 import {
   AnonymousPose,
+  BezierRef,
   chkNamedBezier,
   chkNamedPathChain,
   chkNamedPose,
@@ -16,11 +17,13 @@ import {
   NamedPathChain,
   NamedPose,
   NamedValue,
+  PoseRef,
+  ValueRef,
 } from '../../server/types';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
 import { GetPaths, LoadAndIndexFile } from './API';
 import { EmptyMappedFile } from './NamesToData';
-import { IndexedFile, MappedIndex } from './types';
+import { AnonymousPathChain, IndexedFile, MappedIndex } from './types';
 
 export const ThemeAtom = atomWithStorage<'dark' | 'light'>(
   'theme',
@@ -108,12 +111,14 @@ export const SelectedFileAtom = atom(
     if (isError(maybeIdx)) {
       return;
     }
-    set(MappedFileAtom, mappedIndex);
+    set(MappedFileAtom, maybeIdx);
   },
 );
 
+type MyAtoms<T> = WritableAtom<Map<string, T>, [SetStateAction<Map<string, T>>], void>;
+
 function makeItemFromNameFamily<T>(
-  theAtom: WritableAtom<Map<string, T>, [SetStateAction<Map<string, T>>], void>,
+  theAtom: MyAtoms<T>,
 ) {
   return atomFamily((name: string) =>
     atom(
@@ -127,17 +132,17 @@ function makeItemFromNameFamily<T>(
   );
 }
 
-export const MappedFileAtom = atom(EmptyMappedFile);
-export const MappedValuesAtom = focusAtom(MappedFileAtom, (optic) =>
+export const MappedFileAtom = atom<MappedIndex>(EmptyMappedFile);
+export const MappedValuesAtom:MyAtoms<ValueRef> = focusAtom(MappedFileAtom, (optic) =>
   optic.prop('namedValues'),
 );
-export const MappedPosesAtom = focusAtom(MappedFileAtom, (optic) =>
+export const MappedPosesAtom:MyAtoms<PoseRef> = focusAtom(MappedFileAtom, (optic) =>
   optic.prop('namedPoses'),
 );
-export const MappedBeziersAtom = focusAtom(MappedFileAtom, (optic) =>
+export const MappedBeziersAtom:MyAtoms<BezierRef> = focusAtom(MappedFileAtom, (optic) =>
   optic.prop('namedBeziers'),
 );
-export const MappedPathChainsAtom = focusAtom(MappedFileAtom, (optic) =>
+export const MappedPathChainsAtom:MyAtoms<AnonymousPathChain> = focusAtom(MappedFileAtom, (optic) =>
   optic.prop('namedPathChains'),
 );
 export const ValueAtomFamily = makeItemFromNameFamily(MappedValuesAtom);
@@ -158,6 +163,7 @@ export const PoseFromNameAtoms = atomFamily((name: string) =>
   ),
 );
 
+/*
 let fileData: IndexedFile = MakeIndexedFile(EmptyPathChainFile) as IndexedFile;
 // const FileContentsBackerAtom = atom<IndexedFile>(fileData);
 export const FileContentsAtom = atom(
@@ -259,3 +265,4 @@ export const AllNamesAtom = atom(
       ...(await get(NamedPathChainsAtom)).map((npc) => npc.name),
     ]),
 );
+*/
