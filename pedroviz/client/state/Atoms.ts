@@ -5,10 +5,14 @@ import { focusAtom } from 'jotai-optics';
 import { atomWithStorage } from 'jotai/utils';
 import { SetStateAction } from 'react';
 import {
+  BezierName,
   BezierRef,
   ErrorOr,
   isError,
+  PathChainName,
+  PoseName,
   PoseRef,
+  ValueName,
   ValueRef,
 } from '../../server/types';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
@@ -106,14 +110,30 @@ export const SelectedFileAtom = atom(
   },
 );
 
-type MyAtoms<T> = WritableAtom<
-  Map<string, T>,
-  [SetStateAction<Map<string, T>>],
+type MapAtom<Str, T> = WritableAtom<
+  Map<Str, T>,
+  [SetStateAction<Map<Str, T>>],
   void
 >;
 
-function makeItemFromNameFamily<T>(theAtom: MyAtoms<T>) {
-  return atomFamily((name: string) =>
+export const MappedFileAtom = atom<MappedIndex>(EmptyMappedFile);
+export const MappedValuesAtom: MapAtom<ValueName, ValueRef> = focusAtom(
+  MappedFileAtom,
+  (optic) => optic.prop('namedValues'),
+);
+export const MappedPosesAtom: MapAtom<PoseName, PoseRef> = focusAtom(
+  MappedFileAtom,
+  (optic) => optic.prop('namedPoses'),
+);
+export const MappedBeziersAtom: MapAtom<BezierName, BezierRef> = focusAtom(
+  MappedFileAtom,
+  (optic) => optic.prop('namedBeziers'),
+);
+export const MappedPathChainsAtom: MapAtom<PathChainName, AnonymousPathChain> =
+  focusAtom(MappedFileAtom, (optic) => optic.prop('namedPathChains'));
+
+function makeItemFromNameFamily<Str, T>(theAtom: MapAtom<Str, T>) {
+  return atomFamily((name: Str) =>
     atom(
       (get) => get(theAtom).get(name),
       (get, set, val: T) => {
@@ -125,23 +145,6 @@ function makeItemFromNameFamily<T>(theAtom: MyAtoms<T>) {
   );
 }
 
-export const MappedFileAtom = atom<MappedIndex>(EmptyMappedFile);
-export const MappedValuesAtom: MyAtoms<ValueRef> = focusAtom(
-  MappedFileAtom,
-  (optic) => optic.prop('namedValues'),
-);
-export const MappedPosesAtom: MyAtoms<PoseRef> = focusAtom(
-  MappedFileAtom,
-  (optic) => optic.prop('namedPoses'),
-);
-export const MappedBeziersAtom: MyAtoms<BezierRef> = focusAtom(
-  MappedFileAtom,
-  (optic) => optic.prop('namedBeziers'),
-);
-export const MappedPathChainsAtom: MyAtoms<AnonymousPathChain> = focusAtom(
-  MappedFileAtom,
-  (optic) => optic.prop('namedPathChains'),
-);
 export const ValueAtomFamily = makeItemFromNameFamily(MappedValuesAtom);
 export const PoseAtomFamily = makeItemFromNameFamily(MappedPosesAtom);
 export const BezierAtomFamily = makeItemFromNameFamily(MappedBeziersAtom);

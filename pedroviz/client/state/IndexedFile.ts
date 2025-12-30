@@ -4,6 +4,7 @@ import {
   AnonymousBezier,
   AnonymousPose,
   AnonymousValue,
+  BezierName,
   BezierRef,
   chkConstantHeading,
   chkInterpolatedHeading,
@@ -14,7 +15,10 @@ import {
   isRef,
   makeError,
   PathChainFile,
+  PathChainName,
+  PoseName,
   PoseRef,
+  ValueName,
   ValueRef,
 } from '../../server/types';
 import { ValidRes } from './API';
@@ -23,16 +27,16 @@ import { AnonymousPathChain, MappedIndex, Point } from './types';
 export function MakeMappedIndexedFile(
   pcf: PathChainFile,
 ): ErrorOr<MappedIndex> {
-  const namedValues = new Map<string, ValueRef>(
+  const namedValues = new Map<ValueName, ValueRef>(
     pcf.values.map((nv) => [nv.name, nv.value]),
   );
-  const namedPoses = new Map<string, PoseRef>(
+  const namedPoses = new Map<PoseName, PoseRef>(
     pcf.poses.map((np) => [np.name, np.pose]),
   );
-  const namedBeziers = new Map<string, BezierRef>(
+  const namedBeziers = new Map<BezierName, BezierRef>(
     pcf.beziers.map((nb) => [nb.name, nb.points]),
   );
-  const namedPathChains = new Map<string, AnonymousPathChain>(
+  const namedPathChains = new Map<PathChainName, AnonymousPathChain>(
     pcf.pathChains.map((npc) => [
       npc.name,
       { paths: npc.paths, heading: npc.heading },

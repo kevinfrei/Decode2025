@@ -11,6 +11,7 @@ import {
   isRef,
   PoseRef,
   RadiansRef,
+  ValueName,
   ValueRef,
 } from '../server/types';
 import { NewNamedValue } from './NewNamedValue';
@@ -98,13 +99,13 @@ export function EditableValueRef({
   setRef,
 }: {
   initial: string;
-  setRef: (val: string) => void;
+  setRef: (val: ValueName) => void;
 }): ReactElement {
   const validRefs = useAtomValue(MappedValuesAtom);
   const [curVal, setCurVal] = useState(initial);
   const onChange: InputProps['onChange'] = (_, data) => {
-    if (validRefs.has(data.value)) {
-      setRef(data.value);
+    if (validRefs.has(data.value as ValueName)) {
+      setRef(data.value as ValueName);
     } else {
       // TODO: Highlight the invalidity of this ref: Turn it red or something?
     }
@@ -146,7 +147,7 @@ export function EditableValueExpr({
   );
 }
 
-export function NamedValueElem({ name }: { name: string }): ReactElement {
+export function NamedValueElem({ name }: { name: ValueName }): ReactElement {
   const [item, setItem] = useAtom(ValueAtomFamily(name));
   return isRef(item) ? (
     <>
@@ -235,18 +236,20 @@ export function NamedPoseList(): ReactElement {
     <div style={gridStyle}>
       <Text size={400}>Name {items.size}</Text>
       <AnonymousPoseHeader />
-      {items.entries().map(([name, pose]) => {
-        if (!isRef(pose)) {
-          const color = getColorFor(pose);
-          const style = { color: colors[color % colors.length] };
-          return (
-            <Fragment key={`pr-${name}-1`}>
-              <Text style={style}>{name}</Text>
-              <AnonymousPoseDisplay pose={pose} />
-            </Fragment>
-          );
-        }
-      })}
+      {[
+        ...items.entries().map(([name, pose]) => {
+          if (!isRef(pose)) {
+            const color = getColorFor(pose);
+            const style = { color: colors[color % colors.length] };
+            return (
+              <Fragment key={`pr-${name}-1`}>
+                <Text style={style}>{name}</Text>
+                <AnonymousPoseDisplay pose={pose} />
+              </Fragment>
+            );
+          }
+        }),
+      ]}
     </div>
   );
 }
@@ -313,29 +316,31 @@ export function NamedBezierList(): ReactElement {
     <div style={gridStyle}>
       <Text size={400}>Name {beziers.size}</Text>
       <Text size={400}>Poses</Text>
-      {beziers
-        .entries()
-        .filter(([, br]) => !isRef(br))
-        .map(([name, br], index) => {
-          if (!isRef(br)) {
-            const color = getColorFor(br);
-            const style = {
-              color: colors[color % colors.length],
-              ...rowSpan(1, rowData[index]),
-            };
-            return (
-              <Fragment key={`br-${name}`}>
-                <Text style={style}>{name}</Text>
-                {br.points.map((pr, index) => (
-                  <InlinePoseRefDisplay
-                    key={`br-${name}-${index}-2`}
-                    pose={pr}
-                  />
-                ))}
-              </Fragment>
-            );
-          }
-        })}
+      {[
+        ...beziers
+          .entries()
+          .filter(([, br]) => !isRef(br))
+          .map(([name, br], index) => {
+            if (!isRef(br)) {
+              const color = getColorFor(br);
+              const style = {
+                color: colors[color % colors.length],
+                ...rowSpan(1, rowData[index]),
+              };
+              return (
+                <Fragment key={`br-${name}`}>
+                  <Text style={style}>{name}</Text>
+                  {br.points.map((pr, index) => (
+                    <InlinePoseRefDisplay
+                      key={`br-${name}-${index}-2`}
+                      pose={pr}
+                    />
+                  ))}
+                </Fragment>
+              );
+            }
+          }),
+      ]}
     </div>
   );
 }
@@ -468,13 +473,17 @@ export function PathChainList(): ReactElement {
       >
         Paths
       </Text>
-      {items.entries().map((pc, index) => (
-        <NamedPathChainDisplay
-          key={pc[0]}
-          chain={pc}
-          rowdata={nestedRowData[index]}
-        />
-      ))}
+      {[
+        ...items
+          .entries()
+          .map((pc, index) => (
+            <NamedPathChainDisplay
+              key={pc[0]}
+              chain={pc}
+              rowdata={nestedRowData[index]}
+            />
+          )),
+      ]}
     </div>
   );
 }

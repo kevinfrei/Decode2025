@@ -25,6 +25,7 @@ import {
   AnonymousBezier,
   AnonymousPose,
   AnonymousValue,
+  BezierName,
   BezierRef,
   chkAnonymousValue,
   HeadingRef,
@@ -34,6 +35,8 @@ import {
   NamedPose,
   NamedValue,
   PathChainFile,
+  PathChainName,
+  PoseName,
   PoseRef,
   RadiansRef,
   ValueName,
@@ -202,10 +205,11 @@ function tryMatchingNamedValues(
   if (!varDecl) {
     return;
   }
-  const name = nameOf(child(varDecl.variableDeclaratorId)?.Identifier);
-  if (!name) {
+  const maybeName = nameOf(child(varDecl.variableDeclaratorId)?.Identifier);
+  if (!maybeName) {
     return;
   }
+  const name: ValueName = maybeName as ValueName;
   // TODO: Support initializers of "Math.toRadians(K)"
   const expr = descend(child(varDecl.variableInitializer)?.expression);
   if (isUndefined(expr)) {
@@ -216,9 +220,9 @@ function tryMatchingNamedValues(
     return;
   }
   if (chkAnonymousValue(valRef)) {
-    return { name: name as ValueName, value: valRef };
+    return { name, value: valRef };
   } else if (!isString(valRef.radians)) {
-    return { name: name as ValueName, value: valRef.radians };
+    return { name, value: valRef.radians };
   }
 }
 
@@ -263,12 +267,12 @@ function getRef(expr: ExpressionCstNode): string | undefined {
   }
 }
 
-function getRefOr<T>(
+function getRefOr<Str, T>(
   expr: ExpressionCstNode,
   getOr: (expr: ExpressionCstNode) => T | undefined,
-): T | string | undefined {
+): T | Str | undefined {
   const ref = getRef(expr);
-  return isString(ref) ? ref : getOr(expr);
+  return isString(ref) ? (ref as Str) : getOr(expr);
 }
 
 function getMethodInvoke(primary: PrimaryCtx): [string, string] | undefined {
@@ -418,7 +422,7 @@ function tryMatchingNamedPoses(
     return;
   }
   const pose = getAnonymousPose(decl);
-  return isDefined(pose) ? { name, pose } : undefined;
+  return isDefined(pose) ? { name: name as PoseName, pose } : undefined;
 }
 
 function getAnonymousPose(
@@ -470,10 +474,11 @@ function tryMatchingBeziers(ctx: FieldDeclarationCtx): NamedBezier | undefined {
   if (isUndefined(decl) || isUndefined(type)) {
     return;
   }
-  const name = getLValueName(decl);
-  if (isUndefined(name)) {
+  const maybeName = getLValueName(decl);
+  if (isUndefined(maybeName)) {
     return;
   }
+  const name: BezierName = maybeName as BezierName;
   const points = getAnonymousBezier(
     child(decl.variableInitializer)?.expression,
   );
@@ -645,7 +650,7 @@ function getPathChain(node: BlockStatementCstNode): NamedPathChain | undefined {
       }
     }
   }
-  return { name: fieldName, paths: chain, heading };
+  return { name: fieldName as PathChainName, paths: chain, heading };
 }
 
 function getPathChainFactories(
