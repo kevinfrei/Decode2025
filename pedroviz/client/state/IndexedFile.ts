@@ -56,9 +56,15 @@ export function MakeMappedIndexedFile(
 
   function checkHeadingRef(hr: HeadingRef, id: string): ValidRes {
     if (chkRadiansRef(hr)) {
-      return checkValueRef(hr.radians, `${id}'s Radians ref`);
+      hr = hr.radians;
     }
-    return checkValueRef(hr, id);
+    const valueRefCheck = checkValueRef(hr, id);
+    if (valueRefCheck !== true) {
+      // A heading ref could be a pose ref instead of a value ref
+      // TODO: Maybe keep track of this stuff somehow?
+      return checkPoseRef(hr as unknown as PoseRef, id);
+    }
+    return true;
   }
 
   function checkAnonymousPose(pose: AnonymousPose, id: string): ValidRes {

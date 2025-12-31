@@ -72,10 +72,19 @@ export async function LoadAndIndexFile(
   }
   const indexFile = MakeMappedIndexedFile(pcf);
   if (isError(indexFile)) {
-    return makeError(`Loaded file ${team}/${file} has dangling references.`);
+    return makeError(
+      indexFile,
+      `Loaded file ${team}/${file} has dangling references.`,
+    );
   }
   lastLoadedIndexFile.data = indexFile;
   return indexFile;
+}
+
+export function UpdateIndexFile(team: string, file: string, data: MappedIndex) {
+  lastLoadedIndexFile.team = team;
+  lastLoadedIndexFile.file = file;
+  lastLoadedIndexFile.data = data;
 }
 
 export async function SavePath(

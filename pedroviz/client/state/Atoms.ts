@@ -3,7 +3,6 @@ import { atom, WritableAtom } from 'jotai';
 import { atomFamily } from 'jotai-family';
 import { focusAtom } from 'jotai-optics';
 import { atomWithStorage } from 'jotai/utils';
-import { SetStateAction } from 'react';
 import {
   BezierName,
   BezierRef,
@@ -16,7 +15,7 @@ import {
   ValueRef,
 } from '../../server/types';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
-import { GetPaths, LoadAndIndexFile } from './API';
+import { GetPaths, LoadAndIndexFile, UpdateIndexFile } from './API';
 import { EmptyMappedFile } from './NamesToData';
 import { AnonymousPathChain, MappedIndex } from './types';
 
@@ -56,13 +55,13 @@ export const SelectedTeamAtom = atom(
     const cur = get(SelectedTeamBackingAtom);
     // Clear the selected file when the team is changed
     if (cur !== val) {
-      const curPath = await get(SelectedFileBackingAtom);
+      const curPath = await get(SelectedFileAtom);
       if (curPath !== '') {
         const paths = await get(PathsAtom);
         if (hasField(paths, val)) {
           const files = paths[val];
           if (!files.includes(curPath)) {
-            set(SelectedFileBackingAtom, '');
+            set(SelectedFileAtom, '');
           } else {
             set(SelectedFileAtom, curPath);
           }
@@ -85,38 +84,39 @@ export const FilesForSelectedTeam = atom(async (get) => {
   return [];
 });
 
-export const SelectedFileBackingAtom = atomWithStorage<string>(
+export const SelectedFileAtom = atomWithStorage<string>(
   'selectedPath',
   '',
   undefined,
   { getOnInit: true },
 );
-export const SelectedFileAtom = atom(
+
+const MappedFileBackingAtom = atom(0);
+export const MappedFileAtom = atom(
   async (get) => {
-    return get(SelectedFileBackingAtom);
-  },
-  // TODO: When you set the file, udpate the file contents
-  // automagically. I should be able to actually keep the
-  // dependencies "correct" (and potentially much more atomic,
-  // resulting in fewer UI updates hopefully)
-  async (get, set, val: string) => {
     const team = await get(SelectedTeamAtom);
-    set(SelectedFileBackingAtom, val);
-    const maybeIdx: ErrorOr<MappedIndex> = await LoadAndIndexFile(team, val);
-    if (isError(maybeIdx)) {
-      return;
+    const file = await get(SelectedFileAtom);
+    const count = get(MappedFileBackingAtom);
+    if (team.length > 0 && file.length > 0) {
+      const maybeIdx: ErrorOr<MappedIndex> = await LoadAndIndexFile(team, file);
+      if (!isError(maybeIdx)) {
+        return maybeIdx;
+      }
+      console.error(maybeIdx.errors().join('\n'));
     }
-    set(MappedFileAtom, maybeIdx);
+    return EmptyMappedFile;
+  },
+  async (get, set, data: MappedIndex | Promise<MappedIndex>) => {
+    const team = await get(SelectedTeamAtom);
+    const file = await get(SelectedFileAtom);
+    const val = get(MappedFileBackingAtom);
+    UpdateIndexFile(team, file, await data);
+    set(MappedFileBackingAtom, val + 1);
   },
 );
 
-type MapAtom<Str, T> = WritableAtom<
-  Map<Str, T>,
-  [SetStateAction<Map<Str, T>>],
-  void
->;
+type MapAtom<Str, T> = WritableAtom<Promise<Map<Str, T>>, [Map<Str, T>], void>;
 
-export const MappedFileAtom = atom<MappedIndex>(EmptyMappedFile);
 export const MappedValuesAtom: MapAtom<ValueName, ValueRef> = focusAtom(
   MappedFileAtom,
   (optic) => optic.prop('namedValues'),
@@ -135,9 +135,9 @@ export const MappedPathChainsAtom: MapAtom<PathChainName, AnonymousPathChain> =
 function makeItemFromNameFamily<Str, T>(theAtom: MapAtom<Str, T>) {
   return atomFamily((name: Str) =>
     atom(
-      (get) => get(theAtom).get(name),
-      (get, set, val: T) => {
-        const mappedItems = new Map(get(theAtom));
+      async (get) => (await get(theAtom)).get(name),
+      async (get, set, val: T) => {
+        const mappedItems = new Map(await get(theAtom));
         mappedItems.set(name, val);
         set(theAtom, mappedItems);
       },
