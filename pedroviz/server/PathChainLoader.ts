@@ -27,9 +27,10 @@ import {
   AnonymousValue,
   BezierName,
   BezierRef,
-  chkAnonymousValue,
   HeadingRef,
   HeadingType,
+  isAnonymousValue,
+  isRadiansRef,
   NamedBezier,
   NamedPathChain,
   NamedPose,
@@ -186,7 +187,7 @@ function tryMatchingNamedValues(
   if (!numType) {
     return;
   }
-  const value: AnonymousValue = { type: 'double', value: 0 };
+  let type = 'double';
   if (numType.floatingPointType) {
     if (!child(numType.floatingPointType)?.Double) {
       return;
@@ -195,7 +196,7 @@ function tryMatchingNamedValues(
     if (!child(numType.integralType)?.Int) {
       return;
     }
-    value.type = 'int';
+    type = 'int';
   }
   // Okay, found the type. Need the name and the initialized value.
   if (ctx.variableDeclaratorList.length !== 1) {
@@ -219,10 +220,8 @@ function tryMatchingNamedValues(
   if (isString(valRef)) {
     return;
   }
-  if (chkAnonymousValue(valRef)) {
+  if (isAnonymousValue(valRef) || isRadiansRef(valRef)) {
     return { name, value: valRef };
-  } else if (!isString(valRef.radians)) {
-    return { name, value: valRef.radians };
   }
 }
 
@@ -238,12 +237,12 @@ function getNumericConstant(
   if (isDefined(whichLit?.integerLiteral)) {
     const value = nameOf(child(whichLit.integerLiteral)?.DecimalLiteral);
     if (isDefined(value)) {
-      return { type: 'int', value: parseInt(value) * negative };
+      return { int: parseInt(value) * negative };
     }
   } else if (isDefined(whichLit?.floatingPointLiteral)) {
     const value = nameOf(child(whichLit.floatingPointLiteral)?.FloatLiteral);
     if (isDefined(value)) {
-      return { type: 'double', value: parseFloat(value) * negative };
+      return { double: parseFloat(value) * negative };
     }
   }
   return;
@@ -321,8 +320,7 @@ function getToRadians(
   if (isString(numRef)) {
     return { radians: numRef };
   } else if (isDefined(numRef)) {
-    numRef.type = 'radians';
-    return numRef;
+    return { radians: numRef };
   }
 }
 

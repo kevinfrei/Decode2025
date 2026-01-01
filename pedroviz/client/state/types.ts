@@ -21,6 +21,7 @@ import {
   PathChainName,
   PoseName,
   PoseRef,
+  RadiansRef,
   ValueName,
   ValueRef,
 } from '../../server/types';
@@ -64,7 +65,7 @@ export const chkConcreteHeadingType: typecheck<ConcreteHeadingType> = chkAnyOf(
 );
 
 export type MappedIndex = {
-  namedValues: Map<ValueName, ValueRef>;
+  namedValues: Map<ValueName, ValueRef | RadiansRef>;
   namedPoses: Map<PoseName, PoseRef>;
   namedBeziers: Map<BezierName, BezierRef>;
   namedPathChains: Map<PathChainName, AnonymousPathChain>;

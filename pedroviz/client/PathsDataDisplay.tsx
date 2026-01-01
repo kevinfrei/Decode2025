@@ -5,10 +5,12 @@ import { CSSProperties, Fragment, ReactElement, useState } from 'react';
 import {
   AnonymousPose,
   AnonymousValue,
-  chkRadiansRef,
   HeadingRef,
   HeadingType,
+  isDoubleValue,
+  isRadiansRef,
   isRef,
+  PoseName,
   PoseRef,
   RadiansRef,
   ValueName,
@@ -47,27 +49,25 @@ function AnonymousValueDisplay({
   item,
   ...props
 }: ItemWithStyle<AnonymousValue>): ReactElement {
-  switch (item.type) {
-    case 'radians':
-      return (
-        <MathToRadianDisplay
-          item={{ type: 'double', value: item.value }}
-          {...props}
-        />
-      );
-    case 'double':
-      return <Text {...props}>{item.value.toFixed(3)}</Text>;
-    case 'int':
-      return <Text {...props}>{item.value.toFixed(0)}</Text>;
+  if (isDoubleValue(item)) {
+    return <Text {...props}>{item.double.toFixed(3)}</Text>;
+  } else {
+    return <Text {...props}>{item.int.toFixed(0)}</Text>;
   }
 }
 
+export function GeneralRefDisplay({
+  item,
+  ...props
+}: ItemWithStyle<ValueName | PoseName>) {
+  return <Text {...props}>{item}</Text>;
+}
 export function ValueRefDisplay({
   item,
   ...props
 }: ItemWithStyle<ValueRef>): ReactElement {
   return isRef(item) ? (
-    <Text {...props}>{item}</Text>
+    <GeneralRefDisplay item={item} {...props} />
   ) : (
     <AnonymousValueDisplay item={item} {...props} />
   );
@@ -85,11 +85,13 @@ function HeadingRefDisplay({
   ...props
 }: ItemWithStyle<HeadingRef>): ReactElement {
   if (isDefined(item)) {
-    return chkRadiansRef(item) ? (
-      <RadiansRefDisplay item={item} {...props} />
-    ) : (
-      <ValueRefDisplay item={item} {...props} />
-    );
+    if (isRadiansRef(item)) {
+      return <RadiansRefDisplay item={item} {...props} />;
+    } else if (isRef(item)) {
+      return <GeneralRefDisplay item={item} {...props} />;
+    } else {
+      return <AnonymousValueDisplay item={item} {...props} />;
+    }
   }
   return <>&nbsp;</>;
 }
@@ -98,7 +100,7 @@ export function EditableValueRef({
   initial,
   setRef,
 }: {
-  initial: string;
+  initial: ValueName;
   setRef: (val: ValueName) => void;
 }): ReactElement {
   const validRefs = useAtomValue(MappedValuesAtom);
@@ -109,7 +111,7 @@ export function EditableValueRef({
     } else {
       // TODO: Highlight the invalidity of this ref: Turn it red or something?
     }
-    setCurVal(data.value);
+    setCurVal(data.value as ValueName);
   };
   return (
     <Input
@@ -131,10 +133,7 @@ export function EditableValueExpr({
   const onChangeVal: InputProps['onChange'] = (_, data) => {
     const newVal = Number.parseFloat(data.value);
     if (!isNaN(newVal)) {
-      setVal({
-        type: Number.isInteger(newVal) ? 'int' : 'double',
-        value: newVal,
-      });
+      setVal(Number.isInteger(newVal) ? { int: newVal } : { double: newVal });
     }
   };
   return (
@@ -147,20 +146,50 @@ export function EditableValueExpr({
   );
 }
 
+function getNumber(val: AnonymousValue): number {
+  return isDoubleValue(val) ? val.double : val.int;
+}
+
 export function NamedValueElem({ name }: { name: ValueName }): ReactElement {
   const [item, setItem] = useAtom(ValueAtomFamily(name));
-  return isRef(item) ? (
-    <>
-      <Text>{name}</Text>
-      <EditableValueRef initial={item} setRef={setItem} />
-    </>
-  ) : (
-    <>
-      <Text>{name}</Text>
-      <EditableValueExpr curVal={item.value} setVal={setItem} />
-      <Text>{` ${item.type === 'radians' ? 'degrees' : item.type}`}</Text>
-    </>
-  );
+  if (isRadiansRef(item)) {
+    if (isRef(item.radians)) {
+      return (
+        <>
+          <Text>{name}</Text>
+          <EditableValueRef
+            initial={item.radians}
+            setRef={(nm) => setItem({ radians: nm })}
+          />
+          <Text> degrees</Text>
+        </>
+      );
+    }
+    return (
+      <>
+        <Text>{name}</Text>
+        <EditableValueExpr
+          curVal={getNumber(item.radians)}
+          setVal={(av) => setItem({ radians: av })}
+        />
+      </>
+    );
+  } else if (isRef(item)) {
+    return (
+      <>
+        <Text>{name}</Text>
+        <EditableValueRef initial={item} setRef={setItem} />
+      </>
+    );
+  } else {
+    return (
+      <>
+        <Text>{name}</Text>
+        <EditableValueExpr curVal={getNumber(item)} setVal={setItem} />
+        <Text> {isDoubleValue(item) ? 'double' : 'int'}</Text>
+      </>
+    );
+  }
 }
 
 export function NamedValueList(): ReactElement {

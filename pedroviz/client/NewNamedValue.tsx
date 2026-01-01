@@ -19,7 +19,12 @@ import {
 import { useAtomValue } from 'jotai';
 import { useAtomCallback } from 'jotai/utils';
 import { useState } from 'react';
-import { ValueName, ValueRef } from '../server/types';
+import {
+  AnonymousValue,
+  RadiansRef,
+  ValueName,
+  ValueRef,
+} from '../server/types';
 import { MappedValuesAtom, ValueAtomFamily } from './state/Atoms';
 
 const validName: RegExp = /^[A-Za-z_][a-zA-Z0-9_]*$/;
@@ -31,7 +36,7 @@ export function NewNamedValue(): ReactElement {
     'double',
   );
   const allNames = useAtomValue(MappedValuesAtom);
-  const setNamedValue = useAtomCallback((_, set, val: ValueRef) =>
+  const setNamedValue = useAtomCallback((_, set, val: ValueRef | RadiansRef) =>
     set(ValueAtomFamily(name), val),
   );
 
@@ -95,11 +100,15 @@ export function NewNamedValue(): ReactElement {
   };
 
   const saveValue = () => {
-    const vr: ValueRef = {
-      type: valType === 'degrees' ? 'radians' : valType,
-      value: Number.parseFloat(valStr),
-    };
-    setNamedValue(vr);
+    const value = Number.parseFloat(valStr);
+    const obj: AnonymousValue = Number.isInteger(value)
+      ? { int: value }
+      : { double: value };
+    if (valType === 'degrees') {
+      setNamedValue({ radians: obj });
+    } else {
+      setNamedValue(obj);
+    }
   };
 
   return (

@@ -7,10 +7,12 @@ import {
   BezierName,
   BezierRef,
   ErrorOr,
+  HeadingRef,
   isError,
   PathChainName,
   PoseName,
   PoseRef,
+  RadiansRef,
   ValueName,
   ValueRef,
 } from '../../server/types';
@@ -117,7 +119,7 @@ export const MappedFileAtom = atom(
 
 type MapAtom<Str, T> = WritableAtom<Promise<Map<Str, T>>, [Map<Str, T>], void>;
 
-export const MappedValuesAtom: MapAtom<ValueName, ValueRef> = focusAtom(
+export const MappedValuesAtom: MapAtom<ValueName, ValueRef | RadiansRef> = focusAtom(
   MappedFileAtom,
   (optic) => optic.prop('namedValues'),
 );

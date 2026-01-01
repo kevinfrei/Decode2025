@@ -9,9 +9,9 @@ import {
   MappedPosesAtom,
   MappedValuesAtom,
 } from '../state/Atoms';
+import { getBezierRefPoints } from '../state/IndexedFile';
 import { Point } from '../state/types';
 import { bezierLength, deCasteljau } from './bezier';
-import { getBezierRefPoints } from '../state/IndexedFile';
 
 const Scale = 1;
 const PointRadius = 1;
@@ -29,7 +29,9 @@ export function ScaledCanvas(): ReactElement {
   const points = [
     ...pathChains
       .values()
-      .map((npc: NamedPathChain) => npc.paths.map((br) => getBezierRefPoints(file, br))),
+      .map((npc: NamedPathChain) =>
+        npc.paths.map((br) => getBezierRefPoints(file, br)),
+      ),
   ].flat(1);
   const showColors = false;
   const showTime = false;

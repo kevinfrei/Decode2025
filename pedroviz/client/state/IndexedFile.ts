@@ -1,4 +1,4 @@
-import { isUndefined } from '@freik/typechk';
+import { isDefined, isUndefined } from '@freik/typechk';
 import {
   accError,
   AnonymousBezier,
@@ -6,18 +6,22 @@ import {
   AnonymousValue,
   BezierName,
   BezierRef,
-  chkConstantHeading,
-  chkInterpolatedHeading,
-  chkRadiansRef,
   ErrorOr,
   HeadingRef,
+  isAnonymousValue,
+  isConstantHeading,
+  isDoubleValue,
   isError,
+  isInterpolatedHeading,
+  isIntValue,
+  isRadiansRef,
   isRef,
   makeError,
   PathChainFile,
   PathChainName,
   PoseName,
   PoseRef,
+  RadiansRef,
   ValueName,
   ValueRef,
 } from '../../server/types';
@@ -27,7 +31,7 @@ import { AnonymousPathChain, MappedIndex, Point } from './types';
 export function MakeMappedIndexedFile(
   pcf: PathChainFile,
 ): ErrorOr<MappedIndex> {
-  const namedValues = new Map<ValueName, ValueRef>(
+  const namedValues = new Map<ValueName, ValueRef | RadiansRef>(
     pcf.values.map((nv) => [nv.name, nv.value]),
   );
   const namedPoses = new Map<PoseName, PoseRef>(
@@ -55,14 +59,14 @@ export function MakeMappedIndexedFile(
   }
 
   function checkHeadingRef(hr: HeadingRef, id: string): ValidRes {
-    if (chkRadiansRef(hr)) {
+    if (isRadiansRef(hr)) {
       hr = hr.radians;
     }
-    const valueRefCheck = checkValueRef(hr, id);
+    const valueRefCheck = checkValueRef(hr as ValueRef, id);
     if (valueRefCheck !== true) {
       // A heading ref could be a pose ref instead of a value ref
       // TODO: Maybe keep track of this stuff somehow?
-      return checkPoseRef(hr as unknown as PoseRef, id);
+      return checkPoseRef(hr as PoseName, id);
     }
     return true;
   }
@@ -115,12 +119,12 @@ export function MakeMappedIndexedFile(
     id: string,
   ): ValidRes {
     let res: ValidRes = true;
-    if (chkConstantHeading(apc.heading)) {
+    if (isConstantHeading(apc.heading)) {
       res = checkHeadingRef(
         apc.heading.heading,
         `${id}'s constant heading ref`,
       );
-    } else if (chkInterpolatedHeading(apc.heading)) {
+    } else if (isInterpolatedHeading(apc.heading)) {
       res = checkHeadingRef(
         apc.heading.headings[0],
         `${id}'s start heading ref`,
@@ -146,9 +150,9 @@ export function MakeMappedIndexedFile(
     if (
       allNames.size !==
       namedValues.size +
-        namedPoses.size +
-        namedBeziers.size +
-        namedPathChains.size
+      namedPoses.size +
+      namedBeziers.size +
+      namedPathChains.size
     ) {
       // TODO: Provide a detailed diagnostic of which names are duplicated
       return makeError(
@@ -181,7 +185,7 @@ export function MakeMappedIndexedFile(
   return { namedValues, namedBeziers, namedPoses, namedPathChains };
 }
 
-export function getValueRefValue(idx: MappedIndex, vr: ValueRef): number {
+export function getValueRefValue(idx: MappedIndex, vr: ValueRef | RadiansRef): number {
   let av = vr;
   const seen = new Set<string>();
   while (isRef(av)) {
@@ -191,12 +195,33 @@ export function getValueRefValue(idx: MappedIndex, vr: ValueRef): number {
       );
     }
     seen.add(av);
-    av = idx.namedValues.get(av);
+    av = idx.namedValues.get(av as ValueName);
   }
   if (isUndefined(av)) {
     throw new Error(`Invalid ValueRef ${vr}`);
   }
-  return numFromVal(av);
+  return numFromVal(idx, av);
+}
+
+export function getPoseRefHeading(idx: MappedIndex, pr: PoseRef): number {
+  let ap = pr;
+  const seen = new Set<string>();
+  while (isRef(ap)) {
+    if (seen.has(ap)) {
+      throw new Error(
+        `Circular reference for ${pr} (${ap} triggered the cycle)`,
+      );
+    }
+    seen.add(ap);
+    ap = idx.namedPoses.get(ap);
+  }
+  if (isUndefined(ap)) {
+    throw new Error(`Invalid PoseRef ${pr}`);
+  }
+  if (isUndefined(ap.heading)) {
+    throw new Error(`No heading for Pose ${ap} from PoseRef ${pr}`);
+  }
+  return getHeadingRefValue(idx, ap.heading);
 }
 
 export function getPoseRefPoint(idx: MappedIndex, pr: PoseRef): Point {
@@ -237,8 +262,20 @@ export function getBezierRefPoints(idx: MappedIndex, br: BezierRef): Point[] {
 
 export function getHeadingRefValue(idx: MappedIndex, hr: HeadingRef): number {
   if (isRef(hr)) {
-    return getValueRefValue(idx, hr);
-  } else if (chkRadiansRef(hr)) {
+    // Either a PoseName, AnonymousValue, or ValueName;
+    if (isAnonymousValue(hr)) {
+      return getValueRefValue(idx, hr);
+    }
+    const val = idx.namedValues.get(hr as ValueName);
+    if (isDefined(val)) {
+      return getValueRefValue(idx, val);
+    }
+    const pose = idx.namedPoses.get(hr as PoseName);
+    if (isDefined(pose)) {
+      return getPoseRefHeading(idx, pose);
+    }
+    throw new Error(`Missing heading for ${hr}`);
+  } else if (isRadiansRef(hr)) {
     return (Math.PI * getValueRefValue(idx, hr.radians)) / 180.0;
   } else {
     return getValueRefValue(idx, hr);
@@ -246,12 +283,12 @@ export function getHeadingRefValue(idx: MappedIndex, hr: HeadingRef): number {
 }
 
 // Evaluation from the parsed code representation:
-export function numFromVal(av: AnonymousValue): number {
-  switch (av.type) {
-    case 'double':
-    case 'int':
-      return av.value;
-    case 'radians':
-      return (Math.PI * av.value) / 180.0;
+export function numFromVal(idx: MappedIndex, av: AnonymousValue | RadiansRef): number {
+  if (isDoubleValue(av)) {
+    return av.double;
+  } else if (isIntValue(av)) {
+    return av.int;
+  } else {
+    return (Math.PI * getValueRefValue(idx, av.radians)) / 180.0;
   }
 }
