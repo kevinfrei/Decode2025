@@ -16,24 +16,31 @@ import {
   RadioGroup,
   RadioGroupProps,
 } from '@fluentui/react-components';
-import { useAtomValue, useSetAtom } from 'jotai';
+import { useAtomValue } from 'jotai';
+import { useAtomCallback } from 'jotai/utils';
 import { useState } from 'react';
-import { NamedValue } from '../server/types';
-import { AllNamesAtom, NamedValuesAtom } from './state/Atoms';
+import {
+  AnonymousValue,
+  RadiansRef,
+  ValueName,
+  ValueRef,
+} from '../server/types';
+import { MappedValuesAtom, ValueAtomFamily } from './state/Atoms';
 
 const validName: RegExp = /^[A-Za-z_][a-zA-Z0-9_]*$/;
 
 export function NewNamedValue(): ReactElement {
-  const allNames = useAtomValue(AllNamesAtom);
-
-  const setNamedValue = useSetAtom(NamedValuesAtom);
-  const [name, setName] = useState('newValName');
+  const [name, setName] = useState<ValueName>('newValName' as ValueName);
   const [valStr, setValStr] = useState('0.000');
   const [valType, setValType] = useState<'int' | 'double' | 'degrees'>(
     'double',
   );
+  const allNames = useAtomValue(MappedValuesAtom);
+  const setNamedValue = useAtomCallback((_, set, val: ValueRef | RadiansRef) =>
+    set(ValueAtomFamily(name), val),
+  );
 
-  const checkName = (nm: string): [string, 'error' | 'none'] => {
+  const checkName = (nm: ValueName): [string, 'error' | 'none'] => {
     if (allNames.has(nm)) {
       return ['Please use a unique name.', 'error'];
     } else if (!validName.test(nm)) {
@@ -50,7 +57,9 @@ export function NewNamedValue(): ReactElement {
     return ['', 'none'];
   };
 
-  const [validNameMessage, nameValidationState] = checkName(name.trim());
+  const [validNameMessage, nameValidationState] = checkName(
+    name.trim() as ValueName,
+  );
   const [validValueMessage, valueValidationState] = checkValue(valStr);
 
   const saveEnabled =
@@ -76,7 +85,7 @@ export function NewNamedValue(): ReactElement {
     setValStr(data.value);
   };
   const nameChange: InputProps['onChange'] = (_, data) => {
-    setName(data.value);
+    setName(data.value as ValueName);
   };
 
   const formatNum = (val: number): string => {
@@ -91,14 +100,15 @@ export function NewNamedValue(): ReactElement {
   };
 
   const saveValue = () => {
-    const nv: NamedValue = {
-      name,
-      value: {
-        type: valType === 'degrees' ? 'radians' : valType,
-        value: Number.parseFloat(valStr),
-      },
-    };
-    setNamedValue(nv);
+    const value = Number.parseFloat(valStr);
+    const obj: AnonymousValue = Number.isInteger(value)
+      ? { int: value }
+      : { double: value };
+    if (valType === 'degrees') {
+      setNamedValue({ radians: obj });
+    } else {
+      setNamedValue(obj);
+    }
   };
 
   return (
