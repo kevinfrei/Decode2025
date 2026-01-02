@@ -24,8 +24,8 @@ import {
   RadiansRef,
   ValueName,
   ValueRef,
-} from '../server/types';
-import { MappedValuesAtom, ValueAtomFamily } from './state/Atoms';
+} from '../../server/types';
+import { MappedValuesAtom, ValueAtomFamily } from '../state/Atoms';
 
 const validName: RegExp = /^[A-Za-z_][a-zA-Z0-9_]*$/;
 
