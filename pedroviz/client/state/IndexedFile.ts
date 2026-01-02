@@ -28,7 +28,7 @@ import {
 import { ValidRes } from './API';
 import { AnonymousPathChain, MappedIndex, Point } from './types';
 
-export function MakeMappedIndexedFile(
+export function MakeMappedIndex(
   pcf: PathChainFile,
 ): ErrorOr<MappedIndex> {
   const namedValues = new Map<ValueName, ValueRef | RadiansRef>(

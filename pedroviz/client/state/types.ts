@@ -6,18 +6,9 @@ import {
   typecheck,
 } from '@freik/typechk';
 import {
-  AnonymousBezier,
-  AnonymousPose,
-  AnonymousValue,
   BezierName,
   BezierRef,
-  HeadingRef,
   HeadingType,
-  NamedBezier,
-  NamedPathChain,
-  NamedPose,
-  NamedValue,
-  PathChainFile,
   PathChainName,
   PoseName,
   PoseRef,
@@ -71,47 +62,4 @@ export type MappedIndex = {
   namedPathChains: Map<PathChainName, AnonymousPathChain>;
 };
 
-export type IndexedPCF = PathChainFile & {
-  namedValues: Map<string, number>;
-  namedPoses: Map<string, number>;
-  namedBeziers: Map<string, number>;
-  namedPathChains: Map<string, number>;
-};
-
-export type IndexedPCFile = {
-  values: Map<string, AnonymousValue>;
-  poses: Map<string, AnonymousPose>;
-  beziers: Map<string, AnonymousBezier>;
-  pathChains: Map<string, AnonymousPathChain>;
-};
-
 export type Point = { x: number; y: number };
-
-export type IndexedFile = {
-  getValues(): NamedValue[];
-  getPoses(): NamedPose[];
-  getBeziers(): NamedBezier[];
-  getPathChains(): NamedPathChain[];
-
-  getValueNames(): string[];
-  getPoseNames(): string[];
-  getBezierNames(): string[];
-  getPathChainNames(): string[];
-
-  getValue(name: string): AnonymousValue | undefined;
-  getPose(name: string): AnonymousPose | undefined;
-  getBezier(name: string): AnonymousBezier | undefined;
-  getPathChain(name: string): AnonymousPathChain | undefined;
-
-  setValue(name: string, value: AnonymousValue): void;
-  setPose(name: string, pose: AnonymousPose): void;
-  setBezier(name: string, bezier: AnonymousBezier): void;
-  setPathChain(name: string, pathChain: AnonymousPathChain): void;
-
-  getValueRefValue(vr: ValueRef): number;
-  getPoseRefPoint(pr: PoseRef): Point;
-  getBezierRefPoints(br: BezierRef): Point[];
-  getHeadingRefValue(hr: HeadingRef): number;
-
-  dump(): string;
-};

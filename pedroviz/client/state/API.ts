@@ -10,7 +10,7 @@ import {
   PathChainFile,
   TeamPaths,
 } from '../../server/types';
-import { MakeMappedIndexedFile } from './IndexedFile';
+import { MakeMappedIndex } from './IndexedFile';
 import { fetchApi } from './Storage';
 import { MappedIndex } from './types';
 
@@ -70,7 +70,7 @@ export async function LoadAndIndexFile(
   if (isString(pcf)) {
     return makeError(pcf);
   }
-  const indexFile = MakeMappedIndexedFile(pcf);
+  const indexFile = MakeMappedIndex(pcf);
   if (isError(indexFile)) {
     return makeError(
       indexFile,
