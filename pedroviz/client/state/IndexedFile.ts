@@ -185,7 +185,7 @@ export function MakeMappedIndexedFile(
   return { namedValues, namedBeziers, namedPoses, namedPathChains };
 }
 
-export function getValueRefValue(idx: MappedIndex, vr: ValueRef | RadiansRef): number {
+export function calcValueRef(idx: MappedIndex, vr: ValueRef | RadiansRef): number {
   let av = vr;
   const seen = new Set<string>();
   while (isRef(av)) {
@@ -200,10 +200,10 @@ export function getValueRefValue(idx: MappedIndex, vr: ValueRef | RadiansRef): n
   if (isUndefined(av)) {
     throw new Error(`Invalid ValueRef ${vr}`);
   }
-  return numFromVal(idx, av);
+  return calcValue(idx, av);
 }
 
-export function getPoseRefHeading(idx: MappedIndex, pr: PoseRef): number {
+export function calcPoseRefHeading(idx: MappedIndex, pr: PoseRef): number {
   let ap = pr;
   const seen = new Set<string>();
   while (isRef(ap)) {
@@ -221,10 +221,10 @@ export function getPoseRefHeading(idx: MappedIndex, pr: PoseRef): number {
   if (isUndefined(ap.heading)) {
     throw new Error(`No heading for Pose ${ap} from PoseRef ${pr}`);
   }
-  return getHeadingRefValue(idx, ap.heading);
+  return calcHeadingRef(idx, ap.heading);
 }
 
-export function getPoseRefPoint(idx: MappedIndex, pr: PoseRef): Point {
+export function calcPoseRef(idx: MappedIndex, pr: PoseRef): Point {
   let ap = pr;
   const seen = new Set<string>();
   while (isRef(ap)) {
@@ -239,10 +239,10 @@ export function getPoseRefPoint(idx: MappedIndex, pr: PoseRef): Point {
   if (isUndefined(ap)) {
     throw new Error(`Invalid PoseRef ${pr}`);
   }
-  return { x: getValueRefValue(idx, ap.x), y: getValueRefValue(idx, ap.y) };
+  return { x: calcValueRef(idx, ap.x), y: calcValueRef(idx, ap.y) };
 }
 
-export function getBezierRefPoints(idx: MappedIndex, br: BezierRef): Point[] {
+export function calcBezierRef(idx: MappedIndex, br: BezierRef): Point[] {
   let ab = br;
   const seen = new Set<string>();
   while (isRef(ab)) {
@@ -257,38 +257,38 @@ export function getBezierRefPoints(idx: MappedIndex, br: BezierRef): Point[] {
   if (isUndefined(ab)) {
     throw new Error(`Invalid BezierRef ${br}`);
   }
-  return ab.points.map((p) => getPoseRefPoint(idx, p));
+  return ab.points.map((p) => calcPoseRef(idx, p));
 }
 
-export function getHeadingRefValue(idx: MappedIndex, hr: HeadingRef): number {
+export function calcHeadingRef(idx: MappedIndex, hr: HeadingRef): number {
   if (isRef(hr)) {
     // Either a PoseName, AnonymousValue, or ValueName;
     if (isAnonymousValue(hr)) {
-      return getValueRefValue(idx, hr);
+      return calcValueRef(idx, hr);
     }
     const val = idx.namedValues.get(hr as ValueName);
     if (isDefined(val)) {
-      return getValueRefValue(idx, val);
+      return calcValueRef(idx, val);
     }
     const pose = idx.namedPoses.get(hr as PoseName);
     if (isDefined(pose)) {
-      return getPoseRefHeading(idx, pose);
+      return calcPoseRefHeading(idx, pose);
     }
     throw new Error(`Missing heading for ${hr}`);
   } else if (isRadiansRef(hr)) {
-    return (Math.PI * getValueRefValue(idx, hr.radians)) / 180.0;
+    return (Math.PI * calcValueRef(idx, hr.radians)) / 180.0;
   } else {
-    return getValueRefValue(idx, hr);
+    return calcValueRef(idx, hr);
   }
 }
 
 // Evaluation from the parsed code representation:
-export function numFromVal(idx: MappedIndex, av: AnonymousValue | RadiansRef): number {
+export function calcValue(idx: MappedIndex, av: AnonymousValue | RadiansRef): number {
   if (isDoubleValue(av)) {
     return av.double;
   } else if (isIntValue(av)) {
     return av.int;
   } else {
-    return (Math.PI * getValueRefValue(idx, av.radians)) / 180.0;
+    return (Math.PI * calcValueRef(idx, av.radians)) / 180.0;
   }
 }

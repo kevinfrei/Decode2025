@@ -7,15 +7,15 @@ import {
 } from '../state/API';
 import { IndexedPCF } from '../state/types';
 import { isNumber, isString } from '@freik/typechk';
+import { calcHeadingRef, calcPoseRef, calcValue, calcValueRef } from '../state/IndexedFile';
 
 function mkValNm(name: string): ValueName {
   return name as ValueName;
 }
 function mkVal(type: 'int' | 'double', value: number): AnonymousValue;
-function mkVal(type: 'radians', value: number | string): HeadingRef; 
+function mkVal(type: 'radians', value: number | string): HeadingRef;
 function mkVal(type: 'radians' | 'int' | 'double', value: number | string): AnonymousValue | HeadingRef {
-  return isNumber(value) ?  { type, value}
-  : {radians: mkValNm(value) };
+  return isNumber(value) ? Number.isInteger(value) ? { int: value } : { double: value } : { radians: mkValNm(value) };
 }
 function mkNmVal(name: string, value: AnonymousValue | string | HeadingRef): NamedValue {
   return { name: mkValNm(name), value: isString(value) ? value as ValueRef : value };
@@ -33,12 +33,12 @@ function mkBezNm(name: string): BezierName {
   return name as BezierName;
 }
 function mkBez(type: 'line' | 'curve', ...points: PoseRef[]): AnonymousBezier {
-  return {type, points};
+  return { type, points };
 }
 function mkNmBez(name: string, bez: AnonymousBezier | string): NamedBezier {
-  return {name: mkBezNm(name), points: bez as BezierRef}
+  return { name: mkBezNm(name), points: bez as BezierRef }
 }
-function mkPCNm(name:string): PathChainName {
+function mkPCNm(name: string): PathChainName {
   return name as PathChainName;
 }
 
@@ -90,7 +90,7 @@ const fullPathChainFile: PathChainFile = {
       paths: ['bez1' as BezierName, { type: 'curve', points: ['pose1' as PoseName, 'pose3' as PoseName, 'pose2' as PoseName] }],
       heading: {
         type: 'interpolated',
-        headings: ['pose2' as PoseName, { radians: { type: 'int', value: 135 } }],
+        headings: ['pose2' as PoseName, { radians: { int: 135 } }],
       },
     },
   ],
@@ -101,30 +101,30 @@ const danglingPCF: PathChainFile = {
   values: [...fullPathChainFile.values],
   poses: [
     ...fullPathChainFile.poses,
-    mkNmPose('danglingHeader',mkPose('nope', 'val1')),
+    mkNmPose('danglingHeader', mkPose('nope', 'val1')),
   ],
   beziers: [
     ...fullPathChainFile.beziers,
     mkNmBez('danglingPoseRef',
       mkBez('line',
-          mkPoseNm('noPose'),
-          mkPose('val1', 'not_here', mkVal('radians', 'nuthing')))),
+        mkPoseNm('noPose'),
+        mkPose('val1', 'not_here', mkVal('radians', 'nuthing')))),
     mkNmBez('danglingPoseRef2',
       mkBez('curve',
-        mkPose('val1', 'val2', mkValNm('zip') ))),
+        mkPose('val1', 'val2', mkValNm('zip')))),
     mkNmBez('danglingPoseRef3',
-      mkBez('line', mkPose('val1',  'val2', mkValNm('zip') )))],
+      mkBez('line', mkPose('val1', 'val2', mkValNm('zip'))))],
   pathChains: [
     ...fullPathChainFile.pathChains,
     {
-      name: 'danglingBezRef',
-      paths: ['noBez'],
-      heading: { type: 'constant', heading: 'noHeading' },
+      name: 'danglingBezRef' as PathChainName,
+      paths: ['noBez' as BezierName],
+      heading: { type: 'constant', heading: 'noHeading' as ValueName },
     },
     {
-      name: 'danglingBezRef2',
-      paths: ['bez1', 'bez2'],
-      heading: { type: 'constant', heading: { radians: 'nospot' } },
+      name: 'danglingBezRef2' as PathChainName,
+      paths: ['bez1' as BezierName, 'bez2' as BezierName],
+      heading: { type: 'constant', heading: { radians: 'nospot' as ValueName } },
     },
   ],
 };
@@ -177,14 +177,14 @@ describe('API validation', () => {
   });
   test('LoadPaths', async () => {
     globalThis.fetch = MyFetchFunc;
-    const res2 = await LoadFile('team1', 'path1.java');
+    const res2 = await LoadAndIndexFile('team1', 'path1.java');
     expect(isError(res2)).toBeTrue();
     if (isError(res2)) {
       expect(res2.errors()).toEqual(
         ['Invalid PathChainFile loaded from server'],
       );
     }
-    const res = await LoadFile('team1', 'path2.java');
+    const res = await LoadAndIndexFile('team1', 'path2.java');
     expect(isError(res)).toBeTrue();
     if (isError(res)) {
       expect(res.errors()).toEqual(
@@ -194,7 +194,7 @@ describe('API validation', () => {
   });
   test('Undefined references in PathChainFile validation', async () => {
     globalThis.fetch = MyFetchFunc;
-    const res = await LoadFile('team2', 'path4.java');
+    const res = await LoadAndIndexFile('team2', 'path4.java');
     expect(isError(res)).toBeTrue();
     if (isError(res)) {
       expect(res.errors()).toEqual(['Loaded file team2/path4.java has dangling references.']);
@@ -202,18 +202,22 @@ describe('API validation', () => {
   });
   test('Full PathChainFile validation, color hashing, and evaluation', async () => {
     globalThis.fetch = MyFetchFunc;
-    const res = await LoadFile('team2', 'path3.java');
+    const res = await LoadAndIndexFile('team2', 'path3.java');
     if (isError(res)) {
       console.log('Errors:', res.errors());
       expect(isError(res)).toBeFalse();
       return;
     }
-    expect(res.dump()).toEqual('3 values, 3 poses, 2 beziers, 3 pathChains.');
-    expect(res.getValueRefValue({ type: 'int', value: 1 })).toEqual(1);
-    expect(res.getValueRefValue({ type: 'double', value: 2.5 })).toEqual(2.5);
-    expect(res.getValueRefValue({ type: 'radians', value: 180 })).toEqual(Math.PI);
-    expect(res.getValueRefValue('val2')).toEqual(2.5);
-    expect(res.getPoseRefPoint({ x: 'val1', y: 'val2' })).toEqual({ x: 1, y: 2.5 });
+    expect(res.namedValues.size).toEqual(3);
+    expect(res.namedPoses.size).toEqual(3)
+    expect(res.namedBeziers.size).toEqual(2);
+    expect(res.namedPathChains.size).toEqual(3);
+    
+    expect(calcValue(res, { int: 1 })).toEqual(1);
+    expect(calcValueRef(res, {double: 2.5 })).toEqual(2.5);
+    expect(calcValueRef(res, {radians: {int:180} })).toEqual(Math.PI);
+    expect(calcValueRef(res, 'val2' as ValueName)).toEqual(2.5);
+    expect(calcPoseRef (res, { x: 'val1' as ValueName, y: 'val2' as ValueName })).toEqual({ x: 1, y: 2.5 });
     const pose3 = res.getPoseRefPoint('pose3');
     expect(pose3).toEqual({ x: 1, y: 2.5 });
     expect(() => res.getPoseRefPoint('noPose')).toThrow();
