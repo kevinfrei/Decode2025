@@ -15,6 +15,7 @@ public class TeamTestPaths {
     public static double one80 = Math.toRadians(180);
     public static double step_mid = 74.0;
     public static double radRef = Math.toRadians(ninety);
+    public static double valRef = org;
 
     public static Pose start = new Pose(org, org, 0);
     public static Pose step1 = new Pose(step, org, Math.toRadians(90));

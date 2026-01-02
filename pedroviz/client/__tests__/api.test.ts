@@ -128,6 +128,7 @@ const fullPathChainFile: PathChainFile = {
     mkNmVal('val3', mkVal('radians', 90)),
     mkNmVal('valCirc', mkVal('radians', 'valCirc2')),
     mkNmVal('valCirc2', mkVal('radians', 'valCirc')),
+    mkNmVal('refVal', mkValNm('val1'))
   ],
   poses: [
     mkNmPose('pose1', mkPose(mkVal('double', 2.5), mkValNm('val1'))),
@@ -287,19 +288,6 @@ describe('API validation', () => {
       ]);
     }
   });
-  test('Undefined references in PathChainFile validation', async () => {
-    globalThis.fetch = MyFetchFunc;
-    const res = await LoadAndIndexFile('team2', 'path4.java');
-    expect(isError(res)).toBeTrue();
-    if (isError(res)) {
-      const errs = res.errors();
-      expect(errs.length).toEqual(12);
-      const errTxt = String(res);
-      expect(errTxt).toEndWith(
-        'Loaded file team2/path4.java has dangling references.',
-      );
-    }
-  });
   test('Full PathChainFile validation, color hashing, and evaluation', async () => {
     globalThis.fetch = MyFetchFunc;
     const res = await LoadAndIndexFile('team2', 'path3.java');
@@ -308,7 +296,7 @@ describe('API validation', () => {
       expect(isError(res)).toBeFalse();
       return;
     }
-    expect(res.namedValues.size).toEqual(5);
+    expect(res.namedValues.size).toEqual(6);
     expect(res.namedPoses.size).toEqual(3);
     expect(res.namedBeziers.size).toEqual(2);
     expect(res.namedPathChains.size).toEqual(3);
@@ -336,9 +324,23 @@ describe('API validation', () => {
       (2.5 * Math.PI) / 180,
     );
     expect(calcValueRef(res, { int: 15 })).toEqual(15);
+    expect(calcValueRef(res, mkValNm('refVal'))).toEqual(1);
     expect(calcPoseRefHeading(res, mkPoseNm('pose3'))).toEqual(Math.PI / 2);
     const res2 = await LoadAndIndexFile('team2', 'path3.java');
     expect(!isError(res2)).toBeTrue();
+  });
+  test('Undefined references in PathChainFile validation', async () => {
+    globalThis.fetch = MyFetchFunc;
+    const res = await LoadAndIndexFile('team2', 'path4.java');
+    expect(isError(res)).toBeTrue();
+    if (isError(res)) {
+      const errs = res.errors();
+      expect(errs.length).toEqual(12);
+      const errTxt = String(res);
+      expect(errTxt).toEndWith(
+        'Loaded file team2/path4.java has dangling references.',
+      );
+    }
   });
   test('Need to implement a real "save" feature', async () => {
     // Probably add a test for this, yeah?
