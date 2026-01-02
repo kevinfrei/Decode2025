@@ -150,9 +150,9 @@ export function MakeMappedIndexedFile(
     if (
       allNames.size !==
       namedValues.size +
-      namedPoses.size +
-      namedBeziers.size +
-      namedPathChains.size
+        namedPoses.size +
+        namedBeziers.size +
+        namedPathChains.size
     ) {
       // TODO: Provide a detailed diagnostic of which names are duplicated
       return makeError(
@@ -185,53 +185,69 @@ export function MakeMappedIndexedFile(
   return { namedValues, namedBeziers, namedPoses, namedPathChains };
 }
 
-export function calcValueRef(idx: MappedIndex, vr: ValueRef | RadiansRef): number {
+function cerr(nm: string, set: Set<string>): Error {
+  return new Error(
+    `Circular reference for ${nm} (${[...set.keys()].join(', ')} cause the cycle)`,
+  );
+}
+
+export function calcValueRef(
+  idx: MappedIndex,
+  vr: ValueRef | RadiansRef,
+  circ?: Set<string>,
+): number {
   let av = vr;
-  const seen = new Set<string>();
+  const seen = new Set<string>(circ ?? []);
   while (isRef(av)) {
     if (seen.has(av)) {
-      throw new Error(
-        `Circular reference for ${vr} (${av} triggered the cycle)`,
-      );
+      throw cerr(av, seen);
     }
     seen.add(av);
     av = idx.namedValues.get(av as ValueName);
   }
+  /* This shouldn't ever occur
   if (isUndefined(av)) {
     throw new Error(`Invalid ValueRef ${vr}`);
   }
-  return calcValue(idx, av);
+  */
+  return calcValue(idx, av, seen);
 }
 
-export function calcPoseRefHeading(idx: MappedIndex, pr: PoseRef): number {
+export function calcPoseRefHeading(
+  idx: MappedIndex,
+  pr: PoseRef,
+  circ?: Set<string>,
+): number {
   let ap = pr;
-  const seen = new Set<string>();
+  const seen = new Set<string>(circ ?? []);
   while (isRef(ap)) {
     if (seen.has(ap)) {
-      throw new Error(
-        `Circular reference for ${pr} (${ap} triggered the cycle)`,
-      );
+      throw cerr(ap, seen);
     }
     seen.add(ap);
     ap = idx.namedPoses.get(ap);
   }
+  /*
   if (isUndefined(ap)) {
     throw new Error(`Invalid PoseRef ${pr}`);
   }
   if (isUndefined(ap.heading)) {
     throw new Error(`No heading for Pose ${ap} from PoseRef ${pr}`);
   }
-  return calcHeadingRef(idx, ap.heading);
+  */
+  return calcHeadingRef(idx, ap.heading, seen);
 }
 
-export function calcPoseRef(idx: MappedIndex, pr: PoseRef): Point {
+export function calcPoseRef(
+  idx: MappedIndex,
+  pr: PoseRef,
+  circ?: Set<string>,
+): Point {
   let ap = pr;
-  const seen = new Set<string>();
+  const seen = new Set<string>(circ ?? []);
   while (isRef(ap)) {
     if (seen.has(ap)) {
-      throw new Error(
-        `Circular reference for ${pr} (${ap} triggered the cycle)`,
-      );
+      throw cerr(ap, seen);
     }
     seen.add(ap);
     ap = idx.namedPoses.get(ap);
@@ -239,56 +255,74 @@ export function calcPoseRef(idx: MappedIndex, pr: PoseRef): Point {
   if (isUndefined(ap)) {
     throw new Error(`Invalid PoseRef ${pr}`);
   }
-  return { x: calcValueRef(idx, ap.x), y: calcValueRef(idx, ap.y) };
+  return { x: calcValueRef(idx, ap.x, seen), y: calcValueRef(idx, ap.y, seen) };
 }
 
-export function calcBezierRef(idx: MappedIndex, br: BezierRef): Point[] {
+export function calcBezierRef(
+  idx: MappedIndex,
+  br: BezierRef,
+  circ?: Set<string>,
+): Point[] {
   let ab = br;
-  const seen = new Set<string>();
+  const seen = new Set<string>(circ ?? []);
   while (isRef(ab)) {
     if (seen.has(ab)) {
-      throw new Error(
-        `Circular reference for ${br} (${ab} triggered the cycle)`,
-      );
+      throw cerr(ab, seen);
     }
     seen.add(ab);
     ab = idx.namedBeziers.get(ab);
   }
+  /*
   if (isUndefined(ab)) {
     throw new Error(`Invalid BezierRef ${br}`);
   }
-  return ab.points.map((p) => calcPoseRef(idx, p));
+  */
+  return ab.points.map((p) => calcPoseRef(idx, p, seen));
 }
 
-export function calcHeadingRef(idx: MappedIndex, hr: HeadingRef): number {
+export function calcHeadingRef(
+  idx: MappedIndex,
+  hr: HeadingRef,
+  circ?: Set<string>,
+): number {
   if (isRef(hr)) {
     // Either a PoseName, AnonymousValue, or ValueName;
     if (isAnonymousValue(hr)) {
-      return calcValueRef(idx, hr);
+      return calcValueRef(idx, hr, circ);
     }
     const val = idx.namedValues.get(hr as ValueName);
     if (isDefined(val)) {
-      return calcValueRef(idx, val);
+      return calcValueRef(idx, val, circ);
     }
     const pose = idx.namedPoses.get(hr as PoseName);
     if (isDefined(pose)) {
-      return calcPoseRefHeading(idx, pose);
+      return calcPoseRefHeading(idx, pose, circ);
     }
     throw new Error(`Missing heading for ${hr}`);
   } else if (isRadiansRef(hr)) {
-    return (Math.PI * calcValueRef(idx, hr.radians)) / 180.0;
+    return (Math.PI * calcValueRef(idx, hr.radians, circ)) / 180.0;
   } else {
-    return calcValueRef(idx, hr);
+    return calcValueRef(idx, hr, circ);
   }
 }
 
 // Evaluation from the parsed code representation:
-export function calcValue(idx: MappedIndex, av: AnonymousValue | RadiansRef): number {
+export function calcValue(
+  idx: MappedIndex,
+  av: AnonymousValue | RadiansRef,
+  circ?: Set<string>,
+): number {
   if (isDoubleValue(av)) {
     return av.double;
   } else if (isIntValue(av)) {
     return av.int;
   } else {
-    return (Math.PI * calcValueRef(idx, av.radians)) / 180.0;
+    return (Math.PI * calcValueRef(idx, av.radians, circ)) / 180.0;
   }
 }
+export const EmptyMappedFile: MappedIndex = {
+  namedValues: new Map(),
+  namedPoses: new Map(),
+  namedBeziers: new Map(),
+  namedPathChains: new Map(),
+};

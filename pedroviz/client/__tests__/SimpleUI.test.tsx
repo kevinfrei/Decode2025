@@ -73,21 +73,21 @@ const simpleBez: AnonymousBezier = {
 const fullPathChainFile: PathChainFile = {
   name: 'path3.java',
   values: [
-    { name: 'val1' as ValueName, value: { type: 'int', value: 1 } },
-    { name: 'val2' as ValueName, value: { type: 'double', value: 2.5 } },
-    { name: 'val3' as ValueName, value: { type: 'radians', value: 90 } },
+    { name: 'val1' as ValueName, value: { int: 1 } },
+    { name: 'val2' as ValueName, value: { double: 2.5 } },
+    { name: 'val3' as ValueName, value: { radians: { int: 90 } } },
   ],
   poses: [
     {
       name: 'pose1' as PoseName,
-      pose: { x: { type: 'double', value: 2.5 }, y: 'val1' as ValueName },
+      pose: { x: { double: 2.5 }, y: 'val1' as ValueName },
     },
     {
       name: 'pose2' as PoseName,
       pose: {
         x: 'val2' as ValueName,
         y: 'val1' as ValueName,
-        heading: { type: 'radians', value: 60 },
+        heading: { radians: { int: 60 } },
       },
     },
     {
@@ -141,10 +141,7 @@ const fullPathChainFile: PathChainFile = {
       ],
       heading: {
         type: 'interpolated',
-        headings: [
-          'pose2' as PoseName,
-          { radians: { type: 'int', value: 135 } },
-        ],
+        headings: ['pose2' as PoseName, { radians: { int: 135 } }],
       },
     },
   ],
@@ -297,9 +294,11 @@ describe('SchemaAtom tests', () => {
         </JotaiProvider>,
       );
     });
-    store.set(SelectedTeamAtom, 'team2');
-    store.set(SelectedFileAtom, 'path3.java');
-    await waitFor(async () => {
+    await act(async () => {
+      await store.set(SelectedTeamAtom, 'team2');
+      await store.set(SelectedFileAtom, 'path3.java');
+    });
+    await act(async () => {
       expect(await store.get(SelectedFileAtom)).toBe('path3.java');
     });
     expect(await store.get(MappedValuesAtom)).toBeDefined();
@@ -307,12 +306,9 @@ describe('SchemaAtom tests', () => {
     expect(await store.get(MappedBeziersAtom)).toBeDefined();
     expect(await store.get(MappedPathChainsAtom)).toBeDefined();
     await act(() =>
-      store.set(ValueAtomFamily('valX' as ValueName), {
-        type: 'int',
-        value: 42,
-      }),
+      store.set(ValueAtomFamily('valX' as ValueName), { int: 42 }),
     );
-    waitFor(async () => {
+    await waitFor(async () => {
       expect(
         (await store.get(MappedValuesAtom)).has('valX' as ValueName),
       ).toBeTrue();

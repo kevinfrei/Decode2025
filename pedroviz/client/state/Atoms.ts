@@ -7,7 +7,6 @@ import {
   BezierName,
   BezierRef,
   ErrorOr,
-  HeadingRef,
   isError,
   PathChainName,
   PoseName,
@@ -18,7 +17,7 @@ import {
 } from '../../server/types';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
 import { GetPaths, LoadAndIndexFile, UpdateIndexFile } from './API';
-import { EmptyMappedFile } from './NamesToData';
+import { EmptyMappedFile } from './IndexedFile';
 import { AnonymousPathChain, MappedIndex } from './types';
 
 export const ThemeAtom = atomWithStorage<'dark' | 'light'>(
@@ -119,10 +118,8 @@ export const MappedFileAtom = atom(
 
 type MapAtom<Str, T> = WritableAtom<Promise<Map<Str, T>>, [Map<Str, T>], void>;
 
-export const MappedValuesAtom: MapAtom<ValueName, ValueRef | RadiansRef> = focusAtom(
-  MappedFileAtom,
-  (optic) => optic.prop('namedValues'),
-);
+export const MappedValuesAtom: MapAtom<ValueName, ValueRef | RadiansRef> =
+  focusAtom(MappedFileAtom, (optic) => optic.prop('namedValues'));
 export const MappedPosesAtom: MapAtom<PoseName, PoseRef> = focusAtom(
   MappedFileAtom,
   (optic) => optic.prop('namedPoses'),
