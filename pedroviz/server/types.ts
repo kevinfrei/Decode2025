@@ -146,7 +146,7 @@ export const isRadiansRef = chkObjectOfExactType<RadiansRef>({
 });
 export const isNamedValue = chkObjectOfExactType<NamedValue>({
   name: isString,
-  value: chkAnyOf(isIntValue, isDoubleValue, isRadiansRef),
+  value: chkAnyOf(isValueRef, isRadiansRef),
 });
 
 export const isHeadingRef: typecheck<HeadingRef> = chkAnyOf(
