@@ -1,4 +1,4 @@
-import { Input, InputProps, Text } from '@fluentui/react-components';
+import { Field, Input, InputProps, Text } from '@fluentui/react-components';
 import { useAtom, useAtomValue } from 'jotai';
 import { CSSProperties, ReactElement, useState } from 'react';
 
@@ -11,6 +11,7 @@ import {
   ValueName,
 } from '../../server/types';
 import { MappedValuesAtom, ValueAtomFamily } from '../state/Atoms';
+import { CheckValidName } from './Validation';
 
 export function EditableValueRef({
   initial,
@@ -21,21 +22,34 @@ export function EditableValueRef({
 }): ReactElement {
   const validRefs = useAtomValue(MappedValuesAtom);
   const [curVal, setCurVal] = useState(initial);
+  let [validNameMessage, nameValidationState] = CheckValidName(
+    validRefs,
+    curVal,
+    true,
+  );
   const onChange: InputProps['onChange'] = (_, data) => {
-    if (validRefs.has(data.value as ValueName)) {
-      setRef(data.value as ValueName);
-    } else {
-      // TODO: Highlight the invalidity of this ref: Turn it red or something?
+    [validNameMessage, nameValidationState] = CheckValidName(
+      validRefs,
+      data.value.trim() as ValueName,
+      true,
+    );
+    if (nameValidationState == 'none') {
+      setRef(data.value.trim() as ValueName);
     }
     setCurVal(data.value as ValueName);
   };
   return (
-    <Input
-      type="text"
-      value={curVal}
-      onChange={onChange}
-      input={{ style: { textAlign: 'right' } }}
-    />
+    <Field
+      validationMessage={validNameMessage}
+      validationState={nameValidationState}
+    >
+      <Input
+        type="text"
+        value={curVal}
+        onChange={onChange}
+        input={{ style: { textAlign: 'right' } }}
+      />
+    </Field>
   );
 }
 

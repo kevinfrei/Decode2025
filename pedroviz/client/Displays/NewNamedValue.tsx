@@ -26,8 +26,7 @@ import {
   ValueRef,
 } from '../../server/types';
 import { MappedValuesAtom, ValueAtomFamily } from '../state/Atoms';
-
-const validName: RegExp = /^[A-Za-z_][a-zA-Z0-9_]*$/;
+import { CheckValidName } from './Validation';
 
 export function NewNamedValue(): ReactElement {
   const [name, setName] = useState<ValueName>('newValName' as ValueName);
@@ -40,14 +39,6 @@ export function NewNamedValue(): ReactElement {
     set(ValueAtomFamily(name), val),
   );
 
-  const checkName = (nm: ValueName): [string, 'error' | 'none'] => {
-    if (allNames.has(nm)) {
-      return ['Please use a unique name.', 'error'];
-    } else if (!validName.test(nm)) {
-      return ['Please enter a valid Java variable name.', 'error'];
-    }
-    return ['', 'none'];
-  };
   const checkValue = (vl: string): [string, 'error' | 'none'] => {
     if (valType !== 'int' && isNaN(Number.parseFloat(vl))) {
       return ['Please enter a valid floating point number', 'error'];
@@ -57,8 +48,10 @@ export function NewNamedValue(): ReactElement {
     return ['', 'none'];
   };
 
-  const [validNameMessage, nameValidationState] = checkName(
+  const [validNameMessage, nameValidationState] = CheckValidName(
+    allNames,
     name.trim() as ValueName,
+    false,
   );
   const [validValueMessage, valueValidationState] = checkValue(valStr);
 
