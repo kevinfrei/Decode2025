@@ -8,6 +8,7 @@ import {
   HeadingRef,
   HeadingType,
   isDoubleValue,
+  isIntValue,
   isRadiansRef,
   isRef,
   PoseName,
@@ -124,10 +125,10 @@ export function EditableValueRef({
 }
 
 export function EditableValueExpr({
-  curVal,
+  initial,
   setVal,
 }: {
-  curVal: number;
+  initial: number;
   setVal: (v: AnonymousValue) => void;
 }): ReactElement {
   const onChangeVal: InputProps['onChange'] = (_, data) => {
@@ -139,7 +140,7 @@ export function EditableValueExpr({
   return (
     <Input
       type="number"
-      value={curVal.toString()}
+      value={initial.toString()}
       onChange={onChangeVal}
       input={{ style: { textAlign: 'right' } }}
     />
@@ -152,44 +153,40 @@ function getNumber(val: AnonymousValue): number {
 
 export function NamedValueElem({ name }: { name: ValueName }): ReactElement {
   const [item, setItem] = useAtom(ValueAtomFamily(name));
+  const type = isRadiansRef(item)
+    ? 'degrees'
+    : isIntValue(item)
+      ? 'int'
+      : 'double';
+  let editable: ReactElement;
   if (isRadiansRef(item)) {
     if (isRef(item.radians)) {
-      return (
-        <>
-          <Text>{name}</Text>
-          <EditableValueRef
-            initial={item.radians}
-            setRef={(nm) => setItem({ radians: nm })}
-          />
-          <Text> degrees</Text>
-        </>
+      editable = (
+        <EditableValueRef
+          initial={item.radians}
+          setRef={(nm) => setItem({ radians: nm })}
+        />
       );
-    }
-    return (
-      <>
-        <Text>{name}</Text>
+    } else {
+      editable = (
         <EditableValueExpr
-          curVal={getNumber(item.radians)}
+          initial={getNumber(item.radians)}
           setVal={(av) => setItem({ radians: av })}
         />
-      </>
-    );
+      );
+    }
   } else if (isRef(item)) {
-    return (
-      <>
-        <Text>{name}</Text>
-        <EditableValueRef initial={item} setRef={setItem} />
-      </>
-    );
+    editable = <EditableValueRef initial={item} setRef={setItem} />;
   } else {
-    return (
-      <>
-        <Text>{name}</Text>
-        <EditableValueExpr curVal={getNumber(item)} setVal={setItem} />
-        <Text> {isDoubleValue(item) ? 'double' : 'int'}</Text>
-      </>
-    );
+    editable = <EditableValueExpr initial={getNumber(item)} setVal={setItem} />;
   }
+  return (
+    <>
+      <Text>{name}</Text>
+      {editable}
+      <Text>{type}</Text>
+    </>
+  );
 }
 
 export function NamedValueList(): ReactElement {
