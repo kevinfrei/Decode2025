@@ -37,7 +37,7 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
     return;
   }
   // This currently failing, as I haven't implemented the parsing yet.
-  expect(paths.values.length).toBe(6);
+  expect(paths.values.length).toBe(7);
   expect(paths.values[0]).toEqual({
     name: 'org' as ValueName,
     value: { double: 72.0 },
@@ -65,6 +65,10 @@ test('loadPathChainsFromFile loads paths correctly', async () => {
   expect(paths.values[5]).toEqual({
     name: 'radRef' as ValueName,
     value: { radians: 'ninety' as ValueName },
+  });
+  expect(paths.values[6]).toEqual({
+    name: 'valRef' as ValueName,
+    value: 'org' as ValueName,
   });
 
   expect(paths.poses.length).toBe(6);

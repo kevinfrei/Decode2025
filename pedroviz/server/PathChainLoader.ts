@@ -218,7 +218,7 @@ function tryMatchingNamedValues(
   }
   const valRef = getHeadingRef(expr);
   if (isString(valRef)) {
-    return;
+    return { name, value: valRef as ValueName };
   }
   if (isAnonymousValue(valRef) || isRadiansRef(valRef)) {
     return { name, value: valRef };
