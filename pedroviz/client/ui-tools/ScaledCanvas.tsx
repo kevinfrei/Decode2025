@@ -3,12 +3,13 @@ import { ReactElement, useEffect, useRef } from 'react';
 import { NamedPathChain } from '../../server/types';
 import {
   ColorsAtom,
-  FileContentsAtom,
-  NamedBeziersAtom,
-  NamedPathChainsAtom,
-  NamedPosesAtom,
-  NamedValuesAtom,
+  MappedBeziersAtom,
+  MappedFileAtom,
+  MappedPathChainsAtom,
+  MappedPosesAtom,
+  MappedValuesAtom,
 } from '../state/Atoms';
+import { calcBezierRef } from '../state/IndexedFile';
 import { Point } from '../state/types';
 import { bezierLength, deCasteljau } from './bezier';
 
@@ -20,16 +21,17 @@ const fix = 144;
 export function ScaledCanvas(): ReactElement {
   const colors = useAtomValue(ColorsAtom);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  // const curPathChainFile = useAtomValue(CurPathChainAtom);
-  const file = useAtomValue(FileContentsAtom);
-  const pathChains = useAtomValue(NamedPathChainsAtom);
-  const beziers = useAtomValue(NamedBeziersAtom);
-  const poses = useAtomValue(NamedPosesAtom);
-  const values = useAtomValue(NamedValuesAtom);
+  const pathChains = useAtomValue(MappedPathChainsAtom);
+  const beziers = useAtomValue(MappedBeziersAtom);
+  const poses = useAtomValue(MappedPosesAtom);
+  const values = useAtomValue(MappedValuesAtom);
+  const file = useAtomValue(MappedFileAtom);
   const points = [
     ...pathChains
       .values()
-      .map((npc: NamedPathChain) => npc.paths.map(file.getBezierRefPoints)),
+      .map((npc: NamedPathChain) =>
+        npc.paths.map((br) => calcBezierRef(file, br)),
+      ),
   ].flat(1);
   const showColors = false;
   const showTime = false;

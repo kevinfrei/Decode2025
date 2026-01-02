@@ -9,6 +9,7 @@ import {
   AnonymousBezier,
   AnonymousPose,
   AnonymousValue,
+  BezierName,
   BezierRef,
   HeadingRef,
   HeadingType,
@@ -17,7 +18,11 @@ import {
   NamedPose,
   NamedValue,
   PathChainFile,
+  PathChainName,
+  PoseName,
   PoseRef,
+  RadiansRef,
+  ValueName,
   ValueRef,
 } from '../../server/types';
 
@@ -58,6 +63,14 @@ export const chkConcreteHeadingType: typecheck<ConcreteHeadingType> = chkAnyOf(
   chkConcreteConstantHeading,
   chkConcreteInterpolatedHeading,
 );
+
+export type MappedIndex = {
+  namedValues: Map<ValueName, ValueRef | RadiansRef>;
+  namedPoses: Map<PoseName, PoseRef>;
+  namedBeziers: Map<BezierName, BezierRef>;
+  namedPathChains: Map<PathChainName, AnonymousPathChain>;
+};
+
 export type IndexedPCF = PathChainFile & {
   namedValues: Map<string, number>;
   namedPoses: Map<string, number>;
