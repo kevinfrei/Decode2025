@@ -16,8 +16,8 @@ import {
   ValueName,
   ValueRef,
 } from '../server/types';
-import { NewNamedValue } from './Displays/NewNamedValue';
 // import { getBezier, getColorFor, getPose } from './state/API';
+import { NewValue } from './Displays/NewValue';
 import { NamedValueList } from './Displays/ValDisplay';
 import { getColorFor } from './state/API';
 import {
@@ -409,7 +409,7 @@ export function PathsDataDisplay({
     <>
       <Expando label="Values" indent={20} size={500}>
         <NamedValueList />
-        <NewNamedValue />
+        <NewValue />
       </Expando>
       <Expando label="Poses" indent={20} size={500}>
         <NamedPoseList />
