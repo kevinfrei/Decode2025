@@ -1,7 +1,6 @@
 import { Field, Input, InputProps, Text } from '@fluentui/react-components';
 import { useAtom, useAtomValue } from 'jotai';
 import { CSSProperties, ReactElement, useState } from 'react';
-
 import {
   AnonymousValue,
   isDoubleValue,
@@ -56,20 +55,26 @@ export function EditableValueRef({
 export function EditableValueExpr({
   initial,
   setVal,
+  precision,
 }: {
   initial: number;
   setVal: (v: AnonymousValue) => void;
+  precision: number;
 }): ReactElement {
   const onChangeVal: InputProps['onChange'] = (_, data) => {
     const newVal = Number.parseFloat(data.value);
     if (!isNaN(newVal)) {
-      setVal(Number.isInteger(newVal) ? { int: newVal } : { double: newVal });
+      if (precision === 0) {
+        setVal({ int: Math.round(newVal) });
+      } else {
+        setVal({ double: newVal });
+      }
     }
   };
   return (
     <Input
       type="number"
-      value={initial.toString()}
+      value={initial.toFixed(precision)}
       onChange={onChangeVal}
       input={{ style: { textAlign: 'right' } }}
     />
@@ -101,13 +106,20 @@ export function NamedValueElem({ name }: { name: ValueName }): ReactElement {
         <EditableValueExpr
           initial={getNumber(item.radians)}
           setVal={(av) => setItem({ radians: av })}
+          precision={1}
         />
       );
     }
   } else if (isRef(item)) {
     editable = <EditableValueRef initial={item} setRef={setItem} />;
   } else {
-    editable = <EditableValueExpr initial={getNumber(item)} setVal={setItem} />;
+    editable = (
+      <EditableValueExpr
+        initial={getNumber(item)}
+        setVal={setItem}
+        precision={type === 'int' ? 0 : 2}
+      />
+    );
   }
   return (
     <>
