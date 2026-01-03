@@ -1,5 +1,3 @@
-import { ReactElement } from 'react';
-
 import {
   Button,
   Dialog,
@@ -15,10 +13,11 @@ import {
   Radio,
   RadioGroup,
   RadioGroupProps,
+  Select,
 } from '@fluentui/react-components';
 import { useAtomValue } from 'jotai';
 import { useAtomCallback } from 'jotai/utils';
-import { useState } from 'react';
+import { ReactElement, useState } from 'react';
 import {
   AnonymousValue,
   RadiansRef,
@@ -28,9 +27,11 @@ import {
 import { MappedValuesAtom, ValueAtomFamily } from '../state/Atoms';
 import { CheckValidName } from './Validation';
 
-export function NewNamedValue(): ReactElement {
+export function NewValue(): ReactElement {
   const [name, setName] = useState<ValueName>('newValName' as ValueName);
+  const [isVal, setIsVal] = useState<boolean>(true);
   const [valStr, setValStr] = useState('0.000');
+  const [varStr, setVarStr] = useState('');
   const [valType, setValType] = useState<'int' | 'double' | 'degrees'>(
     'double',
   );
@@ -66,7 +67,7 @@ export function NewNamedValue(): ReactElement {
         break;
       case 'double':
         setValType('double');
-        setValStr(isNaN(numericVal) ? '0.0' : numericVal.toFixed(3));
+        setValStr(isNaN(numericVal) ? '0.0' : numericVal.toFixed(2));
         break;
       case 'degrees':
         setValType('degrees');
@@ -86,23 +87,49 @@ export function NewNamedValue(): ReactElement {
       case 'int':
         return val.toFixed(0);
       case 'double':
-        return val.toFixed(3);
+        return val.toFixed(2);
       case 'degrees':
         return val.toFixed(1);
     }
   };
 
   const saveValue = () => {
-    const value = Number.parseFloat(valStr);
-    const obj: AnonymousValue = Number.isInteger(value)
-      ? { int: value }
-      : { double: value };
-    if (valType === 'degrees') {
-      setNamedValue({ radians: obj });
+    if (isVal) {
+      const value = Number.parseFloat(valStr);
+      const obj: AnonymousValue = Number.isInteger(value)
+        ? { int: value }
+        : { double: value };
+      if (valType === 'degrees') {
+        setNamedValue({ radians: obj });
+      } else {
+        setNamedValue(obj);
+      }
     } else {
-      setNamedValue(obj);
+      if (valType === 'degrees') {
+        setNamedValue({ radians: varStr as ValueName });
+      } else {
+        setNamedValue(varStr as ValueName);
+      }
     }
   };
+
+  const label = (
+    <Select
+      value={isVal ? 'Value' : 'Variable'}
+      onChange={(_, data) => setIsVal(data.value === 'Value')}
+    >
+      <option>Value</option>
+      <option>Variable</option>
+    </Select>
+  );
+
+  const valOrVar = isVal ? (
+    <Input value={valStr} onChange={valueChange} />
+  ) : (
+    <Select value={varStr} onChange={(_, data) => setVarStr(data.value)}>
+      {[...allNames.keys().map((nv) => <option key={nv}>{nv}</option>)]}
+    </Select>
+  );
 
   return (
     <Dialog>
@@ -131,11 +158,11 @@ export function NewNamedValue(): ReactElement {
               </Field>
               <Field
                 className="col3"
-                label="Value"
+                label={label}
                 validationMessage={validValueMessage}
                 validationState={valueValidationState}
               >
-                <Input value={valStr} onChange={valueChange} />
+                {valOrVar}
               </Field>
             </div>
           </DialogContent>
