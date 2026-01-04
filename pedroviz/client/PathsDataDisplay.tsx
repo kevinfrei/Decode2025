@@ -3,11 +3,8 @@ import { isDefined } from '@freik/typechk';
 import { useAtomValue } from 'jotai';
 import { CSSProperties, Fragment, ReactElement } from 'react';
 import {
-  AnonymousPose,
-  AnonymousValue,
   HeadingRef,
   HeadingType,
-  isDoubleValue,
   isRadiansRef,
   isRef,
   PoseName,
@@ -17,20 +14,20 @@ import {
   ValueRef,
 } from '../server/types';
 // import { getBezier, getColorFor, getPose } from './state/API';
+import { NewPose } from './Displays/NewPose';
 import { NewValue } from './Displays/NewValue';
-import { NamedValueList } from './Displays/ValDisplay';
+import { NamedPoseList } from './Displays/PoseDisplay';
+import { AnonymousValueDisplay, NamedValueList } from './Displays/ValDisplay';
 import { getColorFor } from './state/API';
 import {
   ColorsAtom,
   MappedBeziersAtom,
   MappedPathChainsAtom,
-  MappedPosesAtom,
   SelectedFileAtom,
 } from './state/Atoms';
 import { AnonymousPathChain } from './state/types';
 import { Expando } from './ui-tools/Expando';
-
-type ItemWithStyle<Type> = { item: Type; style?: CSSProperties };
+import { ItemWithStyle } from './ui-tools/types';
 
 function MathToRadianDisplay({
   item,
@@ -42,17 +39,6 @@ function MathToRadianDisplay({
       <Text {...props}> degrees</Text>
     </span>
   );
-}
-
-function AnonymousValueDisplay({
-  item,
-  ...props
-}: ItemWithStyle<AnonymousValue>): ReactElement {
-  if (isDoubleValue(item)) {
-    return <Text {...props}>{item.double.toFixed(3)}</Text>;
-  } else {
-    return <Text {...props}>{item.int.toFixed(0)}</Text>;
-  }
 }
 
 export function GeneralRefDisplay({
@@ -79,7 +65,7 @@ function RadiansRefDisplay({
   return <MathToRadianDisplay item={item.radians} {...props} />;
 }
 
-function HeadingRefDisplay({
+export function HeadingRefDisplay({
   item,
   ...props
 }: ItemWithStyle<HeadingRef>): ReactElement {
@@ -93,73 +79,6 @@ function HeadingRefDisplay({
     }
   }
   return <>&nbsp;</>;
-}
-
-export type AnonymousPoseDisplayProps = {
-  pose: AnonymousPose;
-  noHeading?: boolean;
-};
-export function AnonymousPoseDisplay({
-  pose,
-  noHeading,
-}: AnonymousPoseDisplayProps): ReactElement {
-  // const colors = useAtomValue(ColorsAtom);
-  const style = {
-    /* color: colors[getColorFor(pose)]*/
-  };
-  return (
-    <>
-      <ValueRefDisplay style={style} item={pose.x} />
-      <ValueRefDisplay style={style} item={pose.y} />
-      {!noHeading && <HeadingRefDisplay style={style} item={pose.heading} />}
-    </>
-  );
-}
-
-export function AnonymousPoseHeader({
-  noHeading,
-}: {
-  noHeading?: boolean;
-}): ReactElement {
-  return (
-    <>
-      <Text size={400}>X</Text>
-      <Text size={400}>Y</Text>
-      {!noHeading && <Text size={400}>Heading</Text>}
-    </>
-  );
-}
-
-export function NamedPoseList(): ReactElement {
-  const items = useAtomValue(MappedPosesAtom);
-  const colors = useAtomValue(ColorsAtom);
-  const gridStyle: CSSProperties = {
-    display: 'grid',
-    columnGap: '10pt',
-    gridTemplateColumns: '1fr auto auto auto',
-    justifyItems: 'end',
-    justifySelf: 'start',
-  };
-  return (
-    <div style={gridStyle}>
-      <Text size={400}>Name {items.size}</Text>
-      <AnonymousPoseHeader />
-      {[
-        ...items.entries().map(([name, pose]) => {
-          if (!isRef(pose)) {
-            const color = getColorFor(pose);
-            const style = { color: colors[color % colors.length] };
-            return (
-              <Fragment key={`pr-${name}-1`}>
-                <Text style={style}>{name}</Text>
-                <AnonymousPoseDisplay pose={pose} />
-              </Fragment>
-            );
-          }
-        }),
-      ]}
-    </div>
-  );
 }
 
 function InlinePoseRefDisplay({ pose }: { pose: PoseRef }): ReactElement {
@@ -403,7 +322,7 @@ export function PathsDataDisplay({
 }): ReactElement {
   const selFile = useAtomValue(SelectedFileAtom);
   if (selFile.length === 0) {
-    return <div>Ple ase select a file to view.</div>;
+    return <div>Please select a file to view.</div>;
   }
   return (
     <>
@@ -413,7 +332,7 @@ export function PathsDataDisplay({
       </Expando>
       <Expando label="Poses" indent={20} size={500}>
         <NamedPoseList />
-        <Button style={{ margin: 10 }}>New Pose</Button>
+        <NewPose />
       </Expando>
       <Expando label="Bezier Lines/Curves" indent={20} size={500}>
         <NamedBezierList />

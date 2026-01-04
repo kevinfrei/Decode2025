@@ -27,14 +27,14 @@ import {
 import { MappedValuesAtom, ValueAtomFamily } from '../state/Atoms';
 import { CheckValidName } from './Validation';
 
+type ValType = 'int' | 'double' | 'degrees';
+
 export function NewValue(): ReactElement {
   const [name, setName] = useState<ValueName>('newValName' as ValueName);
   const [isVal, setIsVal] = useState<boolean>(true);
   const [valStr, setValStr] = useState('0.000');
   const [varStr, setVarStr] = useState('');
-  const [valType, setValType] = useState<'int' | 'double' | 'degrees'>(
-    'double',
-  );
+  const [valType, setValType] = useState<ValType>('double');
   const allNames = useAtomValue(MappedValuesAtom);
   const setNamedValue = useAtomCallback((_, set, val: ValueRef | RadiansRef) =>
     set(ValueAtomFamily(name), val),
@@ -59,20 +59,12 @@ export function NewValue(): ReactElement {
   const saveEnabled =
     nameValidationState === 'none' && valueValidationState === 'none';
   const typeChange: RadioGroupProps['onChange'] = (_, data) => {
-    const numericVal = Number.parseFloat(valStr);
     switch (data.value) {
       case 'int':
-        setValType('int');
-        setValStr(isNaN(numericVal) ? '0' : numericVal.toFixed(0));
-        break;
       case 'double':
-        setValType('double');
-        setValStr(isNaN(numericVal) ? '0.0' : numericVal.toFixed(2));
-        break;
       case 'degrees':
-        setValType('degrees');
-        setValStr(isNaN(numericVal) ? '0.0' : numericVal.toFixed(1));
-        break;
+        setValType(data.value);
+        setValStr(formatNum(data.value, Number.parseFloat(valStr)));
     }
   };
   const valueChange: InputProps['onChange'] = (_, data) => {
@@ -82,7 +74,8 @@ export function NewValue(): ReactElement {
     setName(data.value as ValueName);
   };
 
-  const formatNum = (val: number): string => {
+  const formatNum = (valType: ValType, val: number): string => {
+    val = isNaN(val) ? 0 : val;
     switch (valType) {
       case 'int':
         return val.toFixed(0);
