@@ -10,7 +10,19 @@ import {
   ValueName,
 } from '../../server/types';
 import { MappedValuesAtom, ValueAtomFamily } from '../state/Atoms';
+import { ItemWithStyle } from '../ui-tools/types';
 import { CheckValidName } from './Validation';
+
+export function AnonymousValueDisplay({
+  item,
+  ...props
+}: ItemWithStyle<AnonymousValue>): ReactElement {
+  if (isDoubleValue(item)) {
+    return <Text {...props}>{item.double.toFixed(3)}</Text>;
+  } else {
+    return <Text {...props}>{item.int.toFixed(0)}</Text>;
+  }
+}
 
 export function EditableValueRef({
   initial,
