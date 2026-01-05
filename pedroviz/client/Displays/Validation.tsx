@@ -1,19 +1,52 @@
-const validName: RegExp = /^[A-Za-z_][a-zA-Z0-9_]*$/;
+import { isArray } from '@freik/typechk';
+import { HasItem, ValidationData, ValidData } from '../types';
 
-export function CheckValidName<T extends string, U>(
-  allNames: Map<T, U>,
-  nm: T,
+const validName: RegExp = /^[A-Za-z_][a-zA-Z0-9_]*$/;
+const validNumber: RegExp = /^-?[0-9]*\.[0-9]*$/;
+
+export function IsValidJavaIdentifier(str: string): boolean {
+  return validName.test(str);
+}
+
+export function IsValidNumber(str: string): boolean {
+  return !Number.isNaN(parseFloat(str)) && validNumber.test(str.trim());
+}
+
+function has<T extends string, U extends HasItem<T>>(
+  value: T,
+  maps: U | U[],
+): boolean {
+  return (isArray(maps) ? maps : [maps]).some((mp) => mp.has(value));
+}
+
+export function CheckValidName<T extends string, U extends HasItem<T>>(
+  validNames: U | U[],
+  expr: T,
   exists: boolean,
-): [string, 'error' | 'none'] {
-  if (exists !== allNames.has(nm)) {
-    return [
-      exists
+): ValidationData {
+  const trimmed = expr.trim();
+  if (exists !== has(trimmed, validNames)) {
+    return {
+      message: exists
         ? 'Please enter an existing variable.'
-        : 'Please enter a unique name.',
-      'error',
-    ];
-  } else if (!validName.test(nm)) {
-    return ['Please enter a valid Java variable name.', 'error'];
+        : 'Please enter a new/unique name.',
+      state: 'error',
+    };
   }
-  return ['', 'none'];
+  return !IsValidJavaIdentifier(trimmed)
+    ? {
+        message: 'Please enter a valid Java variable name.',
+        state: 'error',
+      }
+    : ValidData;
+}
+
+export function CheckValidValueOrName<T extends string, U extends HasItem<T>>(
+  validNames: U | U[],
+  expr: T,
+  exists: boolean,
+): ValidationData {
+  return IsValidNumber(expr.trim())
+    ? ValidData
+    : CheckValidName(validNames, expr, exists);
 }

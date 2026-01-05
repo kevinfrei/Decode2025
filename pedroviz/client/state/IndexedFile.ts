@@ -26,7 +26,7 @@ import {
   ValueRef,
 } from '../../server/types';
 import { ValidRes } from './API';
-import { AnonymousPathChain, MappedIndex, Point } from './types';
+import { AnonymousPathChain, MappedIndex, Point } from '../types';
 
 export function MakeMappedIndex(
   pcf: PathChainFile,

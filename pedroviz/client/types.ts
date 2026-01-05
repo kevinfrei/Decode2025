@@ -15,7 +15,7 @@ import {
   RadiansRef,
   ValueName,
   ValueRef,
-} from '../../server/types';
+} from '../server/types';
 
 export type AnonymousPathChain = {
   paths: BezierRef[];
@@ -63,3 +63,21 @@ export type MappedIndex = {
 };
 
 export type Point = { x: number; y: number };
+
+export type HasItem<T> = {
+  has: (item: T) => boolean;
+};
+
+export type HasKeys<T> = HasItem<T> & {
+  keys: () => Iterable<T>;
+};
+
+export type ValidationState = 'error' | 'warning' | 'success' | 'none';
+export type ValidationData = {
+  message: string,
+  state: ValidationState;
+};
+export const ValidData: ValidationData = Object.freeze({ message: '', state: 'none' });
+export function ValidationResult(message: string, state: ValidationState): ValidationData {
+  return { message, state };
+}
