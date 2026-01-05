@@ -1,4 +1,12 @@
-import { Field, Input, InputProps, Text } from '@fluentui/react-components';
+import {
+  Combobox,
+  ComboboxProps,
+  Field,
+  Input,
+  InputProps,
+  Option,
+  Text,
+} from '@fluentui/react-components';
 import { useAtom, useAtomValue } from 'jotai';
 import { CSSProperties, ReactElement, useState } from 'react';
 import {
@@ -7,7 +15,9 @@ import {
   isIntValue,
   isRadiansRef,
   isRef,
+  isValueName,
   ValueName,
+  ValueRef,
 } from '../../server/types';
 import { MappedValuesAtom, ValueAtomFamily } from '../state/Atoms';
 import { ItemWithStyle } from '../ui-tools/types';
@@ -18,7 +28,7 @@ export function AnonymousValueDisplay({
   ...props
 }: ItemWithStyle<AnonymousValue>): ReactElement {
   if (isDoubleValue(item)) {
-    return <Text {...props}>{item.double.toFixed(3)}</Text>;
+    return <Text {...props}>{item.double.toFixed(2)}</Text>;
   } else {
     return <Text {...props}>{item.int.toFixed(0)}</Text>;
   }
@@ -27,9 +37,11 @@ export function AnonymousValueDisplay({
 export function EditableValueRef({
   initial,
   setRef,
+  style,
 }: {
   initial: ValueName;
   setRef: (val: ValueName) => void;
+  style?: CSSProperties;
 }): ReactElement {
   const validRefs = useAtomValue(MappedValuesAtom);
   const [curVal, setCurVal] = useState(initial);
@@ -51,6 +63,7 @@ export function EditableValueRef({
   };
   return (
     <Field
+      style={style}
       validationMessage={validNameMessage}
       validationState={nameValidationState}
     >
@@ -63,6 +76,95 @@ export function EditableValueRef({
     </Field>
   );
 }
+
+/*
+import {
+  Combobox,
+  makeStyles,
+  Option,
+  useId,
+} from "@fluentui/react-components";
+import type { ComboboxProps } from "@fluentui/react-components";
+
+const useStyles = makeStyles({
+  root: {
+    // Stack the label above the field with a gap
+    display: "grid",
+    gridTemplateRows: "repeat(1fr)",
+    justifyItems: "start",
+    gap: "2px",
+    maxWidth: "400px",
+  },
+});
+*/
+export const Freeform = (props: Partial<ComboboxProps>): ReactElement => {
+  // const comboId = useId("combo-default");
+  const options = [
+    'Cat',
+    'Caterpillar',
+    'Catfish',
+    'Cheetah',
+    'Chicken',
+    'Cockatiel',
+    'Cow',
+    'Dog',
+    'Dolphin',
+    'Ferret',
+    'Firefly',
+    'Fish',
+    'Fox',
+    'Fox Terrier',
+    'Frog',
+    'Hamster',
+    'Snake',
+  ];
+
+  const [matchingOptions, setMatchingOptions] = useState([...options]);
+  const [customSearch, setCustomSearch] = useState<string | undefined>();
+
+  const onChange: ComboboxProps['onChange'] = (event) => {
+    const value = event.target.value.trim();
+    const matches = options.filter(
+      (option) => option.toLowerCase().indexOf(value.toLowerCase()) === 0,
+    );
+    setMatchingOptions(matches);
+    if (value.length && matches.length < 1) {
+      setCustomSearch(value);
+    } else {
+      setCustomSearch(undefined);
+    }
+  };
+
+  const onOptionSelect: ComboboxProps['onOptionSelect'] = (event, data) => {
+    const matchingOption = data.optionText && options.includes(data.optionText);
+    if (matchingOption) {
+      setCustomSearch(undefined);
+    } else {
+      setCustomSearch(data.optionText);
+    }
+  };
+
+  return (
+    <Field style={props.style}>
+      <Combobox
+        freeform
+        placeholder="Select an animal"
+        onChange={onChange}
+        onOptionSelect={onOptionSelect}
+        {...props}
+      >
+        {customSearch ? (
+          <Option key="freeform" text={customSearch}>
+            Search for "{customSearch}"
+          </Option>
+        ) : null}
+        {matchingOptions.map((option) => (
+          <Option key={option}>{option}</Option>
+        ))}
+      </Combobox>
+    </Field>
+  );
+};
 
 export function EditableValueExpr({
   initial,
@@ -122,16 +224,8 @@ export function NamedValueElem({ name }: { name: ValueName }): ReactElement {
         />
       );
     }
-  } else if (isRef(item)) {
-    editable = <EditableValueRef initial={item} setRef={setItem} />;
   } else {
-    editable = (
-      <EditableValueExpr
-        initial={getNumber(item)}
-        setVal={setItem}
-        precision={type === 'int' ? 0 : 2}
-      />
-    );
+    editable = <EditableOnlyValueRef ref={item} setRef={setItem} />;
   }
   return (
     <>
@@ -140,6 +234,28 @@ export function NamedValueElem({ name }: { name: ValueName }): ReactElement {
       <Text>{type}</Text>
     </>
   );
+}
+
+export function EditableOnlyValueRef({
+  ref,
+  setRef,
+}: {
+  ref: ValueRef;
+  setRef: (v: ValueRef) => void;
+}): ReactElement {
+  let editable: ReactElement;
+  if (isValueName(ref)) {
+    editable = <EditableValueRef initial={ref} setRef={setRef} />;
+  } else {
+    editable = (
+      <EditableValueExpr
+        initial={getNumber(ref)}
+        setVal={setRef}
+        precision={isIntValue(ref) ? 0 : 2}
+      />
+    );
+  }
+  return editable;
 }
 
 export function NamedValueList(): ReactElement {
