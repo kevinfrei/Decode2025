@@ -10,7 +10,7 @@ import {
   MappedValuesAtom,
 } from '../state/Atoms';
 import { calcBezierRef } from '../state/IndexedFile';
-import { Point } from '../state/types';
+import { Point } from '../types';
 import { bezierLength, deCasteljau } from './bezier';
 
 const Scale = 1;

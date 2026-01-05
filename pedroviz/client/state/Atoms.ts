@@ -18,7 +18,7 @@ import {
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
 import { GetPaths, LoadAndIndexFile, UpdateIndexFile } from './API';
 import { EmptyMappedFile } from './IndexedFile';
-import { AnonymousPathChain, MappedIndex } from './types';
+import { AnonymousPathChain, MappedIndex } from '../types';
 
 export const ThemeAtom = atomWithStorage<'dark' | 'light'>(
   'theme',
@@ -36,6 +36,8 @@ export const ColorForNumber = atomFamily((index: number) =>
     return colors[index % colors.length];
   }),
 );
+
+export const BlurAtom = atom('');
 
 export const PathsAtom = atom(async () => GetPaths());
 

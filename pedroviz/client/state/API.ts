@@ -12,7 +12,7 @@ import {
 } from '../../server/types';
 import { MakeMappedIndex } from './IndexedFile';
 import { fetchApi } from './Storage';
-import { MappedIndex } from './types';
+import { MappedIndex } from '../types';
 
 export type ValidRes = ErrorOr<true>;
 // Some of the logic seems a little odd, because I want the validation to fully

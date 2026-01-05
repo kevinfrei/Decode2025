@@ -10,9 +10,14 @@ import {
 } from '../../server/types';
 import { HeadingRefDisplay } from '../PathsDataDisplay';
 import { getColorFor } from '../state/API';
-import { ColorsAtom, MappedPosesAtom, PoseAtomFamily } from '../state/Atoms';
+import {
+  ColorsAtom,
+  MappedPosesAtom,
+  MappedValuesAtom,
+  PoseAtomFamily,
+} from '../state/Atoms';
 import { ItemWithStyle } from '../ui-tools/types';
-import { EditableOnlyValueRef, Freeform } from './ValDisplay';
+import { EditableOnlyValueRef, NumberOrNamedValue } from './ValDisplay';
 
 export type AnonymousPoseDisplayProps = {
   pose: AnonymousPose;
@@ -62,13 +67,20 @@ export function NamedPoseItem({
   style,
 }: ItemWithStyle<PoseName>): ReactElement {
   const [pose, setPose] = useAtom(PoseAtomFamily(item));
+  const names = useAtomValue(MappedValuesAtom);
   if (isPoseName(pose)) {
     return <Text>{pose}</Text>;
   } else {
     /*<Text style={style}>{item}</Text> */
     return (
       <>
-        <Freeform style={style} />
+        <NumberOrNamedValue
+          style={style}
+          names={names}
+          placeholder="NUMBER!"
+          value={pose.x as string}
+          setValue={(str) => {}}
+        />
         <AnonymousPoseDisplay pose={pose} setPose={setPose} />
       </>
     );
@@ -94,7 +106,7 @@ export function NamedPoseList(): ReactElement {
           if (!isRef(pose)) {
             const color = getColorFor(pose);
             const style = { color: colors[color % colors.length] };
-            return <NamedPoseItem key={name} item={name} />;
+            return <NamedPoseItem style={style} key={name} item={name} />;
           }
         }),
       ]}

@@ -7,7 +7,7 @@ import {
   Option,
   Text,
 } from '@fluentui/react-components';
-import { useAtom, useAtomValue } from 'jotai';
+import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { CSSProperties, ReactElement, useState } from 'react';
 import {
   AnonymousValue,
@@ -19,9 +19,10 @@ import {
   ValueName,
   ValueRef,
 } from '../../server/types';
-import { MappedValuesAtom, ValueAtomFamily } from '../state/Atoms';
+import { BlurAtom, MappedValuesAtom, ValueAtomFamily } from '../state/Atoms';
+import { HasKeys } from '../types';
 import { ItemWithStyle } from '../ui-tools/types';
-import { CheckValidName } from './Validation';
+import { CheckValidName, IsValidJavaIdentifier } from './Validation';
 
 export function AnonymousValueDisplay({
   item,
@@ -45,17 +46,14 @@ export function EditableValueRef({
 }): ReactElement {
   const validRefs = useAtomValue(MappedValuesAtom);
   const [curVal, setCurVal] = useState(initial);
-  let [validNameMessage, nameValidationState] = CheckValidName(
-    validRefs,
-    curVal,
-    true,
-  );
+  let { message: validNameMessage, state: nameValidationState } =
+    CheckValidName(validRefs, curVal, true);
   const onChange: InputProps['onChange'] = (_, data) => {
-    [validNameMessage, nameValidationState] = CheckValidName(
+    ({ message: validNameMessage, state: nameValidationState } = CheckValidName(
       validRefs,
       data.value.trim() as ValueName,
       true,
-    );
+    ));
     if (nameValidationState == 'none') {
       setRef(data.value.trim() as ValueName);
     }
@@ -97,61 +95,68 @@ const useStyles = makeStyles({
   },
 });
 */
-export const Freeform = (props: Partial<ComboboxProps>): ReactElement => {
-  // const comboId = useId("combo-default");
-  const options = [
-    'Cat',
-    'Caterpillar',
-    'Catfish',
-    'Cheetah',
-    'Chicken',
-    'Cockatiel',
-    'Cow',
-    'Dog',
-    'Dolphin',
-    'Ferret',
-    'Firefly',
-    'Fish',
-    'Fox',
-    'Fox Terrier',
-    'Frog',
-    'Hamster',
-    'Snake',
-  ];
 
-  const [matchingOptions, setMatchingOptions] = useState([...options]);
+export function NumberOrNamedValue<T extends string, U extends HasKeys<T>>({
+  style,
+  names,
+  placeholder,
+  value,
+  setValue,
+}: {
+  style: CSSProperties;
+  names: U;
+  placeholder?: string;
+  value: string;
+  setValue: (val: string) => void;
+}): ReactElement {
+  const options = [...names.keys()] as string[];
+  const setBlur = useSetAtom(BlurAtom);
+  const optsLC = options.map((opt) => opt.toLowerCase());
+  const [matchingOptions, setMatchingOptions] = useState(options);
   const [customSearch, setCustomSearch] = useState<string | undefined>();
 
   const onChange: ComboboxProps['onChange'] = (event) => {
     const value = event.target.value.trim();
-    const matches = options.filter(
-      (option) => option.toLowerCase().indexOf(value.toLowerCase()) === 0,
-    );
-    setMatchingOptions(matches);
-    if (value.length && matches.length < 1) {
-      setCustomSearch(value);
-    } else {
-      setCustomSearch(undefined);
-    }
+    // Only filter values that might be potential names. Otherwise, treat it like a possible value
+    if (IsValidJavaIdentifier(value)) {
+      const valLC = value.toLowerCase();
+      const matches = options.filter((_, index) =>
+        optsLC[index].startsWith(valLC),
+      );
+      setMatchingOptions(matches);
+      if (value.length && matches.length < 1) {
+        setCustomSearch(value);
+      } else {
+        setCustomSearch(undefined);
+      }
+    } else if (matchingOptions.length !== options.length) {
+      // We have a value: Set the match options to the original set
+      setMatchingOptions(options);
+    } /*else if (IsValidNumber(value)) {
+      setValue(value);
+    }*/
+    setBlur(value);
   };
 
-  const onOptionSelect: ComboboxProps['onOptionSelect'] = (event, data) => {
+  const onOptionSelect: ComboboxProps['onOptionSelect'] = (_, data) => {
     const matchingOption = data.optionText && options.includes(data.optionText);
     if (matchingOption) {
       setCustomSearch(undefined);
+      // setValue(data.optionText);
     } else {
       setCustomSearch(data.optionText);
     }
+    setBlur(data.optionText);
   };
 
   return (
-    <Field style={props.style}>
+    <Field style={style}>
       <Combobox
         freeform
-        placeholder="Select an animal"
+        placeholder={placeholder || 'Select a variable'}
         onChange={onChange}
         onOptionSelect={onOptionSelect}
-        {...props}
+        // value={value}
       >
         {customSearch ? (
           <Option key="freeform" text={customSearch}>
@@ -164,7 +169,7 @@ export const Freeform = (props: Partial<ComboboxProps>): ReactElement => {
       </Combobox>
     </Field>
   );
-};
+}
 
 export function EditableValueExpr({
   initial,

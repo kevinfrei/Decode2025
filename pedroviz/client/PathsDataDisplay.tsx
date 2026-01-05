@@ -25,7 +25,7 @@ import {
   MappedPathChainsAtom,
   SelectedFileAtom,
 } from './state/Atoms';
-import { AnonymousPathChain } from './state/types';
+import { AnonymousPathChain } from './types';
 import { Expando } from './ui-tools/Expando';
 import { ItemWithStyle } from './ui-tools/types';
 

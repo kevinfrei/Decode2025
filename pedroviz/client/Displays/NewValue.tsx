@@ -25,6 +25,7 @@ import {
   ValueRef,
 } from '../../server/types';
 import { MappedValuesAtom, ValueAtomFamily } from '../state/Atoms';
+import { ValidationData, ValidData } from '../types';
 import { CheckValidName } from './Validation';
 
 type ValType = 'int' | 'double' | 'degrees';
@@ -40,21 +41,22 @@ export function NewValue(): ReactElement {
     set(ValueAtomFamily(name), val),
   );
 
-  const checkValue = (vl: string): [string, 'error' | 'none'] => {
+  const checkValue = (vl: string): ValidationData => {
     if (valType !== 'int' && isNaN(Number.parseFloat(vl))) {
-      return ['Please enter a valid floating point number', 'error'];
+      return {
+        message: 'Please enter a valid floating point number',
+        state: 'error',
+      };
     } else if (valType === 'int' && isNaN(Number.parseInt(vl))) {
-      return ['Please enter a valid integer', 'error'];
+      return { message: 'Please enter a valid integer', state: 'error' };
     }
-    return ['', 'none'];
+    return ValidData;
   };
 
-  const [validNameMessage, nameValidationState] = CheckValidName(
-    allNames,
-    name.trim() as ValueName,
-    false,
-  );
-  const [validValueMessage, valueValidationState] = checkValue(valStr);
+  const { message: validNameMessage, state: nameValidationState } =
+    CheckValidName(allNames, name.trim() as ValueName, false);
+  const { message: validValueMessage, state: valueValidationState } =
+    checkValue(valStr);
 
   const saveEnabled =
     nameValidationState === 'none' && valueValidationState === 'none';

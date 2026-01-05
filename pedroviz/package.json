@@ -28,6 +28,7 @@
     "jotai-family": "^1.0.1",
     "jotai-optics": "^0.4.0",
     "prettier": "^3.7.4",
+    "prettier-plugin-java": "^2.8.0",
     "prettier-plugin-organize-imports": "^4.3.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
