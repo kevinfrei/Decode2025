@@ -1,18 +1,28 @@
 import { Text } from '@fluentui/react-components';
-import { useAtomValue } from 'jotai';
-import { CSSProperties, Fragment, ReactElement } from 'react';
-import { AnonymousPose, isRef } from '../../server/types';
-import { HeadingRefDisplay, ValueRefDisplay } from '../PathsDataDisplay';
+import { useAtom, useAtomValue } from 'jotai';
+import { CSSProperties, ReactElement } from 'react';
+import {
+  AnonymousPose,
+  isPoseName,
+  isRef,
+  PoseName,
+  ValueRef,
+} from '../../server/types';
+import { HeadingRefDisplay } from '../PathsDataDisplay';
 import { getColorFor } from '../state/API';
-import { ColorsAtom, MappedPosesAtom } from '../state/Atoms';
+import { ColorsAtom, MappedPosesAtom, PoseAtomFamily } from '../state/Atoms';
+import { ItemWithStyle } from '../ui-tools/types';
+import { EditableOnlyValueRef, Freeform } from './ValDisplay';
 
 export type AnonymousPoseDisplayProps = {
   pose: AnonymousPose;
   noHeading?: boolean;
+  setPose: (p: AnonymousPose) => void;
 };
 export function AnonymousPoseDisplay({
   pose,
   noHeading,
+  setPose,
 }: AnonymousPoseDisplayProps): ReactElement {
   // const colors = useAtomValue(ColorsAtom);
   const style = {
@@ -20,8 +30,14 @@ export function AnonymousPoseDisplay({
   };
   return (
     <>
-      <ValueRefDisplay style={style} item={pose.x} />
-      <ValueRefDisplay style={style} item={pose.y} />
+      <EditableOnlyValueRef
+        ref={pose.x}
+        setRef={(px: ValueRef) => setPose({ ...pose, x: px })}
+      />
+      <EditableOnlyValueRef
+        ref={pose.y}
+        setRef={(py: ValueRef) => setPose({ ...pose, y: py })}
+      />
       {!noHeading && <HeadingRefDisplay style={style} item={pose.heading} />}
     </>
   );
@@ -39,6 +55,24 @@ export function AnonymousPoseHeader({
       {!noHeading && <Text size={400}>Heading</Text>}
     </>
   );
+}
+
+export function NamedPoseItem({
+  item,
+  style,
+}: ItemWithStyle<PoseName>): ReactElement {
+  const [pose, setPose] = useAtom(PoseAtomFamily(item));
+  if (isPoseName(pose)) {
+    return <Text>{pose}</Text>;
+  } else {
+    /*<Text style={style}>{item}</Text> */
+    return (
+      <>
+        <Freeform style={style} />
+        <AnonymousPoseDisplay pose={pose} setPose={setPose} />
+      </>
+    );
+  }
 }
 
 export function NamedPoseList(): ReactElement {
@@ -60,12 +94,7 @@ export function NamedPoseList(): ReactElement {
           if (!isRef(pose)) {
             const color = getColorFor(pose);
             const style = { color: colors[color % colors.length] };
-            return (
-              <Fragment key={`pr-${name}-1`}>
-                <Text style={style}>{name}</Text>
-                <AnonymousPoseDisplay pose={pose} />
-              </Fragment>
-            );
+            return <NamedPoseItem key={name} item={name} />;
           }
         }),
       ]}
