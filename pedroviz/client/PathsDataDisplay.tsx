@@ -17,7 +17,7 @@ import {
 import { NewPose } from './Displays/NewPose';
 import { NewValue } from './Displays/NewValue';
 import { NamedPoseList } from './Displays/PoseDisplay';
-import { AnonymousValueDisplay, NamedValueList } from './Displays/ValDisplay';
+import { AnonymousValueDisplay, NamedValueList } from './Displays/ValueDisplay';
 import { getColorFor } from './state/API';
 import {
   ColorsAtom,

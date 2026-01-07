@@ -17,7 +17,7 @@ import {
   PoseAtomFamily,
 } from '../state/Atoms';
 import { ItemWithStyle } from '../ui-tools/types';
-import { EditableOnlyValueRef, NumberOrNamedValue } from './ValDisplay';
+import { EditableOnlyValueRef, NumberOrNamedValue } from './ValueDisplay';
 
 export type AnonymousPoseDisplayProps = {
   pose: AnonymousPose;
