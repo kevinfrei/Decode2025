@@ -21,7 +21,7 @@ export function MyApp(): ReactElement {
         <div className="header-left">
           <PathSelector />
         </div>
-        <div className="header-center">Vote4Pedro</div>
+        <div className="header-center">Viz4Pedro</div>
         <div className="header-right">
           <Settings />
         </div>
