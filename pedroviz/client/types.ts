@@ -9,6 +9,8 @@ import {
   BezierName,
   BezierRef,
   HeadingType,
+  isIntValue,
+  isValueName,
   PathChainName,
   PoseName,
   PoseRef,
@@ -80,4 +82,14 @@ export type ValidationData = {
 export const ValidData: ValidationData = Object.freeze({ message: '', state: 'none' });
 export function ValidationResult(message: string, state: ValidationState): ValidationData {
   return { message, state };
+}
+
+export function GetValueAsString(vr: ValueRef): string {
+  if (isValueName(vr))  {
+    return vr;
+  }
+  if (isIntValue(vr)) {
+    return vr.int.toFixed(0);
+  }
+  return vr.double.toFixed(2);
 }

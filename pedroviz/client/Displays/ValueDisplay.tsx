@@ -7,6 +7,7 @@ import {
   Option,
   Text,
 } from '@fluentui/react-components';
+import { isString } from '@freik/typechk';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { CSSProperties, ReactElement, useState } from 'react';
 import {
@@ -20,9 +21,13 @@ import {
   ValueRef,
 } from '../../server/types';
 import { BlurAtom, MappedValuesAtom, ValueAtomFamily } from '../state/Atoms';
-import { HasKeys } from '../types';
+import { GetValueAsString, HasKeys } from '../types';
 import { ItemWithStyle } from '../ui-tools/types';
-import { CheckValidName, IsValidJavaIdentifier } from './Validation';
+import {
+  CheckValidName,
+  CheckValidValueOrName,
+  IsValidJavaIdentifier,
+} from './Validation';
 
 export function AnonymousValueDisplay({
   item,
@@ -103,10 +108,10 @@ export function NumberOrNamedValue<T extends string, U extends HasKeys<T>>({
   value,
   setValue,
 }: {
-  style: CSSProperties;
+  style?: CSSProperties;
   names: U;
   placeholder?: string;
-  value: string;
+  value: ValueRef;
   setValue: (val: string) => void;
 }): ReactElement {
   const options = [...names.keys()] as string[];
@@ -114,7 +119,12 @@ export function NumberOrNamedValue<T extends string, U extends HasKeys<T>>({
   const optsLC = options.map((opt) => opt.toLowerCase());
   const [matchingOptions, setMatchingOptions] = useState(options);
   const [customSearch, setCustomSearch] = useState<string | undefined>();
-
+  const [curValue, setCurValue] = useState<string>(GetValueAsString(value));
+  let { message, state } = CheckValidValueOrName(
+    names,
+    isString(curValue) ? curValue : '',
+    true,
+  );
   const onChange: ComboboxProps['onChange'] = (event) => {
     const value = event.target.value.trim();
     // Only filter values that might be potential names. Otherwise, treat it like a possible value
@@ -135,7 +145,12 @@ export function NumberOrNamedValue<T extends string, U extends HasKeys<T>>({
     } /*else if (IsValidNumber(value)) {
       setValue(value);
     }*/
-    setBlur(value);
+    if (state !== 'error') {
+      setValue(value);
+    } else {
+      setCurValue(value);
+      setBlur(value);
+    }
   };
 
   const onOptionSelect: ComboboxProps['onOptionSelect'] = (_, data) => {
@@ -146,17 +161,29 @@ export function NumberOrNamedValue<T extends string, U extends HasKeys<T>>({
     } else {
       setCustomSearch(data.optionText);
     }
-    setBlur(data.optionText);
+    ({ message, state } = CheckValidValueOrName(names, data.optionText, true));
+    if (state !== 'error') {
+      setValue(data.optionText);
+    } else {
+      setCurValue(data.optionText);
+      setBlur(data.optionText);
+    }
   };
 
   return (
-    <Field style={style}>
+    <Field style={style} validationMessage={message} validationState={state}>
       <Combobox
         freeform
         placeholder={placeholder || 'Select a variable'}
         onChange={onChange}
         onOptionSelect={onOptionSelect}
-        // value={value}
+        defaultValue={
+          isValueName(value)
+            ? value
+            : isIntValue(value)
+              ? value.int.toFixed(0)
+              : value.double.toFixed(2)
+        }
       >
         {customSearch ? (
           <Option key="freeform" text={customSearch}>
