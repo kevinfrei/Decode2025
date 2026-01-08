@@ -18,8 +18,8 @@ import {
   PoseAtomFamily,
 } from '../state/Atoms';
 import { ItemWithStyle } from '../ui-tools/types';
-import { EditableOnlyValueRef, NumberOrNamedValue } from './ValueDisplay';
 import { IsValidNumber } from './Validation';
+import { NumberOrNamedValue } from './ValueDisplay';
 
 export type AnonymousPoseDisplayProps = {
   pose: AnonymousPose;
@@ -37,16 +37,16 @@ export function AnonymousPoseDisplay({
     if (IsValidNumber(str.trim())) {
       const num = parseFloat(str);
       if (Number.isInteger(num)) {
-        return {int:num};
+        return { int: num };
       }
-       return {double:num};
+      return { double: num };
     }
     return str as ValueName;
-  }
+  };
   const style = {
     /* color: colors[getColorFor(pose)]*/
   };
-/*
+  /*
 
       <EditableOnlyValueRef
         ref={pose.x}
@@ -59,18 +59,22 @@ export function AnonymousPoseDisplay({
 */
   return (
     <>
-        <NumberOrNamedValue
-          names={names}
-          placeholder="Enter a value or select a variable"
-          value={pose.x}
-          setValue={(str:string)=>setPose({...pose, x: ValRefFromString(str)})}
-        />
-        <NumberOrNamedValue
-          names={names}
-          placeholder="Enter a value or select a variable"
-          value={pose.y}
-          setValue={(str:string)=>setPose({...pose, y: ValRefFromString(str)})}
-        />
+      <NumberOrNamedValue
+        names={names}
+        placeholder="Enter a value or select a variable"
+        value={pose.x}
+        setValue={(str: string) =>
+          setPose({ ...pose, x: ValRefFromString(str) })
+        }
+      />
+      <NumberOrNamedValue
+        names={names}
+        placeholder="Enter a value or select a variable"
+        value={pose.y}
+        setValue={(str: string) =>
+          setPose({ ...pose, y: ValRefFromString(str) })
+        }
+      />
       {!noHeading && <HeadingRefDisplay style={style} item={pose.heading} />}
     </>
   );
@@ -101,7 +105,7 @@ export function NamedPoseItem({
   } else {
     return (
       <>
-    <Text style={style}>{item}</Text> 
+        <Text style={style}>{item}</Text>
         <AnonymousPoseDisplay pose={pose} setPose={setPose} />
       </>
     );
