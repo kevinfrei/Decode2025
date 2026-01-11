@@ -27,6 +27,7 @@ import {
   CheckValidName,
   CheckValidValueOrName,
   IsValidJavaIdentifier,
+  IsValidNumber,
 } from './Validation';
 
 export function AnonymousValueDisplay({
@@ -142,9 +143,9 @@ export function NumberOrNamedValue<T extends string, U extends HasKeys<T>>({
     } else if (matchingOptions.length !== options.length) {
       // We have a value: Set the match options to the original set
       setMatchingOptions(options);
-    } /*else if (IsValidNumber(value)) {
+    } else if (IsValidNumber(value)) {
       setValue(value);
-    }*/
+    }
     if (state !== 'error') {
       setValue(value);
     } else {
