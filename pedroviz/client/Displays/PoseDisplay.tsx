@@ -1,14 +1,7 @@
 import { Text } from '@fluentui/react-components';
 import { useAtom, useAtomValue } from 'jotai';
 import { CSSProperties, ReactElement } from 'react';
-import {
-  AnonymousPose,
-  isPoseName,
-  isRef,
-  PoseName,
-  ValueName,
-  ValueRef,
-} from '../../server/types';
+import { AnonymousPose, isPoseName, isRef, PoseName } from '../../server/types';
 import { HeadingRefDisplay } from '../PathsDataDisplay';
 import { getColorFor } from '../state/API';
 import {
@@ -18,8 +11,8 @@ import {
   PoseAtomFamily,
 } from '../state/Atoms';
 import { ItemWithStyle } from '../ui-tools/types';
-import { IsValidNumber } from './Validation';
-import { NumberOrNamedValue } from './ValueDisplay';
+import { NumberOrNamedValue } from './NumberOrNamedValueEditor';
+import { ValRefFromString } from './Validation';
 
 export type AnonymousPoseDisplayProps = {
   pose: AnonymousPose;
@@ -33,16 +26,7 @@ export function AnonymousPoseDisplay({
 }: AnonymousPoseDisplayProps): ReactElement {
   // const colors = usAtomValue(ColorsAtom);
   const names = useAtomValue(MappedValuesAtom);
-  const ValRefFromString = (str: string): ValueRef => {
-    if (IsValidNumber(str.trim())) {
-      const num = parseFloat(str);
-      if (Number.isInteger(num)) {
-        return { int: num };
-      }
-      return { double: num };
-    }
-    return str as ValueName;
-  };
+
   const style = {
     /* color: colors[getColorFor(pose)]*/
   };

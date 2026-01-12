@@ -1,4 +1,5 @@
 import { isArray } from '@freik/typechk';
+import { ValueName, ValueRef } from '../../server/types';
 import { HasItem, ValidationData, ValidData } from '../types';
 
 const validName: RegExp = /^[A-Za-z_][a-zA-Z0-9_]*$/;
@@ -49,4 +50,15 @@ export function CheckValidValueOrName<T extends string, U extends HasItem<T>>(
   return IsValidNumber(expr.trim())
     ? ValidData
     : CheckValidName(validNames, expr, exists);
+}
+
+export function ValRefFromString(str: string): ValueRef {
+  if (IsValidNumber(str.trim())) {
+    const num = parseFloat(str);
+    if (Number.isInteger(num)) {
+      return { int: num };
+    }
+    return { double: num };
+  }
+  return str as ValueName;
 }
