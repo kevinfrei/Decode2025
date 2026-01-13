@@ -6,14 +6,14 @@ import {
   isDoubleValue,
   isIntValue,
   isRadiansRef,
-  isRef,
   isValueName,
   ValueName,
   ValueRef,
 } from '../../server/types';
 import { MappedValuesAtom, ValueAtomFamily } from '../state/Atoms';
 import { ItemWithStyle } from '../ui-tools/types';
-import { CheckValidName } from './Validation';
+import { NumberOrNamedValue } from './NumberOrNamedValueEditor';
+import { CheckValidName, ValRefFromString } from './Validation';
 
 export function AnonymousValueDisplay({
   item,
@@ -129,18 +129,19 @@ export function NamedValueElem({ name }: { name: ValueName }): ReactElement {
       : 'double';
   let editable: ReactElement;
   if (isRadiansRef(item)) {
-    if (isRef(item.radians)) {
-      editable = (
-        /*<NumberOrNamedValue
-          names={useAtomValue(MappedValuesAtom)}
-          value={item.radians}
-          setValue={(val) => setItem({ radians: val })}
-        />*/
-        <EditableValueRef
+    editable = (
+      <NumberOrNamedValue
+        names={useAtomValue(MappedValuesAtom)}
+        value={item.radians}
+        placeholder="RADIANS!"
+        setValue={(val) => setItem({ radians: ValRefFromString(val) })}
+      />
+      /*<EditableValueRef
           initial={item.radians}
           setRef={(nm) => setItem({ radians: nm })}
-        />
-      );
+        />*/
+    );
+    /*    if (isRef(item.radians)) {
     } else {
       editable = (
         <EditableValueExpr
@@ -149,7 +150,7 @@ export function NamedValueElem({ name }: { name: ValueName }): ReactElement {
           precision={1}
         />
       );
-    }
+    }*/
   } else {
     editable = <EditableOnlyValueRef ref={item} setRef={setItem} />;
   }
