@@ -4,8 +4,7 @@ import {
   Field,
   Option,
 } from '@fluentui/react-components';
-import { isString } from '@freik/typechk';
-import { useSetAtom } from 'jotai/react/useSetAtom';
+import { useSetAtom } from 'jotai';
 import { CSSProperties, ReactElement, useState } from 'react';
 import { isIntValue, isValueName, ValueRef } from '../../server/types';
 import { BlurAtom } from '../state/Atoms';
@@ -35,11 +34,7 @@ export function NumberOrNamedValue<T extends string, U extends HasKeys<T>>({
   const [matchingOptions, setMatchingOptions] = useState(options);
   const [customSearch, setCustomSearch] = useState<string | undefined>();
   const [curValue, setCurValue] = useState<string>(GetValueAsString(value));
-  let { message, state } = CheckValidValueOrName(
-    names,
-    isString(curValue) ? curValue : '',
-    true,
-  );
+  let { message, state } = CheckValidValueOrName(names, curValue || '', true);
   const onChange: ComboboxProps['onChange'] = (event) => {
     const value = event.target.value.trim();
     // Only filter values that might be potential names. Otherwise, treat it like a possible value
@@ -76,7 +71,11 @@ export function NumberOrNamedValue<T extends string, U extends HasKeys<T>>({
     } else {
       setCustomSearch(data.optionText);
     }
-    ({ message, state } = CheckValidValueOrName(names, data.optionText, true));
+    ({ message, state } = CheckValidValueOrName(
+      names,
+      data.optionText || '',
+      true,
+    ));
     if (state !== 'error') {
       setValue(data.optionText);
     } else {

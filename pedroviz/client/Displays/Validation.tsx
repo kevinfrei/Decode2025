@@ -3,7 +3,7 @@ import { ValueName, ValueRef } from '../../server/types';
 import { HasItem, ValidationData, ValidData } from '../types';
 
 const validName: RegExp = /^[A-Za-z_][a-zA-Z0-9_]*$/;
-const validNumber: RegExp = /^-? *[0-9]*\.[0-9]*( *e *[-+]? *[0-9]+)?$/;
+const validNumber: RegExp = /^-? *[0-9]*\.?[0-9]*( *e *[-+]? *[0-9]+)?$/;
 
 export function IsValidJavaIdentifier(str: string): boolean {
   return validName.test(str);
