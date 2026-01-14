@@ -1,9 +1,16 @@
 import {
+  Button,
   Combobox,
   ComboboxProps,
+  Dialog,
+  DialogBody,
+  DialogSurface,
+  DialogTrigger,
   Field,
   Option,
+  Text,
 } from '@fluentui/react-components';
+import { EditRegular } from '@fluentui/react-icons';
 import { useSetAtom } from 'jotai';
 import { CSSProperties, ReactElement, useState } from 'react';
 import { isIntValue, isValueName, ValueRef } from '../../server/types';
@@ -85,29 +92,45 @@ export function NumberOrNamedValue<T extends string, U extends HasKeys<T>>({
   };
 
   return (
-    <Field style={style} validationMessage={message} validationState={state}>
-      <Combobox
-        freeform
-        placeholder={placeholder || 'Select a variable'}
-        onChange={onChange}
-        onOptionSelect={onOptionSelect}
-        defaultValue={
-          isValueName(value)
-            ? value
-            : isIntValue(value)
-              ? value.int.toFixed(0)
-              : value.double.toFixed(2)
-        }
-      >
-        {customSearch ? (
-          <Option key="freeform" text={customSearch}>
-            Search for "{customSearch}"
-          </Option>
-        ) : null}
-        {matchingOptions.map((option) => (
-          <Option key={option}>{option}</Option>
-        ))}
-      </Combobox>
-    </Field>
+    <span>
+      <Text>{curValue}&nbsp;</Text>
+      <Dialog>
+        <DialogTrigger>
+          <Button size="small" icon={<EditRegular />} />
+        </DialogTrigger>
+        <DialogSurface>
+          <DialogBody>
+            <Field
+              style={style}
+              validationMessage={message}
+              validationState={state}
+            >
+              <Combobox
+                freeform
+                placeholder={placeholder || 'Select a variable'}
+                onChange={onChange}
+                onOptionSelect={onOptionSelect}
+                defaultValue={
+                  isValueName(value)
+                    ? value
+                    : isIntValue(value)
+                      ? value.int.toFixed(0)
+                      : value.double.toFixed(2)
+                }
+              >
+                {customSearch ? (
+                  <Option key="freeform" text={customSearch}>
+                    Search for "{customSearch}"
+                  </Option>
+                ) : null}
+                {matchingOptions.map((option) => (
+                  <Option key={option}>{option}</Option>
+                ))}
+              </Combobox>
+            </Field>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+    </span>
   );
 }
