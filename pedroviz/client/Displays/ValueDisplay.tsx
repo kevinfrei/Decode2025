@@ -122,6 +122,7 @@ function getNumber(val: AnonymousValue): number {
 
 export function NamedValueElem({ name }: { name: ValueName }): ReactElement {
   const [item, setItem] = useAtom(ValueAtomFamily(name));
+  const names = useAtomValue(MappedValuesAtom);
   const type = isRadiansRef(item)
     ? 'degrees'
     : isIntValue(item)
@@ -131,7 +132,7 @@ export function NamedValueElem({ name }: { name: ValueName }): ReactElement {
   if (isRadiansRef(item)) {
     editable = (
       <NumberOrNamedValue
-        names={useAtomValue(MappedValuesAtom)}
+        names={names}
         value={item.radians}
         placeholder="RADIANS!"
         setValue={(val) => setItem({ radians: ValRefFromString(val) })}
@@ -152,7 +153,15 @@ export function NamedValueElem({ name }: { name: ValueName }): ReactElement {
       );
     }*/
   } else {
-    editable = <EditableOnlyValueRef ref={item} setRef={setItem} />;
+    //    editable = <EditableOnlyValueRef ref={item} setRef={setItem} />;
+    editable = (
+      <NumberOrNamedValue
+        names={names}
+        value={item}
+        placeholder="NotRadians"
+        setValue={(val) => setItem(ValRefFromString(val))}
+      />
+    );
   }
   return (
     <>
