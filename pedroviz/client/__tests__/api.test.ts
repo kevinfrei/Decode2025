@@ -24,7 +24,7 @@ import {
   ValueName,
   ValueRef,
 } from '../../server/types';
-import { GetTeamPaths, LoadAndIndexFile, SavePath } from '../state/API';
+import { GetPaths, LoadAndIndexFile, SavePath } from '../state/API';
 import {
   calcBezierRef,
   calcHeadingRef,
@@ -276,10 +276,10 @@ describe('API validation', () => {
   test('GetPaths', async () => {
     globalThis.fetch = MyFetchFunc;
     bad = true;
-    const res2 = await GetTeamPaths();
+    const res2 = await GetPaths();
     expect(res2).toEqual({});
     bad = false;
-    const res = await GetTeamPaths();
+    const res = await GetPaths();
     expect(res).toEqual(teamPaths);
   });
   test('LoadPaths', async () => {

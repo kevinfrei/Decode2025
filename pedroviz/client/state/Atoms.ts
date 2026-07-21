@@ -21,12 +21,7 @@ import {
 } from '../../server/types';
 import { AnonymousPathChain, MappedIndex } from '../types';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
-import {
-  GetClasses,
-  GetTeamPaths,
-  LoadAndIndexFile,
-  UpdateIndexFile,
-} from './API';
+import { GetPaths, LoadAndIndexFile, UpdateIndexFile } from './API';
 import { EmptyMappedFile } from './IndexedFile';
 
 export const ThemeAtom = atomWithStorage<'dark' | 'light'>(
@@ -48,7 +43,8 @@ export const ColorForNumber = atomFamily((index: number) =>
 
 export const BlurAtom = atom('');
 
-export const PathsAtom = atom(async () => GetTeamPaths());
+export const PathsAtom = atom(async () => GetPaths());
+
 export const TeamsAtom = atom(async (get) => {
   const paths = await get(PathsAtom);
   return Object.keys(paths).sort();
@@ -95,41 +91,8 @@ export const FilesForSelectedTeam = atom(async (get): Promise<Path[]> => {
   return [] as Path[];
 });
 
-export const SelectedFileBackingAtom = atomWithStorage<string>(
+export const SelectedFileAtom = atomWithStorage<string>(
   'selectedPath',
-  '',
-  undefined,
-  { getOnInit: true },
-);
-export const SelectedFileAtom = atom(
-  async (get) => get(SelectedFileBackingAtom),
-  async (get, set, val: string) => {
-    const cur = get(SelectedFileBackingAtom);
-    // Clear the selected class when the file is changed
-    if (cur !== val) {
-      const curClass = await get(SelectedClassAtom);
-      // if (curClass !== '') {
-      //   const paths = await get(ClassesForSelectedFile);
-      set(SelectedClassAtom, '');
-      // }
-    }
-    set(SelectedFileBackingAtom, val);
-  },
-);
-
-export const ClassesForSelectedFile = atom(async (get): Promise<string[]> => {
-  const selTeam = await get(SelectedTeamAtom);
-  const selPath = await get(SelectedFileAtom);
-  if (selTeam === '') {
-    return ['no team selected'];
-  }
-  if (selPath === '') {
-    return ['no file selected'];
-  }
-  return await GetClasses(selTeam, selPath);
-});
-export const SelectedClassAtom = atomWithStorage<string>(
-  'selectedClass',
   '',
   undefined,
   { getOnInit: true },
