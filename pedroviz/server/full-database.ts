@@ -3,7 +3,9 @@ import { isDefined, isUndefined } from '@freik/typechk';
 import { GetTeamPaths } from './getpaths';
 import { GetPathChainIndex } from './loadpath';
 import {
+  ErrorOr,
   isError,
+  makeError,
   Path,
   PathChainClass,
   PathDatabase,
@@ -69,10 +71,11 @@ export async function PopulateDatabase() {
 }
 
 export function GetAllIndexContent(): [Team, Path, string[]][] {
-  const entries: [[Team, Path], [string[], PathChainClass]][] = [
-    ...database.entries(),
-  ];
-  return entries.map(([[team, path], [classes, pcc]]) => [team, path, classes]);
+  return [...database.entries()].map(([[team, path], [classes, pcc]]) => [
+    team,
+    path,
+    classes,
+  ]);
 }
 
 export function GetFullPathChain(
@@ -87,8 +90,42 @@ export function GetDatabase(): PathDatabase {
   return database;
 }
 
+// Interfaces to the web server to talk to the web client:
+
+export function WebGetPathChainClassList(
+  team: Team,
+  path: Path,
+): ErrorOr<string[]> {
+  const res = database.get([team, path]);
+  if (isUndefined(res)) {
+    return makeError(`${team}:${path} no Pedro pathing classes found`);
+  }
+  return res[0];
+}
+
+export function WebGetPathChainClassRoot(
+  team: Team,
+  path: Path,
+): ErrorOr<PathChainClass> {
+  const res = database.get([team, path]);
+  if (isUndefined(res)) {
+    return makeError(`${team}:${path} no Pedro pathing classes found`);
+  }
+  return res[1];
+}
+
+export function WebGetTeamPaths(): TeamPaths {
+  const teamPaths: TeamPaths = {};
+  teampaths.forEach((paths, team) => {
+    teamPaths[team] = paths;
+  });
+  return teamPaths;
+}
+
+/*
 if (import.meta.main) {
   PopulateDatabase()
     .then(() => console.log('done'))
     .catch(console.error);
 }
+*/

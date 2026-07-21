@@ -869,26 +869,11 @@ export async function MakePathChainFile(
   return pcc;
 }
 
-// This is for quick debugging:
+/*
 if (import.meta.main) {
-  // This code runs only when you execute the file directly
-  // e.g., `bun run my-file.ts`
   MakePathChainFile(
-    [
-      '..',
-      'Sixteen750',
-      'src',
-      'main',
-      'java',
-      'org',
-      'firstinspires',
-      'ftc',
-      'sixteen750',
-      'commands',
-      'auto',
-      'Poses.java',
-    ].join('/'),
-  )
+    ['..', 'Sixteen750', 'src', 'main', 'java', 'org', 'firstinspires', 'ftc', 'sixteen750', 'commands', 'auto', 'Poses.java',].join('/'))
     .then((strOrPcf) => console.log(strOrPcf))
     .catch((err) => console.error(err));
 }
+*/

@@ -6,6 +6,7 @@ import { SavePath } from './server/savepath';
 import {
   GetPathFileNames,
   LoadClassList,
+  LoadDatabase,
   LoadPath,
 } from './server/web-interface';
 
@@ -31,6 +32,7 @@ const server = serve({
         decodeURIComponent(req.params.path),
         decodeURIComponent(req.params.data),
       ),
+    '/apii/fulldb': async (req) => LoadDatabase(),
   },
 
   development: process.env.NODE_ENV !== 'production' && {
