@@ -155,6 +155,7 @@ export const EmptyPathChainClass: PathChainClass = {
 };
 
 export type MaybePathFile = ErrorOr<PathChainClass>;
+export type PathDatabase = Map<[Team, Path], [string[], PathChainClass]>;
 
 export function chkTeamPaths(t: unknown): t is TeamPaths {
   return isRecordOf(t, isString, isArrayOfString);

@@ -21,7 +21,7 @@ export async function GetPathChainIndex(
       break;
     }
     list.push(item.name);
-    work.push(...Object.values(pcc.children));
+    work.push(...Object.values(item.children));
   }
   return [list, pcc];
 }
