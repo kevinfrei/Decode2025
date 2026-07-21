@@ -1,9 +1,13 @@
 import { serve } from 'bun';
 
 import index from './index.html';
-import { GetPathFileNames } from './server/getpaths';
-import { LoadPath } from './server/loadpath';
+import { main } from './server/main';
 import { SavePath } from './server/savepath';
+import {
+  GetPathFileNames,
+  LoadClassList,
+  LoadPath,
+} from './server/web-interface';
 
 const server = serve({
   routes: {
@@ -16,11 +20,10 @@ const server = serve({
         decodeURIComponent(req.params.team),
         decodeURIComponent(req.params.path),
       ),
-    '/api/loadclass/:team/:path/:file': async (req) =>
+    '/api/getclasslist/:team/:path': async (req) =>
       LoadClassList(
         decodeURIComponent(req.params.team),
         decodeURIComponent(req.params.path),
-        decodeURIComponent(req.params.file),
       ),
     '/api/savepath/:team/:path/:data': async (req) =>
       SavePath(
@@ -38,4 +41,4 @@ const server = serve({
   },
 });
 
-console.log(`🚀 Server running at ${server.url}`);
+main(server.url).then(console.log).catch(console.error);

@@ -32,10 +32,12 @@ import {
   BezierName,
   BezierRef,
   EmptyPathChainClass,
+  ErrorOr,
   HeadingRef,
   isAnonymousValue,
   isRadiansRef,
   isRef,
+  makeError,
   NamedBezier,
   NamedPathChain,
   NamedPose,
@@ -856,11 +858,11 @@ function getPathChainFactories(
 
 export async function MakePathChainFile(
   filename: string,
-): Promise<PathChainClass | string> {
+): Promise<ErrorOr<PathChainClass>> {
   const loader = new PathChainLoader();
   const res = await loader.loadFile(filename);
   if (isString(res)) {
-    return res;
+    return makeError(res);
   }
   let pcc: OptPCCInfo = { ...loader.info };
   delete pcc.pathChainFields;

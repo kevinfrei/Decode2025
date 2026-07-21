@@ -17,8 +17,6 @@ import {
   waitFor,
 } from '@testing-library/react';
 
-import '@testing-library/jest-dom';
-
 import {
   AnonymousBezier,
   BezierName,
@@ -50,7 +48,8 @@ import {
 import { getStore } from '../state/Storage';
 import { darkOnWhite, lightOnBlack } from '../ui-tools/Colors';
 
-import './jest-dom-types-fix.test';
+// import './jest-dom-types-fix.test';
+// import '@testing-library/jest-dom';
 
 // Mocks & phony data for my tests:
 const teamPaths: TeamPaths = {

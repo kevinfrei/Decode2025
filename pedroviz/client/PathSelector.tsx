@@ -3,28 +3,33 @@ import { useAtom, useAtomValue } from 'jotai';
 
 import { Text } from '@fluentui/react-components';
 
-import { select_a_bot, select_a_file } from './constants';
+import { select_a_bot, select_a_class, select_a_file } from './constants';
 import {
   BlurAtom,
+  ClassesForSelectedFile,
   FilesForSelectedTeam,
+  SelectedClassAtom,
   SelectedFileAtom,
   SelectedTeamAtom,
   TeamsAtom,
 } from './state/Atoms';
 import { AutoSelector } from './ui-tools/AutoSelector';
+import { ErrorBoundary } from './ui-tools/ErrorBoundary';
 
 export function TeamSelector(): ReactElement {
   const teams = useAtomValue(TeamsAtom); //['TeamCode', 'LearnBot'];
   const [team, setTeam] = useAtom(SelectedTeamAtom);
   return (
-    <AutoSelector
-      prompt={select_a_bot}
-      items={teams}
-      selected={team}
-      setSelected={setTeam}
-      /* This is just while testing */
-      // default="LearnBot"
-    />
+    <ErrorBoundary>
+      <AutoSelector
+        prompt={select_a_bot}
+        items={teams}
+        selected={team}
+        setSelected={setTeam}
+        /* This is just while testing */
+        // default="LearnBot"
+      />
+    </ErrorBoundary>
   );
 }
 
@@ -45,7 +50,14 @@ export function FileSelector(): ReactElement {
 export function ClassSelector(): ReactElement {
   const classes = useAtomValue(ClassesForSelectedFile);
   const [classSel, setClass] = useAtom(SelectedClassAtom);
-  return <></>;
+  return (
+    <AutoSelector
+      prompt={select_a_class}
+      items={classes}
+      selected={classSel}
+      setSelected={setClass}
+    />
+  );
 }
 
 export function PathSelector(): ReactElement {
@@ -55,6 +67,8 @@ export function PathSelector(): ReactElement {
       <TeamSelector />
       &nbsp;
       <FileSelector />
+      &nbsp;
+      <ClassSelector />
       &nbsp;
       <Text>{blur}</Text>
     </>

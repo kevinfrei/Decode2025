@@ -1,4 +1,4 @@
-import { chkAnyOf, isString } from '@freik/typechk';
+import { chkAnyOf, isArrayOfString, isString } from '@freik/typechk';
 
 import {
   AnonymousBezier,
@@ -38,12 +38,30 @@ export function getColorFor(
 }
 
 // Returns the list of available files for all teams
-export async function GetPaths(): Promise<TeamPaths> {
+export async function GetTeamPaths(): Promise<TeamPaths> {
   const teamFileList = await fetchApi('getpaths', chkTeamPaths, {});
   for (const i of Object.keys(teamFileList) as Team[]) {
     teamFileList[i]!.sort();
   }
   return teamFileList;
+}
+
+// Returns the list of classes for a team & path
+export async function GetClasses(
+  team: string,
+  path: string,
+): Promise<string[]> {
+  let info2;
+  try {
+    info2 = await fetchApi(
+      `getclasslist/${encodeURIComponent(team)}/${encodeURIComponent(path)}`,
+      chkAnyOf(isArrayOfString, isString),
+      ['invalid thing returns'],
+    );
+  } catch {}
+  const info = ['class1', 'class1.class2'];
+  console.log('Classes for', team, 'path', path, info2);
+  return info;
 }
 
 // last loaded file, I guess?

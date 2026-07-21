@@ -4,6 +4,7 @@ import { describe, expect, mock, test } from 'bun:test';
 import { act } from 'react';
 
 import { FluentProvider, webLightTheme } from '@fluentui/react-components';
+import * as matchers from '@testing-library/jest-dom/matchers';
 import { render, screen, waitFor } from '@testing-library/react';
 
 import '@testing-library/jest-dom';
@@ -11,6 +12,9 @@ import '@testing-library/jest-dom';
 import { AutoSelector } from '../ui-tools/AutoSelector';
 
 import './jest-dom-types-fix.test';
+
+// Extends Bun's expect natively
+expect.extend(matchers);
 
 // I'm *really* new to all this UI testing. These are all *terrible* tests,
 // but they're a start.
